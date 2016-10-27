@@ -42,7 +42,7 @@ public class OTelegramModule extends AbstractOrienteerModule{
 				.oProperty(OPROPERTY_USERNAME, OType.STRING)
 				.oProperty(OPROPERTY_TOKEN, OType.STRING)
 				.switchDisplayable(true, OPROPERTY_USERNAME, OPROPERTY_TOKEN);
-		LOG.info("Install");
+		LOG.debug("Install");
 		//Install data model
 		//Return null of default OModule is enough
 		return null;
@@ -56,6 +56,7 @@ public class OTelegramModule extends AbstractOrienteerModule{
 		BotLogger.setLevel(Level.WARNING);
 		BotLogger.registerLogger(new ConsoleHandler());
 		try {
+			LOG.debug("Database is closed: " + db.isClosed());
 			telegramBotsApi.registerBot(new OTelegramBot(botConfig, db));
 		} catch (TelegramApiRequestException e) {
 			LOG.error("Cannot register bot");
