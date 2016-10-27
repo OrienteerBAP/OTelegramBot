@@ -1,8 +1,11 @@
 package org.orienteer.telegram;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
+import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
+import com.orientechnologies.orient.core.record.impl.ODocument;
+import org.orienteer.core.module.IOrienteerModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
@@ -12,6 +15,7 @@ import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
+import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,12 +28,10 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
     private static final Logger LOG = LoggerFactory.getLogger(OTelegramBot.class);
     private final OTelegramModule.BotConfig BOT_CONFIG;
-    private final ODatabaseDocument DATABASE;
 
 
-    public OTelegramBot(OTelegramModule.BotConfig botConfig, ODatabaseDocument db) {
+    public OTelegramBot(OTelegramModule.BotConfig botConfig) {
         BOT_CONFIG = botConfig;
-        DATABASE = db;
     }
 
     @Override
@@ -76,6 +78,8 @@ public class OTelegramBot extends TelegramLongPollingBot {
                     sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_RESULT_SUCCESS_MSG);
                     sendMessage(sendRequestMessage);
                     sendRequestMessage = getTextMessage(message, getInformationAboutClass(className));
+                    sendMessage(sendRequestMessage);
+                    sendRequestMessage = getClassMenuMessage(message, className);
                 } else {
                     sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_RESULT_FAILED_MSG);
                 }
@@ -93,21 +97,59 @@ public class OTelegramBot extends TelegramLongPollingBot {
         sendMessage(sendRequestMessage);
     }
 
-    private String getInformationAboutClass(String className) {
-        OClass oClass = DATABASE.getMetadata().getSchema().getClass(className);
-        StringBuilder stringBuilder = new StringBuilder();
-        Collection<OProperty> properties = oClass.getIndexedProperties();
-        stringBuilder.append(oClass.getName() + " properties:\n");
-        for (OProperty property : properties) {
-            stringBuilder.append("Name: " + property.getName()
-                    + " default value" + property.getDefaultValue() + "\n");
-        }
+    private String getInformationAboutClass(final String className) {
+        String result = (String) new DBClosure() {
+            @Override
+            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+                OClass oClass = oDatabaseDocument.getMetadata().getSchema().getClass(className);
+                StringBuilder stringBuilder = new StringBuilder();
+                Collection<OProperty> properties = oClass.properties();
+                stringBuilder.append(oClass.getName() + " properties:\n");
+                for (OProperty property : properties) {
+                    stringBuilder.append("Name: " );
+                    stringBuilder.append(property.getName() + "\n");
+                    stringBuilder.append("Type: ");
+                    stringBuilder.append(property.getType() + "\n");
+                    stringBuilder.append("Default value: " + property.getDefaultValue() + "\n");
+                }
+                return stringBuilder.toString();
+            }
+        }.execute();
 
-        return stringBuilder.toString();
+        return result;
     }
 
-    private boolean isClassExists(String className) {
-        return DATABASE.getMetadata().getSchema().existsClass(className);
+    private SendMessage getClassMenuMessage(Message message, final String className) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(message.getChatId().toString());
+        sendMessage.enableMarkdown(true);
+        sendMessage.setText(BotMessage.CLASS_MENU_MSG);
+        List<String> buttonNames = (List<String>) new DBClosure() {
+            @Override
+            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+                List<String> result = new ArrayList<>();
+                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
+                for (ODocument document: oDocuments) {
+                    if (document.field(IOrienteerModule.OMODULE_NAME) != null) {
+                        result.add(document.field(IOrienteerModule.OMODULE_NAME).toString());
+                    }
+                }
+                return result;
+            }
+        }.execute();
+        sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
+        return sendMessage;
+    }
+
+    private boolean isClassExists(final String className) {
+        Boolean isExist = (Boolean) new DBClosure() {
+            @Override
+            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+                return oDatabaseDocument.getMetadata().getSchema().existsClass(className);
+            }
+        }.execute();
+
+        return isExist;
     }
 
     private SendMessage getTextMessage(Message message, String text) {
@@ -124,18 +166,23 @@ public class OTelegramBot extends TelegramLongPollingBot {
      //   sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.enableMarkdown(true);
         sendMessage.setText(BotMessage.MAIN_MENU_MSG);
-        sendMessage.setReplyMarkup(getMainMenuMarkup());
+        List<String> buttonNames = new ArrayList<>();
+        buttonNames.add(BotMessage.SEARCH_BUTTON);
+        sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
         return sendMessage;
     }
 
-    private ReplyKeyboardMarkup getMainMenuMarkup() {
+    private ReplyKeyboardMarkup getMenuMarkup(List<String> buttonNames) {
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
         replyKeyboardMarkup.setSelective(true);
         replyKeyboardMarkup.setResizeKeyboard(true);
         List<KeyboardRow> keyboard = new ArrayList<>();
-        KeyboardRow firstKeyboardRow = new KeyboardRow();
-        firstKeyboardRow.add(BotMessage.SEARCH_BUTTON);
-        keyboard.add(firstKeyboardRow);
+
+        for (String buttonName: buttonNames) {
+            KeyboardRow keyboardRow = new KeyboardRow();
+            keyboardRow.add(buttonName);
+            keyboard.add(keyboardRow);
+        }
         replyKeyboardMarkup.setKeyboard(keyboard);
         return replyKeyboardMarkup;
     }
@@ -168,6 +215,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
     private interface BotMessage {
         String MAIN_MENU_MSG = "Send me name of class and I will try to find it.";
+        String CLASS_MENU_MSG = "Choose document of class and I will send information about him.";
         String ERROR_MSG = "Error message";
         String SEARCH_MSG = "Type your class name:";
         String SEARCH_RESULT_SUCCESS_MSG = "I found class!";
