@@ -49,6 +49,12 @@
 		<wtp.version>none</wtp.version>
 	</properties>
 	<dependencies>
+		<!-- TELEGRAM BOTS API-->
+		<dependency>
+			<groupId>com.github.rubenlagus</groupId>
+			<artifactId>TelegramBots</artifactId>
+			<version>2.4.0</version>
+		</dependency>
 		<dependency>
 			<groupId>org.orienteer</groupId>
 			<artifactId>orienteer-core</artifactId>
@@ -104,6 +110,7 @@
 			<version>${jetty.version}</version>
 			<scope>provided</scope>
 		</dependency>
+
 	</dependencies>
 	<build>
 		<finalName>OTelegramModule</finalName>
@@ -216,6 +223,11 @@
 			<snapshots>
 				<enabled>true</enabled>
 			</snapshots>
+		</repository>
+		<!-- REPOSITORY FOR TELEGRAM BOT API -->
+		<repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
 		</repository>
 	</repositories>
 	</project>
