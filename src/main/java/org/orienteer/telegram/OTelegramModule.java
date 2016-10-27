@@ -42,10 +42,8 @@ public class OTelegramModule extends AbstractOrienteerModule{
 				.oProperty(OPROPERTY_USERNAME, OType.STRING)
 				.oProperty(OPROPERTY_TOKEN, OType.STRING)
 				.switchDisplayable(true, OPROPERTY_USERNAME, OPROPERTY_TOKEN);
-		LOG.debug("Install");
-		//Install data model
-		//Return null of default OModule is enough
-		return null;
+
+		return helper.getODocument();
 	}
 
 	@Override
