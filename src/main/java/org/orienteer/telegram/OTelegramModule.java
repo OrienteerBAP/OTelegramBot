@@ -35,16 +35,14 @@ public class OTelegramModule extends AbstractOrienteerModule{
 		LOG.info("Install");
 		//Install data model
 		//Return null of default OModule is enough
-		return helper.getODocument();
+		return null;
 	}
 
 	@Override
 	public void onInitialize(OrienteerWebApplication app, ODatabaseDocument db) {
 		createClass(db);
-		getOrientClasses(db);
+		readBotConfig(db);
 	}
-
-
 
 	protected void createClass(ODatabaseDocument db) {
 		if (!db.getMetadata().getSchema().existsClass(OCLASS_NAME)) {
@@ -56,25 +54,19 @@ public class OTelegramModule extends AbstractOrienteerModule{
 		}
 	}
 
-	protected void getOrientClasses(ODatabaseDocument db) {
-		OClass omodule = db.getMetadata().getSchema().getClass("OModule");
-		Collection<OClass> allSubclasses = omodule.getAllSubclasses();
+	protected BotConfig readBotConfig(ODatabaseDocument db) {
+        BotConfig botConfig = null;
 
-		Collection<OClass> classes = db.getMetadata().getSchema().getClasses();
-		int count = 0;
-		LOG.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-		LOG.info("!!!                                          !!!");
-		LOG.info("!!!            Start testing                 !!!");
-		LOG.info("!!!                                          !!!");
-		LOG.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-		LOG.info("allSubclasses: " + allSubclasses.size());
-		LOG.info("all schema: " + db.getMetadata().getSchema());
-		LOG.info("classes.size(): " + classes.size());
-		for (OClass oClass : classes) {
-			LOG.info(count + " class name: " + oClass.getName());
-			count++;
-		}
-	}
+        return botConfig;
+    }
 
+    private class BotConfig {
+        final String USERNAME;
+        final String TOKKEN;
 
+        BotConfig(String username, String tokken) {
+            USERNAME = username;
+            TOKKEN = tokken;
+        }
+    }
 }
