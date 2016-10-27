@@ -55,7 +55,7 @@ public class OTelegramModule extends AbstractOrienteerModule{
 		BotLogger.registerLogger(new ConsoleHandler());
 		try {
 			LOG.debug("Database is closed: " + db.isClosed());
-			telegramBotsApi.registerBot(new OTelegramBot(botConfig, db));
+			telegramBotsApi.registerBot(new OTelegramBot(botConfig));
 		} catch (TelegramApiRequestException e) {
 			LOG.error("Cannot register bot");
 			if (LOG.isDebugEnabled()) e.printStackTrace();
