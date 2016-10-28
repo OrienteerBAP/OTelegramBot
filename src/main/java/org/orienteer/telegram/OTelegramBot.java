@@ -44,10 +44,6 @@ public class OTelegramBot extends TelegramLongPollingBot {
         return BOT_CONFIG.USERNAME;
     }
 
-    @Override
-    public void onClosing() {
-
-    }
 
     @Override
     public void onUpdateReceived(Update update) {
@@ -122,6 +118,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private SendMessage getClassMenuMessage(Message message, final String className) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
+        sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.enableMarkdown(true);
         sendMessage.setText(BotMessage.CLASS_MENU_MSG);
         List<String> buttonNames = (List<String>) new DBClosure() {
@@ -163,7 +160,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private SendMessage getMainMenuMessage(Message message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
-     //   sendMessage.setReplyToMessageId(message.getMessageId());
+        sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.enableMarkdown(true);
         sendMessage.setText(BotMessage.MAIN_MENU_MSG);
         List<String> buttonNames = new ArrayList<>();
