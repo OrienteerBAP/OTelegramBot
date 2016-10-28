@@ -29,6 +29,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private static final Logger LOG = LoggerFactory.getLogger(OTelegramBot.class);
     private final OTelegramModule.BotConfig BOT_CONFIG;
 
+    private BotState botState;
 
     public OTelegramBot(OTelegramModule.BotConfig botConfig) {
         BOT_CONFIG = botConfig;
@@ -61,14 +62,42 @@ public class OTelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleIncomingMessage(Message message) throws TelegramApiException {
-        BotState state = getBotState(message.getText());
         SendMessage sendRequestMessage;
+        if (botState == null) {
+            sendRequestMessage = handleNewBotState(message);
+        } else {
+            sendRequestMessage = handleOldBotState(message);
+        }
+        sendMessage(sendRequestMessage);
+    }
 
-        switch (state) {
+    private SendMessage handleNewBotState(Message message) {
+        SendMessage sendRequestMessage;
+        botState = getBotState(message.getText());
+        switch (botState) {
             case START:
                 sendRequestMessage = getMainMenuMessage(message);
+                botState = null;
                 break;
-            case INPUT:
+            case SEARCH:
+                sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_MSG);
+                break;
+            case GET:
+                sendRequestMessage = getTextMessage(message, "Get class");
+                botState = null;
+                break;
+            default:
+                sendRequestMessage = getTextMessage(message, BotMessage.ERROR_MSG);
+                botState = null;
+                break;
+        }
+        return sendRequestMessage;
+    }
+
+    private SendMessage handleOldBotState(Message message) throws TelegramApiException {
+        SendMessage sendRequestMessage;
+        switch (botState) {
+            case SEARCH:
                 String className = message.getText();
                 if (isClassExists(className)) {
                     sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_RESULT_SUCCESS_MSG);
@@ -79,18 +108,13 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 } else {
                     sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_RESULT_FAILED_MSG);
                 }
-                break;
-            case SEARCH:
-                sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_MSG);
-                break;
-            case GET:
-                sendRequestMessage = getTextMessage(message, "Get class");
+                botState = null;
                 break;
             default:
                 sendRequestMessage = getTextMessage(message, BotMessage.ERROR_MSG);
-                break;
+                botState = null;
         }
-        sendMessage(sendRequestMessage);
+        return sendRequestMessage;
     }
 
     private String getInformationAboutClass(final String className) {
@@ -186,7 +210,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
 
     private BotState getBotState(String text) {
-        BotState state = BotState.INPUT;
+        BotState state = BotState.ERROR;
         for (BotState search : BotState.values()) {
             if (search.command.equals(text)) {
                 state = search;
@@ -201,7 +225,8 @@ public class OTelegramBot extends TelegramLongPollingBot {
         START("/start"),
         INPUT("/input"),
         SEARCH(BotMessage.SEARCH_BUTTON),
-        GET("/get");
+        GET("/get"),
+        ERROR("/error");
 
         private String command;
         BotState(String command) {
