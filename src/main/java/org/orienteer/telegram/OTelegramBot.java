@@ -19,6 +19,7 @@ import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -93,7 +94,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_MSG);
                 break;
             case CLASS_SEARCH_BUT:
-                sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_MSG);
+                sendRequestMessage = getClassesMenuMessage(message);
                 break;
             default:
                 sendRequestMessage = getTextMessage(message, BotMessage.ERROR_MSG);
@@ -428,6 +429,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 for (OClass oClass: classes) {
                     result.add(oClass.getName());
                 }
+                Collections.sort(result);
                 return result;
             }
         }.execute();
