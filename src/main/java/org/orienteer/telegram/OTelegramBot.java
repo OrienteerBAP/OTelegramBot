@@ -1,11 +1,12 @@
 package org.orienteer.telegram;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
+import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
+import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import org.orienteer.core.module.IOrienteerModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
@@ -30,6 +31,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private final OTelegramModule.BotConfig BOT_CONFIG;
 
     private BotState botState;
+    private String targetClass;
 
     public OTelegramBot(OTelegramModule.BotConfig botConfig) {
         BOT_CONFIG = botConfig;
@@ -74,13 +76,20 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private SendMessage handleNewBotState(Message message) {
         SendMessage sendRequestMessage;
         botState = getBotState(message.getText());
+        LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        LOG.debug("botState: " + botState);
+        LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         switch (botState) {
+            case BACK_TO_MAIN_MENU:
             case START:
                 sendRequestMessage = getMainMenuMessage(message);
                 botState = null;
                 break;
-            case SEARCH:
+            case GLOBAL_SEARCH:
                 sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_MSG);
+                break;
+            case CLASS_SEARCH_MENU:
+                sendRequestMessage = getClassesMenuMessage(message);
                 break;
             case GET:
                 sendRequestMessage = getTextMessage(message, "Get class");
@@ -96,87 +105,185 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
     private SendMessage handleOldBotState(Message message) throws TelegramApiException {
         SendMessage sendRequestMessage;
+        LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        LOG.debug("start botState in handleOldState: " + botState);
+        LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         switch (botState) {
-            case SEARCH:
-                String className = message.getText();
-                if (isClassExists(className)) {
-                    sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_RESULT_SUCCESS_MSG);
-                    sendMessage(sendRequestMessage);
-                    sendRequestMessage = getTextMessage(message, getInformationAboutClass(className));
-                    sendMessage(sendRequestMessage);
-                    sendRequestMessage = getClassMenuMessage(message, className);
+            case GLOBAL_SEARCH:
+                sendRequestMessage = getTextMessage(message, searchDocumentsInGlobal(message.getText()));
+                botState = null;
+                break;
+            case CLASS_SEARCH_MENU:
+                if (!message.getText().equals(BotMessage.BACK_TO_MAIN_MENU_BUT)) {
+                    targetClass = message.getText();
+                    LOG.debug("target class: " + targetClass);
+                    sendRequestMessage = getDocumentSearchMenu(message);
+                    botState = BotState.DOC_CLASS_SEARCH;
                 } else {
-                    sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_RESULT_FAILED_MSG);
+                    sendRequestMessage = getMainMenuMessage(message);
+                    botState = null;
                 }
+                break;
+            case DOC_CLASS_SEARCH:
+                if (!message.getText().equals(BotMessage.BACK_TO_CLASS_SEARCH_BUT)) {
+                    sendRequestMessage = getTextMessage(message, searchDocumentsInClass(message.getText(), targetClass));
+                } else sendRequestMessage = getClassesMenuMessage(message);
+                targetClass = null;
                 botState = null;
                 break;
             default:
                 sendRequestMessage = getTextMessage(message, BotMessage.ERROR_MSG);
                 botState = null;
         }
+        LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        LOG.debug("finish botState in handleOldState: " + botState);
+        LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         return sendRequestMessage;
     }
 
-    private String getInformationAboutClass(final String className) {
-        String result = (String) new DBClosure() {
+    /**
+     * Search documents with similar names from target class
+     * @param documentName name of document
+     * @param className name of target class
+     * @return result of search
+     */
+    private String searchDocumentsInClass(final String documentName, final String className) {
+        String resultOfSearch = (String) new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                OClass oClass = oDatabaseDocument.getMetadata().getSchema().getClass(className);
-                StringBuilder stringBuilder = new StringBuilder();
-                Collection<OProperty> properties = oClass.properties();
-                stringBuilder.append(oClass.getName() + " properties:\n");
-                for (OProperty property : properties) {
-                    stringBuilder.append("Name: " );
-                    stringBuilder.append(property.getName() + "\n");
-                    stringBuilder.append("Type: ");
-                    stringBuilder.append(property.getType() + "\n");
-                    stringBuilder.append("Default value: " + property.getDefaultValue() + "\n");
+                if (!oDatabaseDocument.getMetadata().getSchema().existsClass(className)) {
+                    return BotMessage.SEARCH_RESULT_FAILED_MSG;
                 }
-                return stringBuilder.toString();
+                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
+                String result = getDocumentString(oDocuments, documentName);
+                if (result.length() > 0) result = BotMessage.SEARCH_RESULT_SUCCESS_MSG + result;
+                return result;
             }
         }.execute();
+
+        return resultOfSearch;
+    }
+
+    /**
+     * Search documents with similar names from all database
+     * @param documentName name of target document
+     * @return result of search
+     */
+    private String searchDocumentsInGlobal(final String documentName) {
+        String resultOfSearch = (String) new DBClosure() {
+            @Override
+            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+                Collection<OClass> classes = oDatabaseDocument.getMetadata().getSchema().getClasses();
+                StringBuilder builder = new StringBuilder();
+                for (OClass oClass : classes) {
+                    ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
+                    builder.append(getDocumentString(oDocuments, documentName));
+                }
+                String result = builder.toString();
+                if (result.length() > 0) result = BotMessage.SEARCH_RESULT_SUCCESS_MSG + result;
+                return result;
+            }
+        }.execute();
+        return resultOfSearch;
+    }
+
+
+    private List<String> search(final String word) {
+        List<String> result = ;
 
         return result;
     }
 
-    private SendMessage getClassMenuMessage(Message message, final String className) {
+    /**
+     * Build string with result of search
+     * @param oDocuments list of documents where will be search
+     * @param documentName name of target document
+     * @return string with result of search
+     */
+    private String getDocumentString(ORecordIteratorClass<ODocument> oDocuments, String documentName) {
+        StringBuilder builder = new StringBuilder();
+        for (ODocument oDocument : oDocuments) {
+            String docName = oDocument.field("name", OType.STRING);
+            if (docName != null && docName.contains(documentName)) {
+                ORID identity = oDocument.getIdentity();
+                builder.append(docName);
+                builder.append(" ");
+                builder.append("/");
+                builder.append(oDocument.getClassName());
+                builder.append(identity.getClusterId());
+                builder.append("_");
+                builder.append(identity.getClusterPosition());
+                builder.append("\n");
+            }
+        }
+        return builder.toString();
+    }
+
+//    private String getInformationAboutDocument(final String className) {
+//        String result = (String) new DBClosure() {
+//            @Override
+//            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+//                StringBuilder stringBuilder = new StringBuilder();
+//                OClass oClass = oDatabaseDocument.getMetadata().getSchema().getClass(className);
+//                Collection<OProperty> properties = oClass.properties();
+//                List<OClass> superClasses = oClass.getSuperClasses();
+//                stringBuilder.append(oClass.getName());
+//                stringBuilder.append(" properties:\n");
+//                for (OProperty property : properties) {
+//                    stringBuilder.append("Name: " );
+//                    stringBuilder.append(property.getName());
+//                    stringBuilder.append("\n");
+//                    stringBuilder.append("Type: ");
+//                    stringBuilder.append(property.getType());
+//                    stringBuilder.append("\n");
+//                    stringBuilder.append("Default value: ");
+//                    stringBuilder.append(property.getDefaultValue());
+//                    stringBuilder.append("\n");
+//                }
+//                return stringBuilder.toString();
+//            }
+//        }.execute();
+//
+//        return result;
+//    }
+
+    private SendMessage getClassesMenuMessage(Message message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
-        sendMessage.setReplyToMessageId(message.getMessageId());
+       // sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.enableMarkdown(true);
         sendMessage.setText(BotMessage.CLASS_MENU_MSG);
         List<String> buttonNames = (List<String>) new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
                 List<String> result = new ArrayList<>();
-                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
-                for (ODocument document: oDocuments) {
-                    if (document.field(IOrienteerModule.OMODULE_NAME) != null) {
-                        result.add(document.field(IOrienteerModule.OMODULE_NAME).toString());
-                    }
+                Collection<OClass> classes = oDatabaseDocument.getMetadata().getSchema().getClasses();
+                for (OClass oClass: classes) {
+                    result.add(oClass.getName());
                 }
                 return result;
             }
         }.execute();
+        buttonNames.add(BotMessage.BACK_TO_MAIN_MENU_BUT);
         sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
         return sendMessage;
     }
 
-    private boolean isClassExists(final String className) {
-        Boolean isExist = (Boolean) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                return oDatabaseDocument.getMetadata().getSchema().existsClass(className);
-            }
-        }.execute();
-
-        return isExist;
+    private SendMessage getDocumentSearchMenu(Message message) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(message.getChatId().toString());
+        sendMessage.setText(BotMessage.SEARCH_MSG);
+        //sendMessage.setReplyToMessageId(message.getMessageId());
+        List<String> buttons = new ArrayList<>();
+        buttons.add(BotMessage.BACK_TO_CLASS_SEARCH_BUT);
+        sendMessage.setReplyMarkup(getMenuMarkup(buttons));
+        return sendMessage;
     }
 
     private SendMessage getTextMessage(Message message, String text) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
-     //   sendMessage.setReplyToMessageId(message.getMessageId());
+      //  sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.setText(text);
         return sendMessage;
     }
@@ -184,11 +291,12 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private SendMessage getMainMenuMessage(Message message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
-        sendMessage.setReplyToMessageId(message.getMessageId());
+        //sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.enableMarkdown(true);
         sendMessage.setText(BotMessage.MAIN_MENU_MSG);
         List<String> buttonNames = new ArrayList<>();
-        buttonNames.add(BotMessage.SEARCH_BUTTON);
+        buttonNames.add(BotMessage.CLASS_SEARCH_BUT);
+        buttonNames.add(BotMessage.GLOBAL_SEARCH_BUT);
         sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
         return sendMessage;
     }
@@ -196,6 +304,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private ReplyKeyboardMarkup getMenuMarkup(List<String> buttonNames) {
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
         replyKeyboardMarkup.setSelective(true);
+        replyKeyboardMarkup.setOneTimeKeyboad(true);
         replyKeyboardMarkup.setResizeKeyboard(true);
         List<KeyboardRow> keyboard = new ArrayList<>();
 
@@ -217,14 +326,19 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 break;
             }
         }
-
         return state;
     }
 
     private enum BotState {
         START("/start"),
         INPUT("/input"),
-        SEARCH(BotMessage.SEARCH_BUTTON),
+        GLOBAL_SEARCH(BotMessage.GLOBAL_SEARCH_BUT),
+        CLASS_SEARCH_MENU(BotMessage.CLASS_SEARCH_BUT),
+        DOC_CLASS_SEARCH("/docclasssearch"),
+        DOC_SEARCH("/docsearch"),
+        BACK_TO_MAIN_MENU(BotMessage.BACK_TO_MAIN_MENU_BUT),
+        BACK_TO_CLASS_SEARCH(BotMessage.BACK_TO_CLASS_SEARCH_BUT),
+        CLASS("/class"),
         GET("/get"),
         ERROR("/error");
 
@@ -236,13 +350,16 @@ public class OTelegramBot extends TelegramLongPollingBot {
     }
 
     private interface BotMessage {
-        String MAIN_MENU_MSG = "Send me name of class and I will try to find it.";
-        String CLASS_MENU_MSG = "Choose document of class and I will send information about him.";
-        String ERROR_MSG = "Error message";
-        String SEARCH_MSG = "Type your class name:";
-        String SEARCH_RESULT_SUCCESS_MSG = "I found class!";
-        String SEARCH_RESULT_FAILED_MSG = "I cannot found class!";
+        String MAIN_MENU_MSG = "Choose search option and send me name of document. I will try to find it.";
+        String CLASS_MENU_MSG = "Choose class in the list.";
+        String ERROR_MSG = "I don't understand you :(";
+        String SEARCH_MSG = "Send me name of document and I will try to find it:";
+        String SEARCH_RESULT_SUCCESS_MSG = "I found:\n\n";
+        String SEARCH_RESULT_FAILED_MSG = "I cannot found something!";
 
-        String SEARCH_BUTTON = "New search";
+        String GLOBAL_SEARCH_BUT = "Global search";
+        String CLASS_SEARCH_BUT = "Class search";
+        String BACK_TO_CLASS_SEARCH_BUT = "Back to class search";
+        String BACK_TO_MAIN_MENU_BUT = "Back to main menu";
     }
 }
