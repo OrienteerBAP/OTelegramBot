@@ -6,9 +6,7 @@ import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +33,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private final OTelegramModule.BotConfig BOT_CONFIG;
 
     private BotState botState;
-    private String targetClass;
+
 
     public OTelegramBot(OTelegramModule.BotConfig botConfig) {
         BOT_CONFIG = botConfig;
@@ -86,13 +84,13 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 sendRequestMessage = getMainMenuMessage(message);
                 break;
             case FIELD_NAMES_SEARCH_BUT:
-                sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_MSG);
+                sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_FIELD_NAMES_MSG);
                 break;
             case VALUES_SEARCH_BUT:
-                sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_MSG);
+                sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_FIELD_VALUES_MSG);
                 break;
             case DOC_SEARCH_BUT:
-                sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_MSG);
+                sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_DOCUMENT_NAMES_MSG);
                 break;
             case CLASS_SEARCH_BUT:
                 sendRequestMessage = getClassesMenuMessage(message);
@@ -122,7 +120,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                     if (result.length() < BotMessage.MAX_LENGTH) {
                         sendRequestMessage = getTextMessage(message, result);
                     } else {
-                        String[] split = result.split(BotMessage.SEARCH_FIELD_VALUES);
+                        String[] split = result.split(BotMessage.SEARCH_FIELD_VALUES_RESULT);
                         sendMessage(getTextMessage(message, split[0]));
                         sendRequestMessage = getTextMessage(message, split[1]);
                     }
@@ -132,22 +130,24 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 }
                 break;
             case FIELD_NAMES_SEARCH_BUT:
-                sendRequestMessage = getTextMessage(message, getResultOfFieldNamesSearch(message.getText()));
-                botState = null;
+                if (getBotState(message.getText()) != BotState.START) {
+                    sendRequestMessage = getTextMessage(message, getResultOfFieldNamesSearch(message.getText()));
+                } else sendRequestMessage = handleNewBotState(message);
                 break;
             case VALUES_SEARCH_BUT:
-                sendRequestMessage = getTextMessage(message, getResultOfFieldValuesSearch(message.getText()));
-                botState = null;
+                if (getBotState(message.getText()) != BotState.START) {
+                    sendRequestMessage = getTextMessage(message, getResultOfFieldValuesSearch(message.getText()));
+                } else sendRequestMessage = handleNewBotState(message);
                 break;
             case DOC_SEARCH_BUT:
-                sendRequestMessage = getTextMessage(message, getResultOfSearchDocumentGlobal(message.getText()));
-                botState = null;
+                if (getBotState(message.getText()) != BotState.START) {
+                    sendRequestMessage = getTextMessage(message, getResultOfSearchDocumentGlobal(message.getText()));
+                } else sendRequestMessage = handleNewBotState(message);
                 break;
             case CLASS_SEARCH_BUT:
                 if (getBotState(message.getText()) != BotState.START) {
                     sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_MSG);
-                } else sendRequestMessage = getMainMenuMessage(message);
-                botState = null;
+                } else sendRequestMessage = handleNewBotState(message);
                 break;
             default:
                 sendRequestMessage = getTextMessage(message, BotMessage.ERROR_MSG);
@@ -179,11 +179,11 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 if (builderFieldNames.length() > word.length() || builderFieldValues.length() > word.length()) {
                     builder.append(String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_SUCCESS_MSG));
                     if (builderFieldNames.length() > word.length()) {
-                        builder.append("\n" + BotMessage.SEARCH_FIELD_NAMES + "\n");
+                        builder.append("\n" + BotMessage.SEARCH_FIELD_NAMES_RESULT + "\n");
                         builder.append(builderFieldNames.toString());
                     }
                     if (builderFieldValues.length() > word.length()) {
-                        builder.append("\n" + BotMessage.SEARCH_FIELD_VALUES + "\n");
+                        builder.append("\n" + BotMessage.SEARCH_FIELD_VALUES_RESULT + "\n");
                         builder.append(builderFieldValues.toString());
                     }
                 } else builder.append(String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_FAILED_MSG));
@@ -213,7 +213,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 }
                 String result = builder.toString();
                 if (result.length() > word.length()) {
-                    result = "\n" + BotMessage.SEARCH_FIELD_NAMES + "\n" + result;
+                    result = "\n" + BotMessage.SEARCH_FIELD_NAMES_RESULT + "\n" + result;
                     result = String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_SUCCESS_MSG) + result;
                 } else result = String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_FAILED_MSG);
                 return result;
@@ -241,7 +241,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 }
                 String result = builder.toString();
                 if (result.length() > word.length()) {
-                    result = "\n" + BotMessage.SEARCH_FIELD_VALUES + "\n" + result;
+                    result = "\n" + BotMessage.SEARCH_FIELD_VALUES_RESULT + "\n" + result;
                     result = String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_SUCCESS_MSG) + result;
                 } else result = String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_FAILED_MSG);
                 return result;
@@ -553,6 +553,10 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
         String ERROR_MSG = "I don't understand you :(";
         String SEARCH_MSG = "Send me name of class or property or document and I will try to find it in .";
+        String SEARCH_FIELD_NAMES_MSG = "Send me word and I will try to find it in field names.";
+        String SEARCH_FIELD_VALUES_MSG = "Send me word and I will try to find it in field values.";
+        String SEARCH_DOCUMENT_NAMES_MSG = "Send me word and I will try to find it in document names";
+
         String SEARCH_RESULT_SUCCESS_MSG = "To get information about document click on link.";
         String SEARCH_RESULT_FAILED_MSG = "I cannot found something!";
 
@@ -573,8 +577,8 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
         String HTML_STRONG_TEXT = "<strong>%s</strong>";
 
-        String SEARCH_FIELD_NAMES = "In field names: ";
-        String SEARCH_FIELD_VALUES = "In field values: ";
+        String SEARCH_FIELD_NAMES_RESULT = "In field names: ";
+        String SEARCH_FIELD_VALUES_RESULT = "In field values: ";
 
         int MAX_LENGTH = 2048;
     }
