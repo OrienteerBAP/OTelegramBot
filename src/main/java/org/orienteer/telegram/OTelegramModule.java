@@ -39,7 +39,7 @@ public class OTelegramModule extends AbstractOrienteerModule{
 	private static final Logger LOG = LoggerFactory.getLogger(OTelegramModule.class);
 
 	public static final String OCLASS_NAME = "OTelegramBot";
-	public static final String OPROPERTY_USERNAME = "username";
+	public static final String OPROPERTY_USERNAME = "USERNAME";
 	public static final String OPROPERTY_TOKEN = "token";
 
 	protected OTelegramModule() {
@@ -66,7 +66,7 @@ public class OTelegramModule extends AbstractOrienteerModule{
 		BotLogger.registerLogger(new ConsoleHandler());
 		try {
 			LOG.debug("Database is closed: " + db.isClosed());
-			telegramBotsApi.registerBot(new OTelegramBot(botConfig));
+			telegramBotsApi.registerBot(OTelegramBot.getOrienteerTelegramBot(botConfig));
 		} catch (TelegramApiRequestException e) {
 			LOG.error("Cannot register bot");
 			if (LOG.isDebugEnabled()) e.printStackTrace();
@@ -90,22 +90,24 @@ public class OTelegramModule extends AbstractOrienteerModule{
 		if (oTelegramBots.hasNext()) {
 			ODocument bot = oTelegramBots.next();
 			if (bot.field(OMODULE_ACTIVATE)) {
-				username = bot.field("username");
+				username = bot.field("USERNAME");
 				token = bot.field("token");
 			}
 		}
-		LOG.info("Bot username: " + username);
+		LOG.info("Bot USERNAME: " + username);
 		LOG.info("Bot token: " + token);
-		return new BotConfig(username, token);
+		return new BotConfig(username, token, 10000);
     }
 
     public class BotConfig {
         final String USERNAME;
         final String TOKEN;
+		final long USER_SESSION;
 
-        BotConfig(String username, String token) {
+        BotConfig(String username, String token, long userSession) {
             USERNAME = username;
             TOKEN = token;
+			USER_SESSION = userSession;
         }
     }
 }

@@ -1,12 +1,17 @@
 package org.orienteer.telegram;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.exception.ORecordNotFoundException;
 import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
+import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +28,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Vitaliy Gonchar
@@ -31,12 +38,27 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
     private static final Logger LOG = LoggerFactory.getLogger(OTelegramBot.class);
     private final OTelegramModule.BotConfig BOT_CONFIG;
-
+    private final LoadingCache<String, BotState> SESSIONS;
     private BotState botState;
 
 
-    public OTelegramBot(OTelegramModule.BotConfig botConfig) {
+    private OTelegramBot(OTelegramModule.BotConfig botConfig, LoadingCache<String, BotState> sessions) {
         BOT_CONFIG = botConfig;
+        SESSIONS = sessions;
+    }
+
+    public static OTelegramBot getOrienteerTelegramBot(OTelegramModule.BotConfig botConfig) {
+        LoadingCache<String, BotState> sessions = CacheBuilder.newBuilder()
+                .expireAfterWrite(botConfig.USER_SESSION, TimeUnit.MINUTES)
+                .build(
+                        new CacheLoader<String, BotState>() {
+                            @Override
+                            public BotState load(String key) {
+                                return null;
+                            }
+                        }
+                );
+        return new OTelegramBot(botConfig, sessions);
     }
 
     @Override
@@ -98,6 +120,13 @@ public class OTelegramBot extends TelegramLongPollingBot {
             case GO_TO_DOCUMENT:
                 sendRequestMessage = getTextMessage(message, getTargetDocument(message.getText()));
                 botState = null;
+                break;
+            case GO_TO_CLASS:
+                sendRequestMessage = getTextMessage(message, getTargetClass(message.getText()));
+                botState = null;
+                break;
+            case SEARCH_CLASS_FIELD_NAMES:
+                sendRequestMessage = getTextMessage(message, BotMessage.SEARCH_MSG);
                 break;
             default:
                 sendRequestMessage = getTextMessage(message, BotMessage.ERROR_MSG);
@@ -407,6 +436,8 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 try {
                     oDocument = oDatabaseDocument.getRecord(oRecordId);
                     builder.append(oDocument.getClassName());
+                    builder.append(" " + BotState.GO_TO_CLASS.command);
+                    builder.append(document.substring(BotState.GO_TO_DOCUMENT.command.length()));
                     builder.append("\n\n");
                     String[] fieldNames = oDocument.fieldNames();
                     List<String> resultList = new ArrayList<>();
@@ -423,6 +454,51 @@ public class OTelegramBot extends TelegramLongPollingBot {
                     if (LOG.isDebugEnabled()) ex.printStackTrace();
                     builder = new StringBuilder(
                             String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.FAILED_DOCUMENT_BY_RID));
+                }
+                return builder.toString();
+            }
+        }.execute();
+        return result;
+    }
+
+    private String getTargetClass(final String targetClass) {
+        String [] split = targetClass.substring(BotState.GO_TO_CLASS.command.length()).split("_");
+        final int clusterID = Integer.valueOf(split[0]);
+        final long recordID = Long.valueOf(split[1]);
+        final ORecordId oRecordId = new ORecordId(clusterID, recordID);
+        String result = (String) new DBClosure() {
+            @Override
+            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+                StringBuilder builder = new StringBuilder(
+                        String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.CLASS_DESCRIPTION_MSG) + "\n\n");
+                OClass oClass = oDatabaseDocument.getRecord(oRecordId);
+                builder.append("Name: ");
+                builder.append(oClass.getName());
+                Collection<OProperty> properties = oClass.properties();
+                List<String> resultList = new ArrayList<>();
+                for (OProperty property : properties) {
+                    resultList.add(String.format(BotMessage.HTML_STRONG_TEXT, property.getName())
+                        + ": default - " + property.getDefaultValue());
+                }
+                Collections.sort(resultList);
+                for (String string : resultList) {
+                    builder.append(string);
+                    builder.append("\n");
+                }
+                builder.append("\n");
+                builder.append(String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.CLASS_DOCUMENTS));
+                builder.append("\n");
+                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
+                resultList = new ArrayList<>();
+                for (ODocument oDocument : oDocuments) {
+                    String docId = BotState.GO_TO_DOCUMENT.command + oDocument.getIdentity().getClusterId()
+                            + "_" + oDocument.getIdentity().getClusterPosition();
+                    resultList.add(oDocument.field("name") + " " + docId);
+                }
+                Collections.sort(resultList);
+                for (String string : resultList) {
+                    builder.append(string);
+                    builder.append("\n");
                 }
                 return builder.toString();
             }
@@ -516,6 +592,8 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private BotState getBotState(String text) {
         if (text.startsWith(BotState.GO_TO_DOCUMENT.command)) {
             return BotState.GO_TO_DOCUMENT;
+        } else if (text.startsWith(BotState.GO_TO_CLASS.command)) {
+            return BotState.GO_TO_CLASS;
         }
         BotState state = BotState.ERROR;
         for (BotState search : BotState.values()) {
@@ -536,6 +614,19 @@ public class OTelegramBot extends TelegramLongPollingBot {
         BACK_TO_MAIN_MENU(BotMessage.BACK_TO_MAIN_MENU_BUT),
         BACK_TO_CLASS_SEARCH(BotMessage.BACK_TO_CLASS_SEARCH_BUT),
         GO_TO_DOCUMENT("/document"),
+        GO_TO_CLASS("/class"),
+
+        SEARCH_GLOBAL("/globalSearch"),
+
+        SEARCH_GLOBAL_FIELD_NAMES("/searchGlobalFieldNames"),
+        SEARCH_GLOBAL_FIELD_VALUES("/searchGlobalFieldValues"),
+        SEARCH_GLOBAL_DOC_NAMES("/searchGlobalDocNames"),
+
+        SEARCH_GLOBAL_CLASS_NAMES("/searchGlobalClassNames"),
+
+        SEARCH_CLASS_FIELD_NAMES("/searchClassFieldNames"),
+        SEARCH_CLASS_FIELD_VALUES("/searchClassFieldValues"),
+        SEARCH_CLASS_DOC_NAMES("/searchClassDocNames"),
         ERROR("/error");
 
         private String command;
@@ -560,6 +651,9 @@ public class OTelegramBot extends TelegramLongPollingBot {
         String SEARCH_RESULT_SUCCESS_MSG = "To get information about document click on link.";
         String SEARCH_RESULT_FAILED_MSG = "I cannot found something!";
 
+        String CLASS_DESCRIPTION_MSG = "Class description: ";
+        String CLASS_DOCUMENTS = "Class documents: ";
+        String FAILED_CLASS_BY_DIR = "Cannot found class by this id";
         String DOCUMENT_DESCRIPTION_MSG = "Document description: ";
         String FAILED_DOCUMENT_BY_RID = "Cannot found document by this id";
 
@@ -569,9 +663,9 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
 
         String CLASS_SEARCH_BUT = "Search in classes";
-        String FIELDS_BUT = "Search in fields";
-        String VALUES_BUT = "Search in values";
-        String DOCUMENTS_BUT = "Search in documents";
+        String FIELDS_BUT = "Search in field names";
+        String VALUES_BUT = "Search in field values";
+        String DOCUMENTS_BUT = "Search in document names";
 
         String BACK_TO_MAIN_MENU_BUT = "Back to main menu";
 
