@@ -1,7 +1,7 @@
 package org.orienteer.telegram;
 
 /**
- * Created by Vitaliy Gonchar on 31.10.16.
+ * @author  Vitaliy Gonchar
  */
 interface BotMessage {
     String MAIN_MENU_MSG = "Change options or send me word and I will try to find it.";
@@ -38,6 +38,7 @@ interface BotMessage {
     String CLASS_FIELD_NAMES_BUT = "Search in class field names";
     String CLASS_FIELD_VALUES_BUT = "Search in class field values";
     String CLASS_DOC_NAMES_BUT = "Search in class document names";
+    String CLASS_BUT = "Class: ";
 
     String FIELD_NAMES_BUT = "Search in field names";
     String FIELD_VALUES_BUT = "Search in field values";
