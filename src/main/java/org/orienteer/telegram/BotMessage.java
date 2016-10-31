@@ -15,10 +15,15 @@ interface BotMessage {
     String SEARCH_FIELD_VALUES_MSG = "Send me word and I will try to find it in field values.";
     String SEARCH_DOCUMENT_NAMES_MSG = "Send me word and I will try to find it in document names";
 
-    String SEARCH_RESULT_SUCCESS_MSG = "To get information about document click on link.";
-    String SEARCH_RESULT_FAILED_MSG = "I cannot found something!";
+    String SEARCH_CLASS_FIELD_NAMES_MSG = "Send me word and I will try to find it in class field names.";
+    String SEARCH_CLASS_FIELD_VALUES_MSG = "Send me word and I will try to find it in class field values.";
+    String SEARCH_CLASS_DOCUMENT_NAMES_MSG = "Send me word and I will try to find it in class document names.";
+
+    String SEARCH_RESULT_SUCCESS_MSG = "<strong>To get information about document click on link.</strong>";
+    String SEARCH_RESULT_FAILED_MSG = "<strong>I cannot found something!</strong>";
 
     String CLASS_DESCRIPTION_MSG = "Class description: ";
+    String CLASS_NAME = "Class name: ";
     String CLASS_DOCUMENTS = "Class documents: ";
     String FAILED_CLASS_BY_DIR = "Cannot found class by this id";
     String DOCUMENT_DESCRIPTION_MSG = "Document description: ";

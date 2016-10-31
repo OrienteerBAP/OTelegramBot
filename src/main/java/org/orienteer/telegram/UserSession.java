@@ -6,7 +6,7 @@ package org.orienteer.telegram;
 class UserSession {
     private BotState botState;
     private String targetClass;
-
+    private boolean isSearch = false;
 
     public BotState getBotState() {
         return botState;
@@ -16,11 +16,20 @@ class UserSession {
         return targetClass;
     }
 
+    public boolean getSearch() { return isSearch; }
+
     public void setBotState(BotState botState) {
         this.botState = botState;
     }
 
     public void setTargetClass(String targetClass) {
         this.targetClass = targetClass;
+    }
+
+    public void setSearch(boolean isSearch) { this.isSearch = isSearch; }
+
+    @Override
+    public String toString() {
+        return "BotState: " + botState + " targetClass: " + targetClass + " isSearch: " + isSearch;
     }
 }

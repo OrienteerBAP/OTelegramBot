@@ -86,53 +86,80 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private void handleIncomingMessage(Message message) throws TelegramApiException {
         SendMessage sendResponseMessage = null;
         UserSession userSession = SESSIONS.getIfPresent(message.getFrom().getId());
-        BotState botState;
         if (userSession == null) {
             userSession = new UserSession();
-            botState = getBotState(message.getText());
-        } else botState = userSession.getBotState();
-        LOG.debug("botState before handleIncomingMessage: " + botState);
+            userSession.setBotState(getBotState(message.getText()));
+        }
+        LOG.debug("botState before handleIncomingMessage: " + userSession.getBotState());
+        LOG.debug("UserSession: \n" + userSession);
         switch (getBotState(message.getText())) {
             case BACK_TO_MAIN_MENU:
             case START:
                 sendResponseMessage = getMainMenuMessage(message);
-                botState = BotState.SEARCH_GLOBAL;
+                userSession.setBotState(BotState.SEARCH_GLOBAL);
+                userSession.setSearch(true);
                 break;
             case GLOBAL_FIELD_NAMES_SEARCH_BUT:
                 sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_FIELD_NAMES_MSG);
-                botState = BotState.SEARCH_GLOBAL_FIELD_NAMES;
+                userSession.setBotState(BotState.SEARCH_GLOBAL_FIELD_NAMES);
+                userSession.setSearch(true);
                 break;
             case GLOBAL_FIELD_VALUES_SEARCH_BUT:
                 sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_FIELD_VALUES_MSG);
-                botState = BotState.SEARCH_GLOBAL_FIELD_VALUES;
+                userSession.setBotState(BotState.SEARCH_GLOBAL_FIELD_VALUES);
+                userSession.setSearch(true);
                 break;
             case GLOBAL_DOC_NAMES_SEARCH_BUT:
                 sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_DOCUMENT_NAMES_MSG);
-                botState = BotState.SEARCH_GLOBAL_DOC_NAMES;
+                userSession.setBotState(BotState.SEARCH_GLOBAL_DOC_NAMES);
+                userSession.setSearch(true);
                 break;
             case CLASS_MENU_SEARCH_BUT:
                 sendResponseMessage = getClassesMenuMessage(message);
+                userSession.setBotState(BotState.ClASS_MENU_OPTIONS);
+                userSession.setSearch(false);
                 break;
             case GO_TO_DOCUMENT:
                 sendResponseMessage = getTextMessage(message, goToTargetDocument(message.getText()));
                 break;
             case GO_TO_CLASS:
                 sendResponseMessage = getTextMessage(message, goToTargetClass(message.getText()));
-
                 break;
             default:
-                botState = handleSearchRequest(message, botState);
+                if (userSession.getSearch()) {
+                    userSession = handleSearchRequest(message, userSession);
+                } else userSession = handleClassMenu(message, userSession);
         }
         if (sendResponseMessage != null) sendMessage(sendResponseMessage);
-        LOG.debug("botState after handleIncomingMessage:  " + botState);
-        userSession.setBotState(botState);
+        LOG.debug("botState after handleIncomingMessage:  " + userSession.getBotState());
         SESSIONS.put(message.getFrom().getId(), userSession);
         LOG.debug("Get from SESSIONS: " + SESSIONS.getUnchecked(message.getFrom().getId()));
     }
 
-    private BotState handleSearchRequest(Message message, BotState botState) throws TelegramApiException {
+    private UserSession handleClassMenu(Message message, UserSession userSession) throws TelegramApiException {
+        SendMessage sendResponseMessage = null;
+        if (getBotState(message.getText()) != BotState.ERROR) {
+            userSession.setBotState(getBotState(message.getText()));
+        }
+        switch (userSession.getBotState()) {
+            case ClASS_MENU_OPTIONS:
+                userSession.setTargetClass(message.getText());
+                sendResponseMessage = getClassOptionMenuMessage(message);
+//                botState = BotState.ClASS_MENU_OPTIONS;
+                break;
+            case CLASS_DOC_NAMES_SEARCH_BUT:
+                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_CLASS_DOCUMENT_NAMES_MSG);
+                userSession.setBotState(BotState.SEARCH_CLASS_DOC_NAMES);
+                userSession.setSearch(true);
+                break;
+        }
+        if (sendResponseMessage != null) sendMessage(sendResponseMessage);
+        return userSession;
+    }
+
+    private UserSession handleSearchRequest(Message message, UserSession userSession) throws TelegramApiException {
         SendMessage sendResponseMessage;
-        switch (botState) {
+        switch (userSession.getBotState()) {
             case SEARCH_GLOBAL:
                 sendResponseMessage = getTextMessage(message, getResultOfGlobalSearch(message.getText()));
                 break;
@@ -145,14 +172,15 @@ public class OTelegramBot extends TelegramLongPollingBot {
             case SEARCH_GLOBAL_DOC_NAMES:
                 sendResponseMessage = getTextMessage(message, getResultOfSearchDocumentGlobal(message.getText()));
                 break;
-            case SEARCH_GLOBAL_CLASS_NAMES:
-                //sendResponseMessage = getTextMessage(message, getRes)
-                //break;
+            case SEARCH_CLASS_DOC_NAMES:
+                sendResponseMessage = getTextMessage(
+                        message, getResultOfSearchDocumentsInClass(message.getText(), userSession.getTargetClass()));
+                break;
             default:
                 sendResponseMessage = getTextMessage(message, BotMessage.ERROR_MSG);
         }
         sendMessage(sendResponseMessage);
-        return botState;
+        return userSession;
     }
 
     /**
@@ -178,7 +206,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 }
                 StringBuilder builder = new StringBuilder();
                 if (builderFieldNames.length() > word.length() || builderFieldValues.length() > word.length()) {
-                    builder.append(String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_SUCCESS_MSG));
+                    builder.append(BotMessage.SEARCH_RESULT_SUCCESS_MSG);
                     if (classes.length() > word.length()) {
                         builder.append("\n" + BotMessage.SEARCH_CLASS_NAMES_RESULT + "\n");
                         builder.append(classes);
@@ -191,7 +219,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                         builder.append("\n" + BotMessage.SEARCH_FIELD_VALUES_RESULT + "\n");
                         builder.append(builderFieldValues.toString());
                     }
-                } else builder.append(String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_FAILED_MSG));
+                } else builder.append(BotMessage.SEARCH_RESULT_FAILED_MSG);
                 LOG.info("\nResult of search: \n" + builder.toString());
                 return builder.toString();
             }
@@ -219,8 +247,8 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 String result = builder.toString();
                 if (result.length() > word.length()) {
                     result = "\n" + BotMessage.SEARCH_FIELD_NAMES_RESULT + "\n" + result;
-                    result = String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_SUCCESS_MSG) + result;
-                } else result = String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_FAILED_MSG);
+                    result = BotMessage.SEARCH_RESULT_SUCCESS_MSG + result;
+                } else result = BotMessage.SEARCH_RESULT_FAILED_MSG;
                 return result;
             }
         }.execute();
@@ -247,8 +275,8 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 String result = builder.toString();
                 if (result.length() > word.length()) {
                     result = "\n" + BotMessage.SEARCH_FIELD_VALUES_RESULT + "\n" + result;
-                    result = String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_SUCCESS_MSG) + result;
-                } else result = String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_FAILED_MSG);
+                    result = BotMessage.SEARCH_RESULT_SUCCESS_MSG + result;
+                } else result = BotMessage.SEARCH_RESULT_FAILED_MSG;
                 return result;
             }
         }.execute();
@@ -344,8 +372,8 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 }
                 String result = builder.toString();
                 if (result.length() > 0) {
-                    result = String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_SUCCESS_MSG) + "\n" + result;
-                }else result = String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_FAILED_MSG);
+                    result = BotMessage.SEARCH_RESULT_SUCCESS_MSG + "\n" + result;
+                }else result = BotMessage.SEARCH_RESULT_FAILED_MSG;
                 return result;
             }
         }.execute();
@@ -358,7 +386,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
      * @param className name of target class
      * @return result of search
      */
-    private String searchDocumentsInClass(final String documentName, final String className) {
+    private String getResultOfSearchDocumentsInClass(final String documentName, final String className) {
         String resultOfSearch = (String) new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
@@ -367,7 +395,13 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 }
                 ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
                 String result = getDocumentString(oDocuments, documentName);
-                if (result.length() > 0) result = BotMessage.SEARCH_RESULT_SUCCESS_MSG + result;
+                if (result.length() > 0) {
+                    result = BotMessage.SEARCH_RESULT_SUCCESS_MSG
+                            + "\n\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.CLASS_NAME)
+                            + className
+                            + "\n\n" + BotMessage.HTML_STRONG_TEXT + BotMessage.CLASS_DOCUMENTS
+                            + "\n" + result;
+                }
                 return result;
             }
         }.execute();
@@ -528,10 +562,10 @@ public class OTelegramBot extends TelegramLongPollingBot {
         sendMessage.enableMarkdown(true);
         sendMessage.setText(BotMessage.CLASS_OPTION_MENU_MSG);
         List<String> buttons = new ArrayList<>();
-        buttons.add(BotMessage.FIELD_NAMES_BUT);
-        buttons.add(BotMessage.FIELD_VALUES_BUT);
-        buttons.add(BotMessage.DOC_NAMES_BUT);
-        buttons.add(BotMessage.BACK_TO_MAIN_MENU_BUT);
+        buttons.add(BotMessage.CLASS_FIELD_NAMES_BUT);
+        buttons.add(BotMessage.CLASS_FIELD_VALUES_BUT);
+        buttons.add(BotMessage.CLASS_DOC_NAMES_BUT);
+//        buttons.add(BotMessage.BACK_TO_MAIN_MENU_BUT);
         sendMessage.setReplyMarkup(getMenuMarkup(buttons));
         return sendMessage;
     }
