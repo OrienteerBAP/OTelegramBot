@@ -96,7 +96,7 @@ public class OTelegramModule extends AbstractOrienteerModule{
 		}
 		LOG.info("Bot USERNAME: " + username);
 		LOG.info("Bot token: " + token);
-		return new BotConfig(username, token, 10000);
+		return new BotConfig(username, token, 30);
     }
 
     public class BotConfig {
