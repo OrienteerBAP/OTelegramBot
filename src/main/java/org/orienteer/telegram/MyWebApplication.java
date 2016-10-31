@@ -1,12 +1,8 @@
 package org.orienteer.telegram;
 
-import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
 import org.orienteer.core.OrienteerWebApplication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collection;
 
 public class MyWebApplication extends OrienteerWebApplication
 {
