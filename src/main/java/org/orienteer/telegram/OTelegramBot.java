@@ -144,10 +144,10 @@ public class OTelegramBot extends TelegramLongPollingBot {
         }
         switch (userSession.getBotState()) {
             case ClASS_MENU_OPTIONS:
-                userSession.setTargetClass(message.getText());
+                if (userSession.getTargetClass() == null) userSession.setTargetClass(message.getText());
                 sendResponseMessage = getClassOptionMenuMessage(message);
-                userSession.setBotState(BotState.SEARCH_IN_CLASS_GLOBAL);
-                userSession.setSearch(true);
+//                userSession.setBotState(BotState.SEARCH_IN_CLASS_GLOBAL);
+//                userSession.setSearch(true);
 //                botState = BotState.ClASS_MENU_OPTIONS;
                 break;
             case CLASS_FIELD_NAMES_SEARCH_BUT:
