@@ -1,7 +1,7 @@
 package org.orienteer.telegram;
 
 /**
- * Created by Vitaliy Gonchar on 31.10.16.
+ * @author Vitaliy Gonchar
  */
 enum BotState {
     START("/start"),
@@ -10,7 +10,7 @@ enum BotState {
     GLOBAL_DOC_NAMES_SEARCH_BUT(BotMessage.DOC_NAMES_BUT),
 
     CLASS_MENU_SEARCH_BUT(BotMessage.CLASS_SEARCH_BUT),
-    CLASS_MENU_CHANGE_CLASS("/changeClass"),
+    CLASS_MENU_CHANGE_CLASS_BUT("/changeClass"),
     ClASS_MENU_OPTIONS("/classMenuOptions"),
     CLASS_FIELD_NAMES_SEARCH_BUT(BotMessage.CLASS_FIELD_NAMES_BUT),
     CLASS_FIELD_VALUES_SEARCH_BUT(BotMessage.CLASS_FIELD_VALUES_BUT),
