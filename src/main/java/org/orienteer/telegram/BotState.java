@@ -28,7 +28,7 @@ enum BotState {
     SEARCH_GLOBAL_FIELD_VALUES("/searchGlobalFieldValues"),
     SEARCH_GLOBAL_DOC_NAMES("/searchGlobalDocNames"),
 
-    SEARCH_GLOBAL_CLASS_NAMES("/searchGlobalClassNames"),
+    SEARCH_IN_CLASS_GLOBAL("/searchInClassAll"),
 
     SEARCH_CLASS_FIELD_NAMES("/searchClassFieldNames"),
     SEARCH_CLASS_FIELD_VALUES("/searchClassFieldValues"),

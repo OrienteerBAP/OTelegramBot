@@ -117,6 +117,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
             case CLASS_MENU_SEARCH_BUT:
                 sendResponseMessage = getClassesMenuMessage(message);
                 userSession.setBotState(BotState.ClASS_MENU_OPTIONS);
+                userSession.setTargetClass(null);
                 userSession.setSearch(false);
                 break;
             case GO_TO_DOCUMENT:
@@ -145,7 +146,19 @@ public class OTelegramBot extends TelegramLongPollingBot {
             case ClASS_MENU_OPTIONS:
                 userSession.setTargetClass(message.getText());
                 sendResponseMessage = getClassOptionMenuMessage(message);
+                userSession.setBotState(BotState.SEARCH_IN_CLASS_GLOBAL);
+                userSession.setSearch(true);
 //                botState = BotState.ClASS_MENU_OPTIONS;
+                break;
+            case CLASS_FIELD_NAMES_SEARCH_BUT:
+                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_CLASS_FIELD_NAMES_MSG);
+                userSession.setBotState(BotState.SEARCH_CLASS_FIELD_NAMES);
+                userSession.setSearch(true);
+                break;
+            case CLASS_FIELD_VALUES_SEARCH_BUT:
+                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_CLASS_FIELD_VALUES_MSG);
+                userSession.setBotState(BotState.SEARCH_CLASS_FIELD_VALUES);
+                userSession.setSearch(true);
                 break;
             case CLASS_DOC_NAMES_SEARCH_BUT:
                 sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_CLASS_DOCUMENT_NAMES_MSG);
@@ -171,6 +184,18 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 break;
             case SEARCH_GLOBAL_DOC_NAMES:
                 sendResponseMessage = getTextMessage(message, getResultOfSearchDocumentGlobal(message.getText()));
+                break;
+            case SEARCH_IN_CLASS_GLOBAL:
+                sendResponseMessage = getTextMessage(
+                        message, getResultOfSearchInClassAllOptions(message.getText(), userSession.getTargetClass()));
+                break;
+            case SEARCH_CLASS_FIELD_NAMES:
+                sendResponseMessage = getTextMessage(
+                        message, getResultOfSearchFieldNamesInClass(message.getText(), userSession.getTargetClass()));
+                break;
+            case SEARCH_CLASS_FIELD_VALUES:
+                sendResponseMessage = getTextMessage(
+                        message, getResultOfSearchFieldValuesInClass(message.getText(), userSession.getTargetClass()));
                 break;
             case SEARCH_CLASS_DOC_NAMES:
                 sendResponseMessage = getTextMessage(
@@ -220,7 +245,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                         builder.append(builderFieldValues.toString());
                     }
                 } else builder.append(BotMessage.SEARCH_RESULT_FAILED_MSG);
-                LOG.info("\nResult of search: \n" + builder.toString());
+                LOG.debug("\nResult of search: \n" + builder.toString());
                 return builder.toString();
             }
         }.execute();
@@ -381,6 +406,97 @@ public class OTelegramBot extends TelegramLongPollingBot {
     }
 
     /**
+     * search similar words with word in class
+     * @param word search word
+     * @param className class where is search
+     * @return result of search
+     */
+    private String getResultOfSearchInClassAllOptions(final String word, final String className) {
+        String result = (String) new DBClosure() {
+            @Override
+            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+                StringBuilder builderFieldNames = new StringBuilder();
+                StringBuilder builderFieldValues = new StringBuilder();
+                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
+                for (ODocument oDocument : oDocuments) {
+                    builderFieldNames.append(searchInFieldNames(word, oDocument));
+                    builderFieldValues.append(searchInFieldValues(word, oDocument));
+                }
+
+                StringBuilder resultBuilder = new StringBuilder();
+                if (builderFieldNames.length() > word.length() || builderFieldValues.length() > word.length()) {
+                resultBuilder.append(BotMessage.SEARCH_RESULT_SUCCESS_MSG);
+                if (builderFieldNames.length() > word.length()) {
+                    resultBuilder.append("\n" + BotMessage.SEARCH_FIELD_NAMES_RESULT + "\n");
+                    resultBuilder.append(builderFieldNames.toString());
+                }
+                if (builderFieldValues.length() > word.length()) {
+                    resultBuilder.append("\n" + BotMessage.SEARCH_FIELD_VALUES_RESULT + "\n");
+                    resultBuilder.append(builderFieldValues.toString());
+                }
+            } else resultBuilder.append(BotMessage.SEARCH_RESULT_FAILED_MSG);
+                LOG.debug("\nResult of search: \n" + resultBuilder.toString());
+                return resultBuilder.toString();
+            }
+        }.execute();
+        return result;
+    }
+
+    /**
+     * search similar field names with fieldName
+     * @param fieldName name of search field
+     * @param className name of target class
+     * @return result of search
+     */
+    private String getResultOfSearchFieldNamesInClass(final String fieldName, final String className) {
+        String result = (String) new DBClosure() {
+            @Override
+            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
+                StringBuilder builder = new StringBuilder();
+                for (ODocument oDocument : oDocuments) {
+                    builder.append(searchInFieldNames(fieldName, oDocument));
+                }
+                StringBuilder resultBuilder = new StringBuilder();
+                if (builder.length() > fieldName.length()) {
+                    resultBuilder.append(BotMessage.SEARCH_RESULT_SUCCESS_MSG);
+                    resultBuilder.append("\n" + BotMessage.SEARCH_FIELD_NAMES_RESULT + "\n");
+                    resultBuilder.append(builder.toString());
+                } else resultBuilder.append(BotMessage.SEARCH_RESULT_FAILED_MSG);
+                return resultBuilder.toString();
+            }
+        }.execute();
+        return result;
+    }
+
+    /**
+     * search similar field values with valueName
+     * @param valueName search word
+     * @param className class where is search
+     * @return result of search
+     */
+    private String getResultOfSearchFieldValuesInClass(final String valueName, final String className) {
+        String result = (String) new DBClosure() {
+            @Override
+            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
+                StringBuilder builder = new StringBuilder();
+                for (ODocument oDocument : oDocuments) {
+                    builder.append(searchInFieldValues(valueName, oDocument));
+                }
+                StringBuilder resultBuilder = new StringBuilder();
+                if (builder.length() > valueName.length()) {
+                    resultBuilder.append(BotMessage.SEARCH_RESULT_SUCCESS_MSG);
+                    resultBuilder.append("\n" + BotMessage.SEARCH_FIELD_VALUES_RESULT + "\n");
+                    resultBuilder.append(builder.toString());
+                } else resultBuilder.append(BotMessage.SEARCH_RESULT_FAILED_MSG);
+                return resultBuilder.toString();
+            }
+        }.execute();
+        return result;
+    }
+
+    /**
      * Search documents with similar names from target class
      * @param documentName name of document
      * @param className name of target class
@@ -401,7 +517,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                             + className
                             + "\n\n" + BotMessage.HTML_STRONG_TEXT + BotMessage.CLASS_DOCUMENTS
                             + "\n" + result;
-                }
+                } else result = BotMessage.SEARCH_RESULT_FAILED_MSG;
                 return result;
             }
         }.execute();
@@ -566,16 +682,6 @@ public class OTelegramBot extends TelegramLongPollingBot {
         buttons.add(BotMessage.CLASS_FIELD_VALUES_BUT);
         buttons.add(BotMessage.CLASS_DOC_NAMES_BUT);
 //        buttons.add(BotMessage.BACK_TO_MAIN_MENU_BUT);
-        sendMessage.setReplyMarkup(getMenuMarkup(buttons));
-        return sendMessage;
-    }
-
-    private SendMessage getDocumentMenuMessage(Message message) {
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(message.getChatId().toString());
-        sendMessage.setText(BotMessage.SEARCH_MSG);
-        List<String> buttons = new ArrayList<>();
-        buttons.add(BotMessage.BACK_TO_CLASS_SEARCH_BUT);
         sendMessage.setReplyMarkup(getMenuMarkup(buttons));
         return sendMessage;
     }

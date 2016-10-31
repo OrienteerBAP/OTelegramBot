@@ -6,7 +6,7 @@ package org.orienteer.telegram;
 interface BotMessage {
     String MAIN_MENU_MSG = "Change options or send me word and I will try to find it.";
     String CLASS_MENU_MSG = "Choose class in the list.";
-    String CLASS_OPTION_MENU_MSG = "Choose search option in class.";
+    String CLASS_OPTION_MENU_MSG = "Choose search option in class.\nOr type word for global search in class";
 
 
     String ERROR_MSG = "<strong>I don't understand you :(</strong>";
@@ -50,5 +50,5 @@ interface BotMessage {
     String SEARCH_FIELD_NAMES_RESULT = "In field names: ";
     String SEARCH_FIELD_VALUES_RESULT = "In field values: ";
     String SEARCH_CLASS_NAMES_RESULT = "In class names: ";
-    int MAX_LENGTH = 2048;
+    int MAX_LENGTH = 4096;
 }
