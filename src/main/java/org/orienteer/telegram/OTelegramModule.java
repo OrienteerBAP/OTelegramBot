@@ -9,6 +9,7 @@ import com.orientechnologies.orient.core.metadata.schema.OSchema;
 import com.orientechnologies.orient.core.metadata.schema.clusterselection.OClusterSelectionFactory;
 import com.orientechnologies.orient.core.record.ORecord;
 import com.orientechnologies.orient.core.record.ORecordFactoryManager;
+import com.orientechnologies.orient.core.schedule.OSchedulerListener;
 import com.sun.org.omg.CORBA.RepositoryIdHelper;
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.module.AbstractOrienteerModule;
@@ -37,35 +38,36 @@ import java.util.logging.Level;
 public class OTelegramModule extends AbstractOrienteerModule{
 
 	private static final Logger LOG = LoggerFactory.getLogger(OTelegramModule.class);
-
+	public static final String NAME = "telegram";
 	public static final String OCLASS_NAME = "OTelegramBot";
-	public static final String OPROPERTY_USERNAME = "USERNAME";
+	public static final String OPROPERTY_USERNAME = "username";
 	public static final String OPROPERTY_TOKEN = "token";
+	public static final String OPROPERTY_USER_SESSION = "user_session";
 
 	protected OTelegramModule() {
-		super("OTelegramModule", 1);
+		super(NAME, 1);
 	}
 	
 	@Override
 	public ODocument onInstall(OrienteerWebApplication app, ODatabaseDocument db) {
 		OSchemaHelper helper = OSchemaHelper.bind(db);
-		helper.oClass(OCLASS_NAME, "OModule")
-				.oProperty(OPROPERTY_USERNAME, OType.STRING)
-				.oProperty(OPROPERTY_TOKEN, OType.STRING)
-				.switchDisplayable(true, OPROPERTY_USERNAME, OPROPERTY_TOKEN);
+		helper.oClass(OCLASS_NAME, OMODULE_CLASS)
+				.oProperty(OPROPERTY_USERNAME, OType.STRING).notNull()
+				.oProperty(OPROPERTY_TOKEN, OType.STRING).notNull()
+				.oProperty(OPROPERTY_USER_SESSION, OType.LONG).defaultValue("30").notNull();
 
-		return helper.getODocument();
+		return new ODocument(helper.getOClass());
 	}
 
 	@Override
 	public void onInitialize(OrienteerWebApplication app, ODatabaseDocument db) {
-		createClass(db);
 		BotConfig botConfig = readBotConfig(db);
+		LOG.debug(botConfig.toString());
 		TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
 		BotLogger.setLevel(Level.WARNING);
 		BotLogger.registerLogger(new ConsoleHandler());
 		try {
-			LOG.debug("Database is closed: " + db.isClosed());
+			LOG.debug("Register bot " + botConfig.USERNAME);
 			telegramBotsApi.registerBot(OTelegramBot.getOrienteerTelegramBot(botConfig));
 		} catch (TelegramApiRequestException e) {
 			LOG.error("Cannot register bot");
@@ -73,30 +75,24 @@ public class OTelegramModule extends AbstractOrienteerModule{
 		}
 	}
 
-	protected void createClass(ODatabaseDocument db) {
-		if (!db.getMetadata().getSchema().existsClass(OCLASS_NAME)) {
-			OClass oTelegramClass = db.getMetadata().getSchema().createClass(OCLASS_NAME);
-			OClass oModule = db.getMetadata().getSchema().getClass("OModule");
-			oTelegramClass.addSuperClass(oModule);
-			oTelegramClass.createProperty(OPROPERTY_USERNAME, OType.STRING);
-			oTelegramClass.createProperty(OPROPERTY_TOKEN, OType.STRING);
-		}
-	}
 
 	protected BotConfig readBotConfig(ODatabaseDocument db) {
 		ORecordIteratorClass<ODocument> oTelegramBots = db.browseClass(OCLASS_NAME);
 		String username = null;
 		String token = null;
+		long userSession = 0;
 		if (oTelegramBots.hasNext()) {
 			ODocument bot = oTelegramBots.next();
 			if (bot.field(OMODULE_ACTIVATE)) {
-				username = bot.field("USERNAME");
-				token = bot.field("token");
+				username = bot.field(OPROPERTY_USERNAME, OType.STRING);
+				token = bot.field(OPROPERTY_TOKEN, OType.STRING);
+				userSession = bot.field(OPROPERTY_USER_SESSION, OType.LONG);
 			}
 		}
 		LOG.info("Bot USERNAME: " + username);
 		LOG.info("Bot token: " + token);
-		return new BotConfig(username, token, 30);
+		LOG.info("User session: " + userSession);
+		return new BotConfig(username, token, userSession);
     }
 
     public class BotConfig {
@@ -109,5 +105,13 @@ public class OTelegramModule extends AbstractOrienteerModule{
             TOKEN = token;
 			USER_SESSION = userSession;
         }
-    }
+
+		@Override
+		public String toString() {
+			return "BotConfig:"
+					+ "\nUsername: " + USERNAME
+					+ "\nBot token: " + TOKEN
+					+ "\nUser session: " + USER_SESSION;
+		}
+	}
 }
