@@ -74,7 +74,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
             Message message = update.getMessage();
             if (message.hasText()) {
                 try {
-                    handleIncomingMessage(message);
+                    handleMenuRequest(message);
                 } catch (TelegramApiException e) {
                     LOG.error("Cannot send message");
                     if (LOG.isDebugEnabled()) e.printStackTrace();
@@ -83,42 +83,54 @@ public class OTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void handleIncomingMessage(Message message) throws TelegramApiException {
+    private void handleMenuRequest(Message message) throws TelegramApiException {
         SendMessage sendResponseMessage = null;
         UserSession userSession = SESSIONS.getIfPresent(message.getFrom().getId());
         if (userSession == null) {
             userSession = new UserSession();
             userSession.setBotState(getBotState(message.getText()));
         }
-        LOG.debug("botState before handleIncomingMessage: " + userSession.getBotState());
-        LOG.debug("UserSession: \n" + userSession);
+
         switch (getBotState(message.getText())) {
-            case BACK_TO_MAIN_MENU:
             case START:
                 sendResponseMessage = getMainMenuMessage(message);
                 userSession.setBotState(BotState.SEARCH_GLOBAL);
-                userSession.setSearch(true);
                 break;
             case GLOBAL_FIELD_NAMES_SEARCH_BUT:
                 sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_FIELD_NAMES_MSG);
                 userSession.setBotState(BotState.SEARCH_GLOBAL_FIELD_NAMES);
-                userSession.setSearch(true);
                 break;
             case GLOBAL_FIELD_VALUES_SEARCH_BUT:
                 sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_FIELD_VALUES_MSG);
                 userSession.setBotState(BotState.SEARCH_GLOBAL_FIELD_VALUES);
-                userSession.setSearch(true);
                 break;
             case GLOBAL_DOC_NAMES_SEARCH_BUT:
                 sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_DOCUMENT_NAMES_MSG);
                 userSession.setBotState(BotState.SEARCH_GLOBAL_DOC_NAMES);
-                userSession.setSearch(true);
                 break;
             case CLASS_MENU_SEARCH_BUT:
                 sendResponseMessage = getClassesMenuMessage(message);
                 userSession.setBotState(BotState.ClASS_MENU_OPTIONS);
                 userSession.setTargetClass(null);
-                userSession.setSearch(false);
+                break;
+            case ClASS_MENU_OPTIONS:
+                if (userSession.getTargetClass() == null) {
+                    userSession.setTargetClass(message.getText().substring(BotMessage.CLASS_BUT.length()));
+                }
+                sendResponseMessage = getClassOptionMenuMessage(message);
+                userSession.setBotState(BotState.SEARCH_IN_CLASS_GLOBAL);
+                break;
+            case CLASS_FIELD_NAMES_SEARCH_BUT:
+                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_CLASS_FIELD_NAMES_MSG);
+                userSession.setBotState(BotState.SEARCH_CLASS_FIELD_NAMES);
+                break;
+            case CLASS_FIELD_VALUES_SEARCH_BUT:
+                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_CLASS_FIELD_VALUES_MSG);
+                userSession.setBotState(BotState.SEARCH_CLASS_FIELD_VALUES);
+                break;
+            case CLASS_DOC_NAMES_SEARCH_BUT:
+                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_CLASS_DOCUMENT_NAMES_MSG);
+                userSession.setBotState(BotState.SEARCH_CLASS_DOC_NAMES);
                 break;
             case GO_TO_DOCUMENT:
                 sendResponseMessage = getTextMessage(message, goToTargetDocument(message.getText()));
@@ -127,47 +139,10 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 sendResponseMessage = getTextMessage(message, goToTargetClass(message.getText()));
                 break;
             default:
-                if (userSession.getSearch()) {
-                    userSession = handleSearchRequest(message, userSession);
-                } else userSession = handleClassMenu(message, userSession);
+                userSession = handleSearchRequest(message, userSession);
         }
-        if (sendResponseMessage != null) sendMessage(sendResponseMessage);
-        LOG.debug("botState after handleIncomingMessage:  " + userSession.getBotState());
         SESSIONS.put(message.getFrom().getId(), userSession);
-        LOG.debug("Get from SESSIONS: " + SESSIONS.getUnchecked(message.getFrom().getId()));
-    }
-
-    private UserSession handleClassMenu(Message message, UserSession userSession) throws TelegramApiException {
-        SendMessage sendResponseMessage = null;
-        if (getBotState(message.getText()) != BotState.ERROR) {
-            userSession.setBotState(getBotState(message.getText()));
-        }
-        switch (userSession.getBotState()) {
-            case ClASS_MENU_OPTIONS:
-                if (userSession.getTargetClass() == null) userSession.setTargetClass(message.getText());
-                sendResponseMessage = getClassOptionMenuMessage(message);
-//                userSession.setBotState(BotState.SEARCH_IN_CLASS_GLOBAL);
-//                userSession.setSearch(true);
-//                botState = BotState.ClASS_MENU_OPTIONS;
-                break;
-            case CLASS_FIELD_NAMES_SEARCH_BUT:
-                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_CLASS_FIELD_NAMES_MSG);
-                userSession.setBotState(BotState.SEARCH_CLASS_FIELD_NAMES);
-                userSession.setSearch(true);
-                break;
-            case CLASS_FIELD_VALUES_SEARCH_BUT:
-                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_CLASS_FIELD_VALUES_MSG);
-                userSession.setBotState(BotState.SEARCH_CLASS_FIELD_VALUES);
-                userSession.setSearch(true);
-                break;
-            case CLASS_DOC_NAMES_SEARCH_BUT:
-                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_CLASS_DOCUMENT_NAMES_MSG);
-                userSession.setBotState(BotState.SEARCH_CLASS_DOC_NAMES);
-                userSession.setSearch(true);
-                break;
-        }
         if (sendResponseMessage != null) sendMessage(sendResponseMessage);
-        return userSession;
     }
 
     private UserSession handleSearchRequest(Message message, UserSession userSession) throws TelegramApiException {
@@ -515,7 +490,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                     result = BotMessage.SEARCH_RESULT_SUCCESS_MSG
                             + "\n\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.CLASS_NAME)
                             + className
-                            + "\n\n" + BotMessage.HTML_STRONG_TEXT + BotMessage.CLASS_DOCUMENTS
+                            + "\n\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.CLASS_DOCUMENTS)
                             + "\n" + result;
                 } else result = BotMessage.SEARCH_RESULT_FAILED_MSG;
                 return result;
@@ -662,7 +637,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 List<String> result = new ArrayList<>();
                 Collection<OClass> classes = oDatabaseDocument.getMetadata().getSchema().getClasses();
                 for (OClass oClass: classes) {
-                    result.add(oClass.getName());
+                    result.add(BotMessage.CLASS_BUT + oClass.getName());
                 }
                 Collections.sort(result);
                 return result;
@@ -681,7 +656,6 @@ public class OTelegramBot extends TelegramLongPollingBot {
         buttons.add(BotMessage.CLASS_FIELD_NAMES_BUT);
         buttons.add(BotMessage.CLASS_FIELD_VALUES_BUT);
         buttons.add(BotMessage.CLASS_DOC_NAMES_BUT);
-//        buttons.add(BotMessage.BACK_TO_MAIN_MENU_BUT);
         sendMessage.setReplyMarkup(getMenuMarkup(buttons));
         return sendMessage;
     }
@@ -729,6 +703,8 @@ public class OTelegramBot extends TelegramLongPollingBot {
             return BotState.GO_TO_DOCUMENT;
         } else if (text.startsWith(BotState.GO_TO_CLASS.command)) {
             return BotState.GO_TO_CLASS;
+        } else if (text.startsWith(BotMessage.CLASS_BUT)) {
+            return BotState.ClASS_MENU_OPTIONS;
         }
         BotState state = BotState.ERROR;
         for (BotState search : BotState.values()) {
