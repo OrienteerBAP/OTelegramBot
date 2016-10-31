@@ -36,25 +36,24 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
     private static final Logger LOG = LoggerFactory.getLogger(OTelegramBot.class);
     private final OTelegramModule.BotConfig BOT_CONFIG;
-    private final LoadingCache<Integer, BotState> SESSIONS;
+    private final LoadingCache<Integer, UserSession> SESSIONS;
 
 
-    private OTelegramBot(OTelegramModule.BotConfig botConfig, LoadingCache<Integer, BotState> sessions) {
+    private OTelegramBot(OTelegramModule.BotConfig botConfig, LoadingCache<Integer, UserSession> sessions) {
         BOT_CONFIG = botConfig;
         SESSIONS = sessions;
     }
 
     public static OTelegramBot getOrienteerTelegramBot(OTelegramModule.BotConfig botConfig) {
-        LoadingCache<Integer, BotState> sessions = CacheBuilder.newBuilder()
+        LoadingCache<Integer, UserSession> sessions = CacheBuilder.newBuilder()
                 .expireAfterWrite(botConfig.USER_SESSION, TimeUnit.MINUTES)
                 .build(
-                        new CacheLoader<Integer, BotState>() {
-                            @Override
-                            public BotState load(Integer key) {
-                                return null;
-                            }
-                        }
-                );
+                        new CacheLoader<Integer, UserSession>() {
+                    @Override
+                    public UserSession load(Integer key) {
+                        return null;
+                    }
+                });
         return new OTelegramBot(botConfig, sessions);
     }
 
@@ -86,10 +85,12 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
     private void handleIncomingMessage(Message message) throws TelegramApiException {
         SendMessage sendResponseMessage = null;
-        BotState botState = SESSIONS.getIfPresent(message.getFrom().getId());
-        if (botState == null) {
+        UserSession userSession = SESSIONS.getIfPresent(message.getFrom().getId());
+        BotState botState;
+        if (userSession == null) {
+            userSession = new UserSession();
             botState = getBotState(message.getText());
-        }
+        } else botState = userSession.getBotState();
         LOG.debug("botState before handleIncomingMessage: " + botState);
         switch (getBotState(message.getText())) {
             case BACK_TO_MAIN_MENU:
@@ -97,19 +98,19 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 sendResponseMessage = getMainMenuMessage(message);
                 botState = BotState.SEARCH_GLOBAL;
                 break;
-            case FIELD_NAMES_SEARCH_BUT:
+            case GLOBAL_FIELD_NAMES_SEARCH_BUT:
                 sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_FIELD_NAMES_MSG);
                 botState = BotState.SEARCH_GLOBAL_FIELD_NAMES;
                 break;
-            case VALUES_SEARCH_BUT:
+            case GLOBAL_FIELD_VALUES_SEARCH_BUT:
                 sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_FIELD_VALUES_MSG);
                 botState = BotState.SEARCH_GLOBAL_FIELD_VALUES;
                 break;
-            case DOC_SEARCH_BUT:
+            case GLOBAL_DOC_NAMES_SEARCH_BUT:
                 sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_DOCUMENT_NAMES_MSG);
                 botState = BotState.SEARCH_GLOBAL_DOC_NAMES;
                 break;
-            case CLASS_SEARCH_BUT:
+            case CLASS_MENU_SEARCH_BUT:
                 sendResponseMessage = getClassesMenuMessage(message);
                 break;
             case GO_TO_DOCUMENT:
@@ -124,7 +125,8 @@ public class OTelegramBot extends TelegramLongPollingBot {
         }
         if (sendResponseMessage != null) sendMessage(sendResponseMessage);
         LOG.debug("botState after handleIncomingMessage:  " + botState);
-        SESSIONS.put(message.getFrom().getId(), botState);
+        userSession.setBotState(botState);
+        SESSIONS.put(message.getFrom().getId(), userSession);
         LOG.debug("Get from SESSIONS: " + SESSIONS.getUnchecked(message.getFrom().getId()));
     }
 
@@ -526,9 +528,9 @@ public class OTelegramBot extends TelegramLongPollingBot {
         sendMessage.enableMarkdown(true);
         sendMessage.setText(BotMessage.CLASS_OPTION_MENU_MSG);
         List<String> buttons = new ArrayList<>();
-        buttons.add(BotMessage.FIELDS_BUT);
-        buttons.add(BotMessage.VALUES_BUT);
-        buttons.add(BotMessage.DOCUMENTS_BUT);
+        buttons.add(BotMessage.FIELD_NAMES_BUT);
+        buttons.add(BotMessage.FIELD_VALUES_BUT);
+        buttons.add(BotMessage.DOC_NAMES_BUT);
         buttons.add(BotMessage.BACK_TO_MAIN_MENU_BUT);
         sendMessage.setReplyMarkup(getMenuMarkup(buttons));
         return sendMessage;
@@ -558,9 +560,9 @@ public class OTelegramBot extends TelegramLongPollingBot {
         sendMessage.enableMarkdown(true);
         sendMessage.setText(BotMessage.MAIN_MENU_MSG);
         List<String> buttonNames = new ArrayList<>();
-        buttonNames.add(BotMessage.FIELDS_BUT);
-        buttonNames.add(BotMessage.VALUES_BUT);
-        buttonNames.add(BotMessage.DOCUMENTS_BUT);
+        buttonNames.add(BotMessage.FIELD_NAMES_BUT);
+        buttonNames.add(BotMessage.FIELD_VALUES_BUT);
+        buttonNames.add(BotMessage.DOC_NAMES_BUT);
         buttonNames.add(BotMessage.CLASS_SEARCH_BUT);
         sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
         return sendMessage;
@@ -596,77 +598,5 @@ public class OTelegramBot extends TelegramLongPollingBot {
             }
         }
         return state;
-    }
-
-    private enum BotState {
-        START("/start"),
-        FIELD_NAMES_SEARCH_BUT(BotMessage.FIELDS_BUT),
-        VALUES_SEARCH_BUT(BotMessage.VALUES_BUT),
-        DOC_SEARCH_BUT(BotMessage.DOCUMENTS_BUT),
-        CLASS_SEARCH_BUT(BotMessage.CLASS_SEARCH_BUT),
-        BACK_TO_MAIN_MENU(BotMessage.BACK_TO_MAIN_MENU_BUT),
-        BACK_TO_CLASS_SEARCH(BotMessage.BACK_TO_CLASS_SEARCH_BUT),
-        GO_TO_DOCUMENT("/document"),
-        GO_TO_CLASS("/class"),
-
-        SEARCH_GLOBAL("/globalSearch"),
-
-        SEARCH_GLOBAL_FIELD_NAMES("/searchGlobalFieldNames"),
-        SEARCH_GLOBAL_FIELD_VALUES("/searchGlobalFieldValues"),
-        SEARCH_GLOBAL_DOC_NAMES("/searchGlobalDocNames"),
-
-        SEARCH_GLOBAL_CLASS_NAMES("/searchGlobalClassNames"),
-
-        SEARCH_CLASS_FIELD_NAMES("/searchClassFieldNames"),
-        SEARCH_CLASS_FIELD_VALUES("/searchClassFieldValues"),
-        SEARCH_CLASS_DOC_NAMES("/searchClassDocNames"),
-        ERROR("/error");
-
-        private String command;
-        BotState(String command) {
-            this.command = command;
-        }
-
-    }
-
-    private interface BotMessage {
-        String MAIN_MENU_MSG = "Change options or send me word and I will try to find it.";
-        String CLASS_MENU_MSG = "Choose class in the list.";
-        String CLASS_OPTION_MENU_MSG = "Choose search option in class.";
-
-
-        String ERROR_MSG = "<strong>I don't understand you :(</strong>";
-        String SEARCH_MSG = "Send me name of class or property or document and I will try to find it in .";
-        String SEARCH_FIELD_NAMES_MSG = "Send me word and I will try to find it in field names.";
-        String SEARCH_FIELD_VALUES_MSG = "Send me word and I will try to find it in field values.";
-        String SEARCH_DOCUMENT_NAMES_MSG = "Send me word and I will try to find it in document names";
-
-        String SEARCH_RESULT_SUCCESS_MSG = "To get information about document click on link.";
-        String SEARCH_RESULT_FAILED_MSG = "I cannot found something!";
-
-        String CLASS_DESCRIPTION_MSG = "Class description: ";
-        String CLASS_DOCUMENTS = "Class documents: ";
-        String FAILED_CLASS_BY_DIR = "Cannot found class by this id";
-        String DOCUMENT_DESCRIPTION_MSG = "Document description: ";
-        String FAILED_DOCUMENT_BY_RID = "Cannot found document by this id";
-
-        String GLOBAL_SEARCH_BUT = "Global search";
-
-        String BACK_TO_CLASS_SEARCH_BUT = "Back to class searchAll";
-
-
-        String CLASS_SEARCH_BUT = "Search in classes";
-        String FIELDS_BUT = "Search in field names";
-        String VALUES_BUT = "Search in field values";
-        String DOCUMENTS_BUT = "Search in document names";
-
-        String BACK_TO_MAIN_MENU_BUT = "Back to main menu";
-
-        String HTML_STRONG_TEXT = "<strong>%s</strong>";
-
-        String SEARCH_FIELD_NAMES_RESULT = "In field names: ";
-        String SEARCH_FIELD_VALUES_RESULT = "In field values: ";
-        String SEARCH_CLASS_NAMES_RESULT = "In class names: ";
-        int MAX_LENGTH = 2048;
     }
 }
