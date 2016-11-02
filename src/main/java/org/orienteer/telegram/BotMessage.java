@@ -25,7 +25,7 @@ interface BotMessage {
     String CLASS_DESCRIPTION_MSG = "Class description: ";
     String CLASS_NAME = "Class name: ";
     String CLASS_DOCUMENTS = "Class documents: ";
-    String FAILED_CLASS_BY_DIR = "Cannot found class by this id";
+    String SEARCH_FAILED_CLASS_BY_NAME = "<strong>Cannot found class by this class name</strong>";
     String DOCUMENT_DESCRIPTION_MSG = "Document description: ";
     String FAILED_DOCUMENT_BY_RID = "Cannot found document by this id";
 
@@ -50,6 +50,10 @@ interface BotMessage {
 
     String SEARCH_FIELD_NAMES_RESULT = "In field names: ";
     String SEARCH_FIELD_VALUES_RESULT = "In field values: ";
+    String SEARCH_DOCUMENT_NAMES_RESULT = "In document names: ";
     String SEARCH_CLASS_NAMES_RESULT = "In class names: ";
+
+    String START_OF_RESULT = "<strong>Start of result</strong>";
+    String END_OF_RESULT = "<strong>End of result</strong>";
     int MAX_LENGTH = 4096;
 }

@@ -5,7 +5,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.exception.ORecordNotFoundException;
-import com.orientechnologies.orient.core.id.ORID;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
@@ -23,10 +22,8 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import javax.swing.text.html.HTMLDocument;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -183,6 +180,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
         return userSession;
     }
 
+
     /**
      * search word in all database
      * @param word search word
@@ -194,6 +192,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
                 StringBuilder builderFieldNames = new StringBuilder();
                 StringBuilder builderFieldValues = new StringBuilder();
+                StringBuilder builderDocumentNames = new StringBuilder();
                 String classes;
                 Collection<OClass> oClasses = oDatabaseDocument.getMetadata().getSchema().getClasses();
                 classes = searchInClassNames(word, oClasses);
@@ -202,22 +201,30 @@ public class OTelegramBot extends TelegramLongPollingBot {
                     for (ODocument oDocument : oDocuments) {
                         builderFieldNames.append(searchInFieldNames(word, oDocument));
                         builderFieldValues.append(searchInFieldValues(word, oDocument));
+                        builderDocumentNames.append(searchDocument(word, oDocument));
                     }
+
+
                 }
                 StringBuilder builder = new StringBuilder();
-                if (builderFieldNames.length() > word.length() || builderFieldValues.length() > word.length()) {
+                if (builderFieldNames.length() > 0 || builderFieldValues.length() > 0
+                        || builderDocumentNames.length() > 0 || classes.length() > 0) {
                     builder.append(BotMessage.SEARCH_RESULT_SUCCESS_MSG);
-                    if (classes.length() > word.length()) {
+                    if (classes.length() > 0) {
                         builder.append("\n" + BotMessage.SEARCH_CLASS_NAMES_RESULT + "\n");
                         builder.append(classes);
                     }
-                    if (builderFieldNames.length() > word.length()) {
+                    if (builderFieldNames.length() > 0) {
                         builder.append("\n" + BotMessage.SEARCH_FIELD_NAMES_RESULT + "\n");
                         builder.append(builderFieldNames.toString());
                     }
-                    if (builderFieldValues.length() > word.length()) {
+                    if (builderFieldValues.length() > 0) {
                         builder.append("\n" + BotMessage.SEARCH_FIELD_VALUES_RESULT + "\n");
                         builder.append(builderFieldValues.toString());
+                    }
+                    if (builderDocumentNames.length() > 0) {
+                        builder.append("\n" + BotMessage.SEARCH_DOCUMENT_NAMES_RESULT + "\n");
+                        builder.append(builderDocumentNames.toString());
                     }
                 } else builder.append(BotMessage.SEARCH_RESULT_FAILED_MSG);
                 LOG.debug("\nResult of search: \n" + builder.toString());
@@ -313,8 +320,12 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private String searchInFieldNames(final String word, ODocument oDocument) {
         StringBuilder builder = new StringBuilder();
         String [] fieldNames = oDocument.fieldNames();
-        String documentLink = BotState.GO_TO_DOCUMENT.command + oDocument.getIdentity().getClusterId()
-                + "_" + oDocument.getIdentity().getClusterPosition();
+        String docName = oDocument.field("name", OType.STRING);
+        if (docName == null) docName = "without document name";
+        String documentLink = BotState.GO_TO_CLASS.command + oDocument.getClassName()
+                + "_" + oDocument.getIdentity().getClusterId()
+                + "_" + oDocument.getIdentity().getClusterPosition()
+                + " : " + docName;
         for (String name : fieldNames) {
             if (isWordInLine(word, name)) {
                 builder.append("- ");
@@ -338,8 +349,12 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private String searchInFieldValues(final String word, ODocument oDocument) {
         StringBuilder builder = new StringBuilder();
         String[] fieldNames = oDocument.fieldNames();
-        String classId = BotState.GO_TO_DOCUMENT.command + oDocument.getIdentity().getClusterId()
-                + "_" + oDocument.getIdentity().getClusterPosition();
+        String docName = oDocument.field("name", OType.STRING);
+        if (docName == null) docName = "without document name";
+        String documentLink = BotState.GO_TO_CLASS.command + oDocument.getClassName()
+                + "_" + oDocument.getIdentity().getClusterId()
+                + "_" + oDocument.getIdentity().getClusterPosition()
+                + " : " + docName;
         for (String name : fieldNames) {
             String fieldValue = oDocument.field(name, OType.STRING);
             if (fieldValue != null && isWordInLine(word, fieldValue)) {
@@ -348,7 +363,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 builder.append(" : ");
                 builder.append(fieldValue);
                 builder.append(" ");
-                builder.append(classId);
+                builder.append(documentLink);
                 builder.append("\n");
             }
         }
@@ -368,7 +383,9 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 StringBuilder builder = new StringBuilder();
                 for (OClass oClass : classes) {
                     ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
-                    builder.append(getDocumentString(oDocuments, documentName));
+                    for (ODocument oDocument: oDocuments) {
+                        builder.append(searchDocument(documentName, oDocument));
+                    }
                 }
                 String result = builder.toString();
                 if (result.length() > 0) {
@@ -392,23 +409,29 @@ public class OTelegramBot extends TelegramLongPollingBot {
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
                 StringBuilder builderFieldNames = new StringBuilder();
                 StringBuilder builderFieldValues = new StringBuilder();
+                StringBuilder builderDocumentNames = new StringBuilder();
                 ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
                 for (ODocument oDocument : oDocuments) {
                     builderFieldNames.append(searchInFieldNames(word, oDocument));
                     builderFieldValues.append(searchInFieldValues(word, oDocument));
+                    builderDocumentNames.append(searchDocument(word, oDocument));
                 }
 
                 StringBuilder resultBuilder = new StringBuilder();
-                if (builderFieldNames.length() > word.length() || builderFieldValues.length() > word.length()) {
-                resultBuilder.append(BotMessage.SEARCH_RESULT_SUCCESS_MSG);
-                if (builderFieldNames.length() > word.length()) {
-                    resultBuilder.append("\n" + BotMessage.SEARCH_FIELD_NAMES_RESULT + "\n");
-                    resultBuilder.append(builderFieldNames.toString());
-                }
-                if (builderFieldValues.length() > word.length()) {
-                    resultBuilder.append("\n" + BotMessage.SEARCH_FIELD_VALUES_RESULT + "\n");
-                    resultBuilder.append(builderFieldValues.toString());
-                }
+                if (builderFieldNames.length() > 0 || builderFieldValues.length() > 0) {
+                    resultBuilder.append(BotMessage.SEARCH_RESULT_SUCCESS_MSG);
+                    if (builderFieldNames.length() > 0) {
+                        resultBuilder.append("\n" + BotMessage.SEARCH_FIELD_NAMES_RESULT + "\n");
+                        resultBuilder.append(builderFieldNames.toString());
+                    }
+                    if (builderFieldValues.length() > 0) {
+                        resultBuilder.append("\n" + BotMessage.SEARCH_FIELD_VALUES_RESULT + "\n");
+                        resultBuilder.append(builderFieldValues.toString());
+                    }
+                    if (builderDocumentNames.length() > 0) {
+                        resultBuilder.append("\n" + BotMessage.SEARCH_DOCUMENT_NAMES_RESULT + "\n");
+                        resultBuilder.append(builderDocumentNames.toString());
+                    }
             } else resultBuilder.append(BotMessage.SEARCH_RESULT_FAILED_MSG);
                 LOG.debug("\nResult of search: \n" + resultBuilder.toString());
                 return resultBuilder.toString();
@@ -484,14 +507,18 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 if (!oDatabaseDocument.getMetadata().getSchema().existsClass(className)) {
                     return BotMessage.SEARCH_RESULT_FAILED_MSG;
                 }
+                StringBuilder builder = new StringBuilder();
                 ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
-                String result = getDocumentString(oDocuments, documentName);
-                if (result.length() > 0) {
+                String result;
+                for (ODocument oDocument : oDocuments) {
+                    builder.append(searchDocument(documentName, oDocument));
+                }
+                if (builder.length() > 0) {
                     result = BotMessage.SEARCH_RESULT_SUCCESS_MSG
                             + "\n\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.CLASS_NAME)
                             + className
                             + "\n\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.CLASS_DOCUMENTS)
-                            + "\n" + result;
+                            + "\n" + builder.toString();
                 } else result = BotMessage.SEARCH_RESULT_FAILED_MSG;
                 return result;
             }
@@ -502,26 +529,25 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
     /**
      * Build string with result of searchAll
-     * @param oDocuments list of documents where will be searchAll
      * @param word name of target document
+     * @param oDocument search document
      * @return string with result of searchAll
      */
-    private String getDocumentString(ORecordIteratorClass<ODocument> oDocuments, final String word) {
+    private String searchDocument(final String word, ODocument oDocument) {
         StringBuilder builder = new StringBuilder();
-        for (ODocument oDocument : oDocuments) {
             String docName = oDocument.field("name", OType.STRING);
-            if (docName != null && isWordInLine(word, docName)) {
-                ORID identity = oDocument.getIdentity();
+            if (docName == null) docName = "without document name";
+            String documentLink = BotState.GO_TO_CLASS.command + oDocument.getClassName()
+                    + "_" + oDocument.getIdentity().getClusterId()
+                    + "_" + oDocument.getIdentity().getClusterPosition()
+                    + " : " + docName;
+            if (isWordInLine(word, docName)) {
                 builder.append("- ");
                 builder.append(docName);
                 builder.append(" ");
-                builder.append(BotState.GO_TO_DOCUMENT.command);
-                builder.append(identity.getClusterId());
-                builder.append("_");
-                builder.append(identity.getClusterPosition());
+                builder.append(documentLink);
                 builder.append("\n");
             }
-        }
         return builder.toString();
     }
 
@@ -543,9 +569,9 @@ public class OTelegramBot extends TelegramLongPollingBot {
      * @return string with description document
      */
     private String goToTargetDocument(final String document) {
-        String [] split = document.substring(BotState.GO_TO_DOCUMENT.command.length()).split("_");
-        final int clusterID = Integer.valueOf(split[0]);
-        final long recordID = Long.valueOf(split[1]);
+        String [] split = document.substring(BotState.GO_TO_CLASS.command.length()).split("_");
+        final int clusterID = Integer.valueOf(split[1]);
+        final long recordID = Long.valueOf(split[2]);
         final ORecordId oRecordId = new ORecordId(clusterID, recordID);
         String result = (String) new DBClosure() {
             @Override
@@ -590,6 +616,9 @@ public class OTelegramBot extends TelegramLongPollingBot {
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
                 StringBuilder builder = new StringBuilder(
                         String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.CLASS_DESCRIPTION_MSG) + "\n\n");
+                if (!oDatabaseDocument.getMetadata().getSchema().existsClass(className)) {
+                    return BotMessage.SEARCH_FAILED_CLASS_BY_NAME;
+                }
                 OClass oClass = oDatabaseDocument.getMetadata().getSchema().getClass(className);
                 builder.append("Name: ");
                 builder.append(oClass.getName());
@@ -611,7 +640,8 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
                 resultList = new ArrayList<>();
                 for (ODocument oDocument : oDocuments) {
-                    String docId = BotState.GO_TO_DOCUMENT.command + oDocument.getIdentity().getClusterId()
+                    String docId = BotState.GO_TO_CLASS.command + oDocument.getClassName()
+                            + "_" + oDocument.getIdentity().getClusterId()
                             + "_" + oDocument.getIdentity().getClusterPosition();
                     resultList.add(oDocument.field("name") + " " + docId);
                 }
@@ -699,18 +729,22 @@ public class OTelegramBot extends TelegramLongPollingBot {
     }
 
     private BotState getBotState(String text) {
-        if (text.startsWith(BotState.GO_TO_DOCUMENT.command)) {
-            return BotState.GO_TO_DOCUMENT;
-        } else if (text.startsWith(BotState.GO_TO_CLASS.command)) {
-            return BotState.GO_TO_CLASS;
-        } else if (text.startsWith(BotMessage.CLASS_BUT)) {
-            return BotState.ClASS_MENU_OPTIONS;
-        }
         BotState state = BotState.ERROR;
         for (BotState search : BotState.values()) {
             if (search.command.equals(text)) {
                 state = search;
                 break;
+            }
+        }
+        if (state == BotState.ERROR) {
+            if (text.startsWith(BotState.GO_TO_CLASS.command) && text.contains("_")) {
+                return BotState.GO_TO_DOCUMENT;
+            } else if (text.startsWith(BotState.GO_TO_CLASS.command)) {
+                return BotState.GO_TO_CLASS;
+            } else if (text.startsWith("/")) {
+                return BotState.GO_TO_CLASS;
+            } else if (text.startsWith(BotMessage.CLASS_BUT)) {
+                return BotState.ClASS_MENU_OPTIONS;
             }
         }
         return state;

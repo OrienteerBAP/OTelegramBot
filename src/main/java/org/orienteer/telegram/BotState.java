@@ -19,8 +19,8 @@ enum BotState {
 
     BACK_TO_MAIN_MENU(BotMessage.BACK_TO_MAIN_MENU_BUT),
     BACK_TO_CLASS_SEARCH(BotMessage.BACK_TO_CLASS_SEARCH_BUT),
-    GO_TO_DOCUMENT("/document"),
-    GO_TO_CLASS("/class"),
+    GO_TO_DOCUMENT("/_"),
+    GO_TO_CLASS("/"),
 
     SEARCH_GLOBAL("/globalSearch"),
 
