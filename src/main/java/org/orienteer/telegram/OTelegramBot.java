@@ -22,7 +22,6 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
-import javax.swing.text.html.HTMLDocument;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -34,7 +33,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private static final Logger LOG = LoggerFactory.getLogger(OTelegramBot.class);
     private final OTelegramModule.BotConfig BOT_CONFIG;
     private final LoadingCache<Integer, UserSession> SESSIONS;
-
+    private final int N = 10;   // max result in one message
 
     private OTelegramBot(OTelegramModule.BotConfig botConfig, LoadingCache<Integer, UserSession> sessions) {
         BOT_CONFIG = botConfig;
@@ -129,6 +128,16 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_CLASS_DOCUMENT_NAMES_MSG);
                 userSession.setBotState(BotState.SEARCH_CLASS_DOC_NAMES);
                 break;
+            case NEXT_RESULT:
+                sendResponseMessage = getTextMessage(message, userSession.getNextResult());
+                sendMessage(sendResponseMessage);
+                sendResponseMessage = getNextPreviousMenuMessage(message);
+                break;
+            case PREVIOUS_RESULT:
+                sendResponseMessage = getTextMessage(message, userSession.getPreviousResult());
+                sendMessage(sendResponseMessage);
+                sendResponseMessage = getNextPreviousMenuMessage(message);
+                break;
             case GO_TO_DOCUMENT:
                 sendResponseMessage = getTextMessage(message, goToTargetDocument(message.getText()));
                 break;
@@ -143,424 +152,57 @@ public class OTelegramBot extends TelegramLongPollingBot {
     }
 
     private UserSession handleSearchRequest(Message message, UserSession userSession) throws TelegramApiException {
-        SendMessage sendResponseMessage;
+        SendMessage sendResponseMessage = null;
+        List<String> result = null;
+        Search search = new Search(message.getText());
         switch (userSession.getBotState()) {
             case SEARCH_GLOBAL:
-                sendResponseMessage = getTextMessage(message, getResultOfGlobalSearch(message.getText()));
+                search.setGlobalSearch(true);
+                result = search.getResultOfSearch();
                 break;
             case SEARCH_GLOBAL_FIELD_NAMES:
-                sendResponseMessage = getTextMessage(message, getResultOfFieldNamesSearch(message.getText()));
+                search.setGlobalFieldNamesSearch(true);
+                result = search.getResultOfSearch();
                 break;
             case SEARCH_GLOBAL_FIELD_VALUES:
-                sendResponseMessage = getTextMessage(message, getResultOfFieldValuesSearch(message.getText()));
+                search.setGlobalFieldValuesSearch(true);
+                result = search.getResultOfSearch();
                 break;
             case SEARCH_GLOBAL_DOC_NAMES:
-                sendResponseMessage = getTextMessage(message, getResultOfSearchDocumentGlobal(message.getText()));
+                search.setGlobalDocumentNamesSearch(true);
+                result = search.getResultOfSearch();
                 break;
             case SEARCH_IN_CLASS_GLOBAL:
-                sendResponseMessage = getTextMessage(
-                        message, getResultOfSearchInClassAllOptions(message.getText(), userSession.getTargetClass()));
+                search = new Search(message.getText(), userSession.getTargetClass());
+                search.setGlobalClassSearch(true);
+                result = search.getResultOfSearch();
                 break;
             case SEARCH_CLASS_FIELD_NAMES:
-                sendResponseMessage = getTextMessage(
-                        message, getResultOfSearchFieldNamesInClass(message.getText(), userSession.getTargetClass()));
+                search = new Search(message.getText(), userSession.getTargetClass());
+                search.setClassFieldNamesSearch(true);
+                result = search.getResultOfSearch();
                 break;
             case SEARCH_CLASS_FIELD_VALUES:
-                sendResponseMessage = getTextMessage(
-                        message, getResultOfSearchFieldValuesInClass(message.getText(), userSession.getTargetClass()));
+                search = new Search(message.getText(), userSession.getTargetClass());
+                search.setClassFieldValuesSearch(true);
+                result = search.getResultOfSearch();
                 break;
             case SEARCH_CLASS_DOC_NAMES:
-                sendResponseMessage = getTextMessage(
-                        message, getResultOfSearchDocumentsInClass(message.getText(), userSession.getTargetClass()));
+                search = new Search(message.getText(), userSession.getTargetClass());
+                search.setClassDocumentNamesSearch(true);
+                result = search.getResultOfSearch();
                 break;
-            default:
-                sendResponseMessage = getTextMessage(message, BotMessage.ERROR_MSG);
         }
+        if (result != null) {
+            userSession.setResultOfSearch(result);
+            if (result.size() > 1) {
+                sendResponseMessage = getTextMessage(message, userSession.getNextResult());
+                sendMessage(sendResponseMessage);
+                sendResponseMessage = getNextPreviousMenuMessage(message);
+            } else sendResponseMessage = getTextMessage(message, userSession.getNextResult());
+        } else sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_RESULT_FAILED_MSG);
         sendMessage(sendResponseMessage);
         return userSession;
-    }
-
-
-    /**
-     * search word in all database
-     * @param word search word
-     * @return string with result of search
-     */
-    private String getResultOfGlobalSearch(final String word) {
-        String result = (String) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                StringBuilder builderFieldNames = new StringBuilder();
-                StringBuilder builderFieldValues = new StringBuilder();
-                StringBuilder builderDocumentNames = new StringBuilder();
-                String classes;
-                Collection<OClass> oClasses = oDatabaseDocument.getMetadata().getSchema().getClasses();
-                classes = searchInClassNames(word, oClasses);
-                for (OClass oClass : oClasses) {
-                    ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
-                    for (ODocument oDocument : oDocuments) {
-                        builderFieldNames.append(searchInFieldNames(word, oDocument));
-                        builderFieldValues.append(searchInFieldValues(word, oDocument));
-                        builderDocumentNames.append(searchDocument(word, oDocument));
-                    }
-
-
-                }
-                StringBuilder builder = new StringBuilder();
-                if (builderFieldNames.length() > 0 || builderFieldValues.length() > 0
-                        || builderDocumentNames.length() > 0 || classes.length() > 0) {
-                    builder.append(BotMessage.SEARCH_RESULT_SUCCESS_MSG);
-                    if (classes.length() > 0) {
-                        builder.append("\n" + BotMessage.SEARCH_CLASS_NAMES_RESULT + "\n");
-                        builder.append(classes);
-                    }
-                    if (builderFieldNames.length() > 0) {
-                        builder.append("\n" + BotMessage.SEARCH_FIELD_NAMES_RESULT + "\n");
-                        builder.append(builderFieldNames.toString());
-                    }
-                    if (builderFieldValues.length() > 0) {
-                        builder.append("\n" + BotMessage.SEARCH_FIELD_VALUES_RESULT + "\n");
-                        builder.append(builderFieldValues.toString());
-                    }
-                    if (builderDocumentNames.length() > 0) {
-                        builder.append("\n" + BotMessage.SEARCH_DOCUMENT_NAMES_RESULT + "\n");
-                        builder.append(builderDocumentNames.toString());
-                    }
-                } else builder.append(BotMessage.SEARCH_RESULT_FAILED_MSG);
-                LOG.debug("\nResult of search: \n" + builder.toString());
-                return builder.toString();
-            }
-        }.execute();
-        return result;
-    }
-
-    /**
-     * search similar words in field names in all database
-     * @param word search word
-     * @return string with result of search
-     */
-    private String getResultOfFieldNamesSearch(final String word) {
-        String result = (String) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                StringBuilder builder = new StringBuilder();
-                Collection<OClass> oClasses = oDatabaseDocument.getMetadata().getSchema().getClasses();
-                for (OClass oClass : oClasses) {
-                    ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
-                    for (ODocument oDocument : oDocuments) {
-                        builder.append(searchInFieldNames(word, oDocument));
-                    }
-                }
-                String result = builder.toString();
-                if (result.length() > word.length()) {
-                    result = "\n" + BotMessage.SEARCH_FIELD_NAMES_RESULT + "\n" + result;
-                    result = BotMessage.SEARCH_RESULT_SUCCESS_MSG + result;
-                } else result = BotMessage.SEARCH_RESULT_FAILED_MSG;
-                return result;
-            }
-        }.execute();
-        return result;
-    }
-
-    /**
-     * Search similar words with word in field values in all database
-     * @param word search word
-     * @return string with result of search
-     */
-    private String getResultOfFieldValuesSearch(final String word) {
-        String result = (String) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                StringBuilder builder = new StringBuilder();
-                Collection<OClass> oClasses = oDatabaseDocument.getMetadata().getSchema().getClasses();
-                for (OClass oClass : oClasses) {
-                    ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
-                    for (ODocument oDocument : oDocuments) {
-                        builder.append(searchInFieldValues(word, oDocument));
-                    }
-                }
-                String result = builder.toString();
-                if (result.length() > word.length()) {
-                    result = "\n" + BotMessage.SEARCH_FIELD_VALUES_RESULT + "\n" + result;
-                    result = BotMessage.SEARCH_RESULT_SUCCESS_MSG + result;
-                } else result = BotMessage.SEARCH_RESULT_FAILED_MSG;
-                return result;
-            }
-        }.execute();
-
-        return result;
-    }
-
-    /**
-     * search similar class names with word
-     * @param word search word
-     * @param oClasses collection of classes where is search
-     * @return result of search
-     */
-    private String searchInClassNames(final String word, Collection<OClass> oClasses) {
-        StringBuilder builder = new StringBuilder();
-        for (OClass oClass : oClasses) {
-            if (isWordInLine(word, oClass.getName())) {
-                builder.append("-  class name: ");
-                builder.append(oClass.getName());
-                builder.append(" ");
-                builder.append(BotState.GO_TO_CLASS.command + oClass.getName());
-                builder.append("\n");
-            }
-        }
-        return builder.toString();
-    }
-
-    /**
-     * search similar words in field names
-     * @param word search wor
-     * @param oDocument document where is search
-     * @return string with result of search
-     */
-    private String searchInFieldNames(final String word, ODocument oDocument) {
-        StringBuilder builder = new StringBuilder();
-        String [] fieldNames = oDocument.fieldNames();
-        String docName = oDocument.field("name", OType.STRING);
-        if (docName == null) docName = "without document name";
-        String documentLink = BotState.GO_TO_CLASS.command + oDocument.getClassName()
-                + "_" + oDocument.getIdentity().getClusterId()
-                + "_" + oDocument.getIdentity().getClusterPosition()
-                + " : " + docName;
-        for (String name : fieldNames) {
-            if (isWordInLine(word, name)) {
-                builder.append("- ");
-                builder.append(name);
-                builder.append(" : ");
-                builder.append(oDocument.field(name, OType.STRING));
-                builder.append(" ");
-                builder.append(documentLink);
-                builder.append("\n");
-            }
-        }
-        return builder.toString();
-    }
-
-    /**
-     * search similar words in field values
-     * @param word search word
-     * @param oDocument document where is search
-     * @return string with result of search
-     */
-    private String searchInFieldValues(final String word, ODocument oDocument) {
-        StringBuilder builder = new StringBuilder();
-        String[] fieldNames = oDocument.fieldNames();
-        String docName = oDocument.field("name", OType.STRING);
-        if (docName == null) docName = "without document name";
-        String documentLink = BotState.GO_TO_CLASS.command + oDocument.getClassName()
-                + "_" + oDocument.getIdentity().getClusterId()
-                + "_" + oDocument.getIdentity().getClusterPosition()
-                + " : " + docName;
-        for (String name : fieldNames) {
-            String fieldValue = oDocument.field(name, OType.STRING);
-            if (fieldValue != null && isWordInLine(word, fieldValue)) {
-                builder.append("- ");
-                builder.append(name);
-                builder.append(" : ");
-                builder.append(fieldValue);
-                builder.append(" ");
-                builder.append(documentLink);
-                builder.append("\n");
-            }
-        }
-        return builder.toString();
-    }
-
-    /**
-     * Search documents with similar names from all database
-     * @param documentName name of target document
-     * @return result of search
-     */
-    private String getResultOfSearchDocumentGlobal(final String documentName) {
-        String resultOfSearch = (String) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                Collection<OClass> classes = oDatabaseDocument.getMetadata().getSchema().getClasses();
-                StringBuilder builder = new StringBuilder();
-                for (OClass oClass : classes) {
-                    ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
-                    for (ODocument oDocument: oDocuments) {
-                        builder.append(searchDocument(documentName, oDocument));
-                    }
-                }
-                String result = builder.toString();
-                if (result.length() > 0) {
-                    result = BotMessage.SEARCH_RESULT_SUCCESS_MSG + "\n" + result;
-                }else result = BotMessage.SEARCH_RESULT_FAILED_MSG;
-                return result;
-            }
-        }.execute();
-        return resultOfSearch;
-    }
-
-    /**
-     * search similar words with word in class
-     * @param word search word
-     * @param className class where is search
-     * @return result of search
-     */
-    private String getResultOfSearchInClassAllOptions(final String word, final String className) {
-        String result = (String) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                StringBuilder builderFieldNames = new StringBuilder();
-                StringBuilder builderFieldValues = new StringBuilder();
-                StringBuilder builderDocumentNames = new StringBuilder();
-                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
-                for (ODocument oDocument : oDocuments) {
-                    builderFieldNames.append(searchInFieldNames(word, oDocument));
-                    builderFieldValues.append(searchInFieldValues(word, oDocument));
-                    builderDocumentNames.append(searchDocument(word, oDocument));
-                }
-
-                StringBuilder resultBuilder = new StringBuilder();
-                if (builderFieldNames.length() > 0 || builderFieldValues.length() > 0) {
-                    resultBuilder.append(BotMessage.SEARCH_RESULT_SUCCESS_MSG);
-                    if (builderFieldNames.length() > 0) {
-                        resultBuilder.append("\n" + BotMessage.SEARCH_FIELD_NAMES_RESULT + "\n");
-                        resultBuilder.append(builderFieldNames.toString());
-                    }
-                    if (builderFieldValues.length() > 0) {
-                        resultBuilder.append("\n" + BotMessage.SEARCH_FIELD_VALUES_RESULT + "\n");
-                        resultBuilder.append(builderFieldValues.toString());
-                    }
-                    if (builderDocumentNames.length() > 0) {
-                        resultBuilder.append("\n" + BotMessage.SEARCH_DOCUMENT_NAMES_RESULT + "\n");
-                        resultBuilder.append(builderDocumentNames.toString());
-                    }
-            } else resultBuilder.append(BotMessage.SEARCH_RESULT_FAILED_MSG);
-                LOG.debug("\nResult of search: \n" + resultBuilder.toString());
-                return resultBuilder.toString();
-            }
-        }.execute();
-        return result;
-    }
-
-    /**
-     * search similar field names with fieldName
-     * @param fieldName name of search field
-     * @param className name of target class
-     * @return result of search
-     */
-    private String getResultOfSearchFieldNamesInClass(final String fieldName, final String className) {
-        String result = (String) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
-                StringBuilder builder = new StringBuilder();
-                for (ODocument oDocument : oDocuments) {
-                    builder.append(searchInFieldNames(fieldName, oDocument));
-                }
-                StringBuilder resultBuilder = new StringBuilder();
-                if (builder.length() > fieldName.length()) {
-                    resultBuilder.append(BotMessage.SEARCH_RESULT_SUCCESS_MSG);
-                    resultBuilder.append("\n" + BotMessage.SEARCH_FIELD_NAMES_RESULT + "\n");
-                    resultBuilder.append(builder.toString());
-                } else resultBuilder.append(BotMessage.SEARCH_RESULT_FAILED_MSG);
-                return resultBuilder.toString();
-            }
-        }.execute();
-        return result;
-    }
-
-    /**
-     * search similar field values with valueName
-     * @param valueName search word
-     * @param className class where is search
-     * @return result of search
-     */
-    private String getResultOfSearchFieldValuesInClass(final String valueName, final String className) {
-        String result = (String) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
-                StringBuilder builder = new StringBuilder();
-                for (ODocument oDocument : oDocuments) {
-                    builder.append(searchInFieldValues(valueName, oDocument));
-                }
-                StringBuilder resultBuilder = new StringBuilder();
-                if (builder.length() > valueName.length()) {
-                    resultBuilder.append(BotMessage.SEARCH_RESULT_SUCCESS_MSG);
-                    resultBuilder.append("\n" + BotMessage.SEARCH_FIELD_VALUES_RESULT + "\n");
-                    resultBuilder.append(builder.toString());
-                } else resultBuilder.append(BotMessage.SEARCH_RESULT_FAILED_MSG);
-                return resultBuilder.toString();
-            }
-        }.execute();
-        return result;
-    }
-
-    /**
-     * Search documents with similar names from target class
-     * @param documentName name of document
-     * @param className name of target class
-     * @return result of search
-     */
-    private String getResultOfSearchDocumentsInClass(final String documentName, final String className) {
-        String resultOfSearch = (String) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                if (!oDatabaseDocument.getMetadata().getSchema().existsClass(className)) {
-                    return BotMessage.SEARCH_RESULT_FAILED_MSG;
-                }
-                StringBuilder builder = new StringBuilder();
-                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
-                String result;
-                for (ODocument oDocument : oDocuments) {
-                    builder.append(searchDocument(documentName, oDocument));
-                }
-                if (builder.length() > 0) {
-                    result = BotMessage.SEARCH_RESULT_SUCCESS_MSG
-                            + "\n\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.CLASS_NAME)
-                            + className
-                            + "\n\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.CLASS_DOCUMENTS)
-                            + "\n" + builder.toString();
-                } else result = BotMessage.SEARCH_RESULT_FAILED_MSG;
-                return result;
-            }
-        }.execute();
-
-        return resultOfSearch;
-    }
-
-    /**
-     * Build string with result of searchAll
-     * @param word name of target document
-     * @param oDocument search document
-     * @return string with result of searchAll
-     */
-    private String searchDocument(final String word, ODocument oDocument) {
-        StringBuilder builder = new StringBuilder();
-            String docName = oDocument.field("name", OType.STRING);
-            if (docName == null) docName = "without document name";
-            String documentLink = BotState.GO_TO_CLASS.command + oDocument.getClassName()
-                    + "_" + oDocument.getIdentity().getClusterId()
-                    + "_" + oDocument.getIdentity().getClusterPosition()
-                    + " : " + docName;
-            if (isWordInLine(word, docName)) {
-                builder.append("- ");
-                builder.append(docName);
-                builder.append(" ");
-                builder.append(documentLink);
-                builder.append("\n");
-            }
-        return builder.toString();
-    }
-
-    /**
-     * search word in line
-     * @param word search word
-     * @param line string where word can be
-     * @return true if word is in line
-     */
-    private boolean isWordInLine(final String word, String line) {
-        boolean isIn = false;
-        if (line.toLowerCase().contains(word.toLowerCase())) isIn = true;
-        return isIn;
     }
 
     /**
@@ -654,6 +296,19 @@ public class OTelegramBot extends TelegramLongPollingBot {
             }
         }.execute();
         return result;
+    }
+
+    private SendMessage getNextPreviousMenuMessage(Message message) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(message.getChatId().toString());
+        sendMessage.enableHtml(true);
+        sendMessage.enableMarkdown(true);
+        sendMessage.setText(BotMessage.NEXT_PREVIOUS_MSG);
+        List<String> buttons = new ArrayList<>();
+        buttons.add(BotMessage.NEXT_RESULT_BUT);
+        buttons.add(BotMessage.PREVIOUS_RESULT_BUT);
+        sendMessage.setReplyMarkup(getMenuMarkup(buttons));
+        return sendMessage;
     }
 
     private SendMessage getClassesMenuMessage(Message message) {
