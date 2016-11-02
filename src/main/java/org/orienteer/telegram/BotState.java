@@ -22,6 +22,9 @@ enum BotState {
     GO_TO_DOCUMENT("/_"),
     GO_TO_CLASS("/"),
 
+    NEXT_RESULT(BotMessage.NEXT_RESULT_BUT),
+    PREVIOUS_RESULT(BotMessage.PREVIOUS_RESULT_BUT),
+
     SEARCH_GLOBAL("/globalSearch"),
 
     SEARCH_GLOBAL_FIELD_NAMES("/searchGlobalFieldNames"),
