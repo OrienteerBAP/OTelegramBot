@@ -1,7 +1,5 @@
 package org.orienteer.telegram;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -29,7 +27,7 @@ class UserSession {
         this.targetClass = targetClass;
     }
 
-    public void setResultIterator(List<String> resultOfSearch) {
+    public void setResultOfSearch(List<String> resultOfSearch) {
         this.resultIterator = resultOfSearch.listIterator();
     }
 
@@ -39,11 +37,18 @@ class UserSession {
         } else return BotMessage.END_OF_RESULT;
     }
 
-
-    public String getPerviousResult() {
+    public String getPreviousResult() {
         if (resultIterator.hasPrevious()) {
             return resultIterator.previous();
         } else return BotMessage.START_OF_RESULT;
+    }
+
+    public boolean hasNextResult() {
+        return resultIterator.hasNext();
+    }
+
+    public boolean hasPreviousResult() {
+        return resultIterator.hasPrevious();
     }
 
     @Override
