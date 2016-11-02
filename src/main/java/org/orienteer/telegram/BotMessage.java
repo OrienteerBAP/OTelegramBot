@@ -6,7 +6,7 @@ package org.orienteer.telegram;
 interface BotMessage {
     String MAIN_MENU_MSG = "Change options or send me word and I will try to find it.";
     String CLASS_MENU_MSG = "Choose class in the list.";
-    String CLASS_OPTION_MENU_MSG = "Choose search option in class.\nOr type word for global search in class";
+    String CLASS_OPTION_MENU_MSG = "Choose getResultOfSearch option in class.\nOr type word for global getResultOfSearch in class";
 
 
     String ERROR_MSG = "<strong>I don't understand you :(</strong>";
@@ -29,7 +29,7 @@ interface BotMessage {
     String DOCUMENT_DESCRIPTION_MSG = "Document description: ";
     String FAILED_DOCUMENT_BY_RID = "Cannot found document by this id";
 
-    String GLOBAL_SEARCH_BUT = "Global search";
+    String GLOBAL_SEARCH_BUT = "Global getResultOfSearch";
 
     String BACK_TO_CLASS_SEARCH_BUT = "Back to class searchAll";
 
@@ -53,6 +53,10 @@ interface BotMessage {
     String SEARCH_DOCUMENT_NAMES_RESULT = "In document names: ";
     String SEARCH_CLASS_NAMES_RESULT = "In class names: ";
 
+    String NEXT_RESULT_BUT = "Next result of search";
+    String PREVIOUS_RESULT_BUT = "Previous result of search";
+    String NEXT_PREVIOUS_MSG = "Click on 'Next result of search' and I will send you next 10 results of search." +
+            " Or click on 'Previous result of search' and I will send you previous 10 results of search";
     String START_OF_RESULT = "<strong>Start of result</strong>";
     String END_OF_RESULT = "<strong>End of result</strong>";
     int MAX_LENGTH = 4096;
