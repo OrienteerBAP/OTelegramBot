@@ -1,3 +1,7 @@
 .idea/
 OTelegramModule.iml
 target/
+bin/
+.settings/
+.classpath
+.project

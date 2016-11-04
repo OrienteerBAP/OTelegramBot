@@ -13,6 +13,7 @@ public class MyWebApplication extends OrienteerWebApplication
 	{
 		super.init();
 		mountPages("org.orienteer.telegram.web");
+		registerWidgets("org.orienteer.telegram.widget");
 		registerModule(OTelegramModule.class);
 	}
 	
