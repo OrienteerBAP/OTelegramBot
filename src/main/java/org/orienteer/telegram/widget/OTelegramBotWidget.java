@@ -1,38 +1,26 @@
 package org.orienteer.telegram.widget;
 
-import java.io.Serializable;
 import java.util.*;
 
-import com.orientechnologies.orient.core.id.ORecordId;
-import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
 import com.orientechnologies.orient.core.metadata.schema.*;
 import com.orientechnologies.orient.core.metadata.security.ORule;
-import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import org.apache.wicket.Component;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.*;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.LoadableDetachableModel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.util.string.Strings;
-import org.orienteer.core.CustomAttributes;
 import org.orienteer.core.component.FAIcon;
 import org.orienteer.core.component.FAIconType;
-import org.orienteer.core.component.ODocumentPageLink;
 import org.orienteer.core.component.command.EditSchemaCommand;
 import org.orienteer.core.component.command.SaveSchemaCommand;
-import org.orienteer.core.component.meta.AbstractComplexModeMetaPanel;
-import org.orienteer.core.component.meta.AbstractModeMetaPanel;
 import org.orienteer.core.component.meta.OClassMetaPanel;
 import org.orienteer.core.component.property.BooleanEditPanel;
 import org.orienteer.core.component.property.BooleanViewPanel;
 import org.orienteer.core.component.property.DisplayMode;
 import org.orienteer.core.component.structuretable.OrienteerStructureTable;
-import org.orienteer.core.component.widget.oclass.OClassConfigurationWidget;
-import org.orienteer.core.component.widget.oclass.OClassHooksWidget;
-import org.orienteer.core.util.ODocumentChoiceRenderer;
 import org.orienteer.core.widget.AbstractModeAwareWidget;
 import org.orienteer.core.widget.Widget;
+import org.orienteer.telegram.OTelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,11 +29,8 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 
 import ru.ydn.wicket.wicketorientdb.OrientDbWebSession;
 import ru.ydn.wicket.wicketorientdb.components.TransactionlessForm;
-import ru.ydn.wicket.wicketorientdb.model.SimpleNamingModel;
-import ru.ydn.wicket.wicketorientdb.proto.OClassPrototyper;
 import ru.ydn.wicket.wicketorientdb.security.OSecurityHelper;
 import ru.ydn.wicket.wicketorientdb.security.OrientPermission;
-import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
 /**
  * @author Vitaliy Gonchar
@@ -106,6 +91,7 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 						db.commit();
 						if (value != null) {
 							entity.setCustom(critery, value.toString());
+							OTelegramBot.createClassCache();
 						}
 						db.commit();
 					}

@@ -28,6 +28,7 @@ import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;

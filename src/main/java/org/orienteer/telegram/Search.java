@@ -9,10 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Vitaliy Gonchar
@@ -34,6 +31,8 @@ public class Search {
     private final String searchWord;
     private final String className;
 
+    private final Set<OClass> CLASS_CACHE = OTelegramBot.getClassCache();
+
     public Search(String searchWord) {
         this.searchWord = searchWord;
         this.className = null;
@@ -41,7 +40,14 @@ public class Search {
 
     public Search(String searchWord, String className) {
         this.searchWord = searchWord;
-        this.className = className;
+        String value = null;
+        for (OClass oClass : CLASS_CACHE) {
+            if (className.equals(oClass.getName())) {
+                value = className;
+                break;
+            }
+        }
+        this.className = value;
     }
 
     public List<String> getResultOfSearch() {
@@ -55,13 +61,13 @@ public class Search {
         } else if (globalDocumentNamesSearch) {
             result = getResultOfSearchDocumentGlobal();
         } else if (globalClassSearch) {
-            result = getResultOfSearchInClassAllOptions();
+            result = className != null ? getResultOfSearchInClassAllOptions() : Arrays.asList(BotMessage.ERROR_MSG);
         } else if (classFieldNamesSearch) {
-            result = getResultOfSearchFieldNamesInClass();
+            result = className != null ? getResultOfSearchFieldNamesInClass() : Arrays.asList(BotMessage.ERROR_MSG);
         } else if (classFieldValuesSearch) {
-            result = getResultOfSearchFieldValuesInClass();
+            result = className != null ? getResultOfSearchFieldValuesInClass() : Arrays.asList(BotMessage.ERROR_MSG);
         } else if (classDocumentNamesSearch) {
-            result = getResultOfSearchDocumentsInClass();
+            result = className != null ? getResultOfSearchDocumentsInClass() : Arrays.asList(BotMessage.ERROR_MSG);
         }
         return result;
     }
@@ -105,9 +111,8 @@ public class Search {
                 List<String> fieldValuesList = new LinkedList<>();
                 List<String> documentNamesList = new LinkedList<>();
                 List<String> classesNamesList = new LinkedList<>();
-                Collection<OClass> oClasses = oDatabaseDocument.getMetadata().getSchema().getClasses();
-                classesNamesList.addAll(searchInClassNames(oClasses));
-                for (OClass oClass : oClasses) {
+                classesNamesList.addAll(searchInClassNames());
+                for (OClass oClass : CLASS_CACHE) {
                     ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
                     for (ODocument oDocument : oDocuments) {
                         fieldNamesList.addAll(searchInFieldNames(oDocument));
@@ -144,13 +149,12 @@ public class Search {
 
     /**
      * getResultOfSearch similar class names with word
-     * @param oClasses collection of classes where is getResultOfSearch
      * @return result list of getResultOfSearch
      */
-    private List<String> searchInClassNames(Collection<OClass> oClasses) {
+    private List<String> searchInClassNames() {
         List<String> resultList = new LinkedList<>();
         String searchClass;
-        for (OClass oClass : oClasses) {
+        for (OClass oClass : CLASS_CACHE) {
             if (isWordInLine(searchWord, oClass.getName())) {
                 searchClass = "-  class name: " + oClass.getName() + " "
                         + BotState.GO_TO_CLASS.command + oClass.getName() + "\n";
@@ -245,8 +249,7 @@ public class Search {
             @Override
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
                 List<String> fieldsList = new LinkedList<>();
-                Collection<OClass> oClasses = oDatabaseDocument.getMetadata().getSchema().getClasses();
-                for (OClass oClass : oClasses) {
+                for (OClass oClass : CLASS_CACHE) {
                     ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
                     for (ODocument oDocument : oDocuments) {
                        fieldsList.addAll(searchInFieldNames(oDocument));
@@ -267,8 +270,7 @@ public class Search {
             @Override
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
                 List<String> valuesList = new LinkedList<>();
-                Collection<OClass> oClasses = oDatabaseDocument.getMetadata().getSchema().getClasses();
-                for (OClass oClass : oClasses) {
+                for (OClass oClass : CLASS_CACHE) {
                     ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
                     for (ODocument oDocument : oDocuments) {
                         valuesList.addAll(searchInFieldValues(oDocument));
@@ -287,9 +289,8 @@ public class Search {
         return (List<String>) new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                Collection<OClass> classes = oDatabaseDocument.getMetadata().getSchema().getClasses();
                 List<String> docsList = new LinkedList<>();
-                for (OClass oClass : classes) {
+                for (OClass oClass : CLASS_CACHE) {
                     ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
                     for (ODocument oDocument: oDocuments) {
                         String doc = searchDocument(oDocument);
@@ -369,9 +370,6 @@ public class Search {
         return(List<String>) new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
-//                if (!oDatabaseDocument.getMetadata().getSchema().existsClass(className)) {
-//                    return BotMessage.SEARCH_RESULT_FAILED_MSG;
-//                }
                 List<String> docList = new LinkedList<>();
                 ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
                 for (ODocument oDocument : oDocuments) {
