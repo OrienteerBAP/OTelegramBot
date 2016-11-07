@@ -3,5 +3,4 @@ OTelegramModule.iml
 target/
 bin/
 .settings/
-.classpath
-.project
+Orienteer/
