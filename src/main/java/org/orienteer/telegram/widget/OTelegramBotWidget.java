@@ -15,6 +15,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.LoadableDetachableModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.util.string.Strings;
+import org.orienteer.core.CustomAttributes;
 import org.orienteer.core.component.FAIcon;
 import org.orienteer.core.component.FAIconType;
 import org.orienteer.core.component.ODocumentPageLink;
@@ -53,8 +54,10 @@ import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 	private static final long serialVersionUID = 1L;
 
+	private static final String SYSTEM_CUSTOM = "orienteer.bot.";
+
 	private static final Logger LOG = LoggerFactory.getLogger(OTelegramBotWidget.class);
-	
+
 	private OrienteerStructureTable<OClass, String> structureTable;
 
 	private List<String> propertiesList = new ArrayList<>();
@@ -62,12 +65,9 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 	public OTelegramBotWidget(String id, IModel<OClass> model, IModel<ODocument> widgetDocumentModel) {
 		super(id, model, widgetDocumentModel);
 		Form<OClass> form = new TransactionlessForm<OClass>("form");
-		test();
-		propertiesList.add("telegramSearch");
-		propertiesList.add("telegramSearchQuery");
+		propertiesList.add(SYSTEM_CUSTOM + "telegramSearch");
+		propertiesList.add(SYSTEM_CUSTOM + "telegramSearchQuery");
 
-		//modifySchema();
-		final OBotWidgetPopertiesClass pr = new OBotWidgetPopertiesClass("OClassTelegramState", getModel().getObject().getName());
 		structureTable = new OrienteerStructureTable<OClass, String>("attributes", model, propertiesList) {
 
 			@Override
@@ -75,10 +75,12 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 				return new OClassMetaPanel<Object>(id, getModeModel(), getModel(), rowModel) {
 					@Override
 					protected Object getValue(OClass entity, String critery) {
-						if (critery.equals(propertiesList.get(0))) {
-							return pr.isTelegramSearch();
-						} else return pr.getTelegramSearchQuery();
+						String custom = getEntityObject().getCustom(getPropertyObject());
+						LOG.debug("custom: " + custom);
 
+						if (getPropertyObject().equals(propertiesList.get(0))) {
+							return custom != null ? new Boolean(custom) : false;
+						} else return custom != null ? custom : "SELECT * FROM " + getEntityObject().getName() + " WHERE name=?";
 					}
 
 					@Override
@@ -100,14 +102,13 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 
 					@Override
 					protected void setValue(OClass entity, String critery, Object value) {
-						if (critery.equals(propertiesList.get(0))) {
-							pr.setTelegramSearch((Boolean) value);
-						} else if (critery.equals(propertiesList.get(1))) {
-							pr.setTelegramSearchQuery((String) value);
+						ODatabaseDocument db = OrientDbWebSession.get().getDatabase();
+						db.commit();
+						if (value != null) {
+							entity.setCustom(critery, value.toString());
 						}
+						db.commit();
 					}
-
-
 				};
 			}
 		};
@@ -118,110 +119,6 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 		add(form);
 	}
 
-	private class OBotWidgetPopertiesClass implements Serializable {
-		private boolean telegramSearch;
-		private String telegramSearchQuery;
-		private final String className;
-		private final String docName;
-		private static final long serialVersionUID = 2L;
-
-		public OBotWidgetPopertiesClass(final String className, final String docName) {
-			ODatabaseDocument db = OrientDbWebSession.get().getDatabase();
-			ORecordIteratorClass<ODocument> oDocuments = db.browseClass(className);
-			this.className = className;
-			this.docName = docName;
-			for (ODocument doc : oDocuments) {
-				if (doc.field("name").equals(docName)) {
-					telegramSearch = doc.field(propertiesList.get(0), OType.BOOLEAN);
-					telegramSearchQuery = doc.field(propertiesList.get(1), OType.STRING);
-				}
-			}
-		}
-
-		public boolean isTelegramSearch() {
-			return telegramSearch;
-		}
-
-		public String getTelegramSearchQuery() {
-			return telegramSearchQuery;
-		}
-
-		public void setTelegramSearch(boolean isTelegramSearch) {
-			telegramSearch = isTelegramSearch;
-			ODatabaseDocument db = OrientDbWebSession.get().getDatabase();
-			db.commit();
-			for (ODocument doc : db.browseClass(className)) {
-				if (doc.field("name").equals(docName)) {
-					doc.field(propertiesList.get(0), telegramSearch);
-					doc.save();
-					break;
-				}
-			}
-			db.commit();
-		}
-
-		public void setTelegramSearchQuery(String telegramSearchQuery) {
-			this.telegramSearchQuery = telegramSearchQuery;
-			ODatabaseDocument db = OrientDbWebSession.get().getDatabase();
-			db.commit();
-			for (ODocument doc : db.browseClass(className)) {
-				if (doc.field("name").equals(docName)) {
-					doc.field(propertiesList.get(1), telegramSearchQuery);
-					doc.save();
-					break;
-				}
-			}
-			db.commit();
-		}
-
-	}
-
-	void modifySchema() {
-		final String classNameParent = "OClassTelegramState";
-		ODatabaseDocument db = OrientDbWebSession.get().getDatabase();
-		OSchema schema = db.getMetadata().getSchema();
-		db.commit();
-		if (schema.existsClass(classNameParent)) schema.dropClass(classNameParent);
-		if (!schema.existsClass(classNameParent)) {
-			OClass oClass = schema.createClass(classNameParent);
-			oClass.createProperty("name", OType.STRING);
-			oClass.createProperty("telegramSearch", OType.BOOLEAN);
-			oClass.createProperty("telegramSearchQuery", OType.STRING);
-			Collection<OClass> classes = schema.getClasses();
-			List<String> classNames = new ArrayList<>();
-			for (OClass oClass1 : classes) {
-				classNames.add(oClass1.getName());
-			}
-			Collections.sort(classNames);
-			for (String className : classNames) {
-				ODocument oDocument = new ODocument();
-				oDocument.field("name", className);
-				oDocument.field("telegramSearch", true);
-				oDocument.field("telegramSearchQuery", "query123");
-				oDocument.setClassName(classNameParent);
-				oDocument.save();
-				db.commit();
-			}
-		}
-		db.commit();
-	}
-
-	private void test() {
-		new DBClosure() {
-			@Override
-			protected Object execute(ODatabaseDocument db) {
-				OSchema schema = db.getMetadata().getSchema();
-
-				List<OGlobalProperty> globalProperties = schema.getGlobalProperties();
-				for (OGlobalProperty pr : globalProperties) {
-					LOG.info("global property - name: " + pr.getName() + " type: " + pr.getType() + " id: " + pr.getId());
-				}
-
-				return null;
-			}
-		}.execute();
-	}
-
     @Override
     protected FAIcon newIcon(String id) {
         return new FAIcon(id, FAIconType.list);
@@ -229,7 +126,7 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 
     @Override
     protected IModel<String> getDefaultTitleModel() {
-        return Model.of("Telegram shared documents");
+        return Model.of("Telegram enable");
     }
     
     @Override
