@@ -43,7 +43,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
             protected Object execute(ODatabaseDocument db) {
                 Map<String, OClass> classCache = new HashMap<>();
                 for (OClass oClass : db.getMetadata().getSchema().getClasses()) {
-                    String stringValue = oClass.getCustom("orienteer.bot.telegramSearch");
+                    String stringValue = oClass.getCustom("orienteer.telegramSearch");
                     if (stringValue != null && new Boolean(stringValue)) {
                         classCache.put(oClass.getName(), oClass);
                     }
@@ -286,8 +286,21 @@ public class OTelegramBot extends TelegramLongPollingBot {
                     return BotMessage.SEARCH_FAILED_CLASS_BY_NAME;
                 }
                 OClass oClass = classCache.get(className);
-                builder.append("Name: ");
+                builder.append("<strong>Name: </strong>");
                 builder.append(oClass.getName());
+                builder.append("\n");
+                builder.append("<strong>Super classes: </strong>");
+                List<String> superClasses = new ArrayList<>();
+                for (OClass oClass1 : oClass.getSuperClasses()) {
+                    if (classCache.containsKey(oClass.getName())) {
+                        superClasses.add("/" + oClass1.getName() + " ");
+                    }
+                }
+                if (superClasses.size() > 0) {
+                    for (String str : superClasses) {
+                        builder.append(str);
+                    }
+                } else builder.append("without superclasses");
                 builder.append("\n");
                 Collection<OProperty> properties = oClass.properties();
                 List<String> resultList = new ArrayList<>();

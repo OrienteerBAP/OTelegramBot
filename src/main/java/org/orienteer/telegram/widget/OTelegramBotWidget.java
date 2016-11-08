@@ -9,6 +9,7 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.*;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.component.FAIcon;
 import org.orienteer.core.component.FAIconType;
 import org.orienteer.core.component.command.EditSchemaCommand;
@@ -39,7 +40,7 @@ import ru.ydn.wicket.wicketorientdb.security.OrientPermission;
 public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 	private static final long serialVersionUID = 1L;
 
-	private static final String SYSTEM_CUSTOM = "orienteer.bot.";
+	private static final String SYSTEM_CUSTOM = "orienteer.";
 
 	private static final Logger LOG = LoggerFactory.getLogger(OTelegramBotWidget.class);
 
@@ -52,7 +53,7 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 		Form<OClass> form = new TransactionlessForm<OClass>("form");
 		propertiesList.add(SYSTEM_CUSTOM + "telegramSearch");
 		propertiesList.add(SYSTEM_CUSTOM + "telegramSearchQuery");
-
+		modifyCustomAttributes();
 		structureTable = new OrienteerStructureTable<OClass, String>("attributes", model, propertiesList) {
 
 			@Override
@@ -60,12 +61,9 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 				return new OClassMetaPanel<Object>(id, getModeModel(), getModel(), rowModel) {
 					@Override
 					protected Object getValue(OClass entity, String critery) {
-						String custom = getEntityObject().getCustom(getPropertyObject());
-						LOG.debug("custom: " + custom);
-
-						if (getPropertyObject().equals(propertiesList.get(0))) {
-							return custom != null ? new Boolean(custom) : false;
-						} else return custom != null ? custom : "SELECT * FROM " + getEntityObject().getName() + " WHERE name=?";
+						CustomAttribute customAttribute = CustomAttribute.get(critery);
+						LOG.debug("customAttribute = " + customAttribute);
+						return customAttribute.getValue(entity);
 					}
 
 					@Override
@@ -87,13 +85,9 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 
 					@Override
 					protected void setValue(OClass entity, String critery, Object value) {
-						ODatabaseDocument db = OrientDbWebSession.get().getDatabase();
-						db.commit();
-						if (value != null) {
-							entity.setCustom(critery, value.toString());
-							OTelegramBot.createClassCache();
-						}
-						db.commit();
+						CustomAttribute customAttribute = CustomAttribute.get(critery);
+						customAttribute.setValue(entity, value);
+						OTelegramBot.createClassCache();
 					}
 				};
 			}
@@ -103,6 +97,13 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 		structureTable.addCommand(new SaveSchemaCommand<OClass>(structureTable, getModeModel()));
 		form.add(structureTable);
 		add(form);
+	}
+
+	private void modifyCustomAttributes() {
+		if (CustomAttribute.getIfExists(propertiesList.get(0)) == null) {
+			CustomAttribute.create(propertiesList.get(0), OType.BOOLEAN, false, false);
+			CustomAttribute.create(propertiesList.get(1), OType.STRING, "SELECT * FROM " + getModel().getObject().getName() + " WHERE name=?", true);
+		}
 	}
 
     @Override
