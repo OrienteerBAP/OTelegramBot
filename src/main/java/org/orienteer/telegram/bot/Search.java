@@ -1,4 +1,4 @@
-package org.orienteer.telegram;
+package org.orienteer.telegram.bot;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;

@@ -1,6 +1,7 @@
 package org.orienteer.telegram;
 
 import org.orienteer.core.OrienteerWebApplication;
+import org.orienteer.telegram.module.OTelegramModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

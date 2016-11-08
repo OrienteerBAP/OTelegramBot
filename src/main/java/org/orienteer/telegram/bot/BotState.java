@@ -1,4 +1,4 @@
-package org.orienteer.telegram;
+package org.orienteer.telegram.bot;
 
 /**
  * @author Vitaliy Gonchar

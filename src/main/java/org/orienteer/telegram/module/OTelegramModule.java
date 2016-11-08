@@ -1,16 +1,6 @@
-package org.orienteer.telegram;
+package org.orienteer.telegram.module;
 
-import com.orientechnologies.orient.core.id.ORID;
-import com.orientechnologies.orient.core.id.ORecordId;
-import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.metadata.schema.OSchema;
-import com.orientechnologies.orient.core.metadata.schema.clusterselection.OClusterSelectionFactory;
-import com.orientechnologies.orient.core.record.ORecord;
-import com.orientechnologies.orient.core.record.ORecordFactoryManager;
-import com.orientechnologies.orient.core.schedule.OSchedulerListener;
-import com.sun.org.omg.CORBA.RepositoryIdHelper;
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.module.AbstractOrienteerModule;
 import org.orienteer.core.util.OSchemaHelper;
@@ -18,18 +8,13 @@ import org.orienteer.core.util.OSchemaHelper;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.metadata.schema.OType;
+import org.orienteer.telegram.bot.OTelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.logging.BotLogger;
-import org.telegram.telegrambots.logging.BotsFileHandler;
-import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 
@@ -97,9 +82,9 @@ public class OTelegramModule extends AbstractOrienteerModule{
     }
 
     public class BotConfig {
-        final String USERNAME;
-        final String TOKEN;
-		final long USER_SESSION;
+        public final String USERNAME;
+        public final String TOKEN;
+		public final long USER_SESSION;
 
         BotConfig(String username, String token, long userSession) {
             USERNAME = username;

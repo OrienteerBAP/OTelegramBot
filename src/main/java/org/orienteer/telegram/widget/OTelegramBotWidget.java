@@ -20,7 +20,7 @@ import org.orienteer.core.component.property.DisplayMode;
 import org.orienteer.core.component.structuretable.OrienteerStructureTable;
 import org.orienteer.core.widget.AbstractModeAwareWidget;
 import org.orienteer.core.widget.Widget;
-import org.orienteer.telegram.OTelegramBot;
+import org.orienteer.telegram.bot.OTelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

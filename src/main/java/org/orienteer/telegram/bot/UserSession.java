@@ -1,4 +1,4 @@
-package org.orienteer.telegram;
+package org.orienteer.telegram.bot;
 
 import java.util.List;
 import java.util.ListIterator;
