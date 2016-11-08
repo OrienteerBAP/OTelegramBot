@@ -35,17 +35,17 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private final OTelegramModule.BotConfig BOT_CONFIG;
     private final LoadingCache<Integer, UserSession> SESSIONS;
 
-    private static Set<OClass> classCache;
+    private static Map<String, OClass> classCache;
 
     public static void createClassCache() {
-        classCache = (Set<OClass>) new DBClosure() {
+        classCache = (Map<String, OClass>) new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument db) {
-                Set<OClass> classCache = new HashSet<>();
+                Map<String, OClass> classCache = new HashMap<>();
                 for (OClass oClass : db.getMetadata().getSchema().getClasses()) {
                     String stringValue = oClass.getCustom("orienteer.bot.telegramSearch");
                     if (stringValue != null && new Boolean(stringValue)) {
-                        classCache.add(oClass);
+                        classCache.put(oClass.getName(), oClass);
                     }
                 }
                 return classCache;
@@ -54,7 +54,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
         LOG.debug("Class cache size: " + classCache.size());
     }
 
-    public static Set<OClass> getClassCache() {
+    public static Map<String, OClass> getClassCache() {
         return classCache;
     }
 
@@ -282,10 +282,10 @@ public class OTelegramBot extends TelegramLongPollingBot {
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
                 StringBuilder builder = new StringBuilder(
                         String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.CLASS_DESCRIPTION_MSG) + "\n\n");
-                if (!classCache.contains(className)) {
+                if (!classCache.containsKey(className)) {
                     return BotMessage.SEARCH_FAILED_CLASS_BY_NAME;
                 }
-                OClass oClass = oDatabaseDocument.getMetadata().getSchema().getClass(className);
+                OClass oClass = classCache.get(className);
                 builder.append("Name: ");
                 builder.append(oClass.getName());
                 builder.append("\n");
@@ -341,7 +341,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
         sendMessage.enableMarkdown(true);
         sendMessage.setText(BotMessage.CLASS_MENU_MSG);
         List<String> buttonNames = new ArrayList<>();
-        for (OClass oClass: classCache) {
+        for (OClass oClass: classCache.values()) {
             buttonNames.add(BotMessage.CLASS_BUT + oClass.getName());
         }
         Collections.sort(buttonNames);

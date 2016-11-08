@@ -31,7 +31,7 @@ public class Search {
     private final String searchWord;
     private final String className;
 
-    private final Set<OClass> CLASS_CACHE = OTelegramBot.getClassCache();
+    private final Map<String, OClass> CLASS_CACHE = OTelegramBot.getClassCache();
 
     public Search(String searchWord) {
         this.searchWord = searchWord;
@@ -40,14 +40,7 @@ public class Search {
 
     public Search(String searchWord, String className) {
         this.searchWord = searchWord;
-        String value = null;
-        for (OClass oClass : CLASS_CACHE) {
-            if (className.equals(oClass.getName())) {
-                value = className;
-                break;
-            }
-        }
-        this.className = value;
+        this.className = CLASS_CACHE.containsKey(className) ? className : null;
     }
 
     public List<String> getResultOfSearch() {
@@ -112,7 +105,7 @@ public class Search {
                 List<String> documentNamesList = new LinkedList<>();
                 List<String> classesNamesList = new LinkedList<>();
                 classesNamesList.addAll(searchInClassNames());
-                for (OClass oClass : CLASS_CACHE) {
+                for (OClass oClass : CLASS_CACHE.values()) {
                     ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
                     for (ODocument oDocument : oDocuments) {
                         fieldNamesList.addAll(searchInFieldNames(oDocument));
@@ -154,7 +147,7 @@ public class Search {
     private List<String> searchInClassNames() {
         List<String> resultList = new LinkedList<>();
         String searchClass;
-        for (OClass oClass : CLASS_CACHE) {
+        for (OClass oClass : CLASS_CACHE.values()) {
             if (isWordInLine(searchWord, oClass.getName())) {
                 searchClass = "-  class name: " + oClass.getName() + " "
                         + BotState.GO_TO_CLASS.command + oClass.getName() + "\n";
@@ -249,7 +242,7 @@ public class Search {
             @Override
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
                 List<String> fieldsList = new LinkedList<>();
-                for (OClass oClass : CLASS_CACHE) {
+                for (OClass oClass : CLASS_CACHE.values()) {
                     ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
                     for (ODocument oDocument : oDocuments) {
                        fieldsList.addAll(searchInFieldNames(oDocument));
@@ -270,7 +263,7 @@ public class Search {
             @Override
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
                 List<String> valuesList = new LinkedList<>();
-                for (OClass oClass : CLASS_CACHE) {
+                for (OClass oClass : CLASS_CACHE.values()) {
                     ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
                     for (ODocument oDocument : oDocuments) {
                         valuesList.addAll(searchInFieldValues(oDocument));
@@ -290,7 +283,7 @@ public class Search {
             @Override
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
                 List<String> docsList = new LinkedList<>();
-                for (OClass oClass : CLASS_CACHE) {
+                for (OClass oClass : CLASS_CACHE.values()) {
                     ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
                     for (ODocument oDocument: oDocuments) {
                         String doc = searchDocument(oDocument);
