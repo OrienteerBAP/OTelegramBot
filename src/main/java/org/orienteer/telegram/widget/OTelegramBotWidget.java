@@ -102,7 +102,7 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 	private void modifyCustomAttributes() {
 		if (CustomAttribute.getIfExists(propertiesList.get(0)) == null) {
 			CustomAttribute.create(propertiesList.get(0), OType.BOOLEAN, false, false);
-			CustomAttribute.create(propertiesList.get(1), OType.STRING, "SELECT * FROM " + getModel().getObject().getName() + " WHERE name=?", true);
+			CustomAttribute.create(propertiesList.get(1), OType.STRING, "SELECT FROM " + getModel().getObject().getName(), true);
 		}
 	}
 
