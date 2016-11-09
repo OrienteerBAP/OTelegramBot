@@ -45,10 +45,11 @@ public class OTelegramBot extends TelegramLongPollingBot {
             @Override
             protected Object execute(ODatabaseDocument db) {
                 Map<String, OClass> classCache = new HashMap<>();
+                CustomAttribute customAttribute = CustomAttribute.get(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH);
                 for (OClass oClass : db.getMetadata().getSchema().getClasses()) {
-                    String custom = oClass.getCustom(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH);
-                    LOG.debug("custom: " + custom);
-                    if (custom != null && new Boolean(custom)) {
+//                    String custom = oClass.getCustom(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH);
+//                    LOG.debug("custom: " + custom);
+                    if (customAttribute.getValue(oClass)) {
                         classCache.put(oClass.getName(), oClass);
                     }
                 }
