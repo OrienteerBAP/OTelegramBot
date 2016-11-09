@@ -11,6 +11,9 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import org.glassfish.jersey.internal.inject.Custom;
+import org.orienteer.core.CustomAttribute;
+import org.orienteer.telegram.CustomConstants;
 import org.orienteer.telegram.module.OTelegramModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,27 +38,38 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private final OTelegramModule.BotConfig BOT_CONFIG;
     private final LoadingCache<Integer, UserSession> SESSIONS;
 
-    private static Map<String, OClass> classCache;
+    private static Map<String, OClass> CLASS_CACHE;
+    private static Map<String, String> QUERY_CACHE;
 
     public static void createClassCache() {
-        classCache = (Map<String, OClass>) new DBClosure() {
+        CLASS_CACHE = (Map<String, OClass>) new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument db) {
                 Map<String, OClass> classCache = new HashMap<>();
                 for (OClass oClass : db.getMetadata().getSchema().getClasses()) {
-                    String stringValue = oClass.getCustom("orienteer.telegramSearch");
-                    if (stringValue != null && new Boolean(stringValue)) {
+                    String custom = oClass.getCustom(CustomConstants.CUSTOM_TELEGRAM_SEARCH);
+                    LOG.debug("custom: " + custom);
+                    if (custom != null && new Boolean(custom)) {
                         classCache.put(oClass.getName(), oClass);
                     }
                 }
                 return classCache;
             }
         }.execute();
-        LOG.debug("Class cache size: " + classCache.size());
+        createQueryCache();
+        LOG.debug("Class cache size: " + CLASS_CACHE.size());
+    }
+
+    public static void createQueryCache() {
+        QUERY_CACHE = new HashMap<>();
+        if (CLASS_CACHE == null) createClassCache();
+        for (OClass oClass : CLASS_CACHE.values()) {
+            QUERY_CACHE.put(oClass.getName(), oClass.getCustom(CustomConstants.CUSTOM_TELEGRAM_SEARCH_QUERY));
+        }
     }
 
     public static Map<String, OClass> getClassCache() {
-        return classCache;
+        return CLASS_CACHE;
     }
 
     private OTelegramBot(OTelegramModule.BotConfig botConfig, LoadingCache<Integer, UserSession> sessions) {
@@ -282,17 +296,17 @@ public class OTelegramBot extends TelegramLongPollingBot {
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
                 StringBuilder builder = new StringBuilder(
                         String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.CLASS_DESCRIPTION_MSG) + "\n\n");
-                if (!classCache.containsKey(className)) {
+                if (!CLASS_CACHE.containsKey(className)) {
                     return BotMessage.SEARCH_FAILED_CLASS_BY_NAME;
                 }
-                OClass oClass = classCache.get(className);
+                OClass oClass = CLASS_CACHE.get(className);
                 builder.append("<strong>Name: </strong>");
                 builder.append(oClass.getName());
                 builder.append("\n");
                 builder.append("<strong>Super classes: </strong>");
                 List<String> superClasses = new ArrayList<>();
                 for (OClass oClass1 : oClass.getSuperClasses()) {
-                    if (classCache.containsKey(oClass.getName())) {
+                    if (CLASS_CACHE.containsKey(oClass.getName())) {
                         superClasses.add("/" + oClass1.getName() + " ");
                     }
                 }
@@ -354,7 +368,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
         sendMessage.enableMarkdown(true);
         sendMessage.setText(BotMessage.CLASS_MENU_MSG);
         List<String> buttonNames = new ArrayList<>();
-        for (OClass oClass: classCache.values()) {
+        for (OClass oClass: CLASS_CACHE.values()) {
             buttonNames.add(BotMessage.CLASS_BUT + oClass.getName());
         }
         Collections.sort(buttonNames);

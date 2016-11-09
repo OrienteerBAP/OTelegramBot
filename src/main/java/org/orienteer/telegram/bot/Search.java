@@ -32,6 +32,7 @@ public class Search {
     private final String className;
 
     private final Map<String, OClass> CLASS_CACHE = OTelegramBot.getClassCache();
+    private final Map<String, String> SEARCH_QUERY_CACHE = new HashMap<>();
 
     public Search(String searchWord) {
         this.searchWord = searchWord;

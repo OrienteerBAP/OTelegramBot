@@ -21,17 +21,18 @@ import org.orienteer.core.component.property.DisplayMode;
 import org.orienteer.core.component.structuretable.OrienteerStructureTable;
 import org.orienteer.core.widget.AbstractModeAwareWidget;
 import org.orienteer.core.widget.Widget;
+import org.orienteer.telegram.CustomConstants;
 import org.orienteer.telegram.bot.OTelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 
-import ru.ydn.wicket.wicketorientdb.OrientDbWebSession;
 import ru.ydn.wicket.wicketorientdb.components.TransactionlessForm;
 import ru.ydn.wicket.wicketorientdb.security.OSecurityHelper;
 import ru.ydn.wicket.wicketorientdb.security.OrientPermission;
+
+
 
 /**
  * @author Vitaliy Gonchar
@@ -40,7 +41,6 @@ import ru.ydn.wicket.wicketorientdb.security.OrientPermission;
 public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 	private static final long serialVersionUID = 1L;
 
-	private static final String SYSTEM_CUSTOM = "orienteer.";
 
 	private static final Logger LOG = LoggerFactory.getLogger(OTelegramBotWidget.class);
 
@@ -51,8 +51,8 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 	public OTelegramBotWidget(String id, IModel<OClass> model, IModel<ODocument> widgetDocumentModel) {
 		super(id, model, widgetDocumentModel);
 		Form<OClass> form = new TransactionlessForm<OClass>("form");
-		propertiesList.add(SYSTEM_CUSTOM + "telegramSearch");
-		propertiesList.add(SYSTEM_CUSTOM + "telegramSearchQuery");
+		propertiesList.add(CustomConstants.CUSTOM_TELEGRAM_SEARCH);
+		propertiesList.add(CustomConstants.CUSTOM_TELEGRAM_SEARCH_QUERY);
 		modifyCustomAttributes();
 		structureTable = new OrienteerStructureTable<OClass, String>("attributes", model, propertiesList) {
 
@@ -62,7 +62,7 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 					@Override
 					protected Object getValue(OClass entity, String critery) {
 						CustomAttribute customAttribute = CustomAttribute.get(critery);
-						LOG.debug("customAttribute = " + customAttribute);
+						LOG.debug("customAttribute = " + customAttribute.getName());
 						return customAttribute.getValue(entity);
 					}
 
