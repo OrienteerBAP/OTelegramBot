@@ -11,9 +11,8 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import org.glassfish.jersey.internal.inject.Custom;
 import org.orienteer.core.CustomAttribute;
-import org.orienteer.telegram.CustomConstants;
+import org.orienteer.telegram.CustomConfiguration;
 import org.orienteer.telegram.module.OTelegramModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +46,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
             protected Object execute(ODatabaseDocument db) {
                 Map<String, OClass> classCache = new HashMap<>();
                 for (OClass oClass : db.getMetadata().getSchema().getClasses()) {
-                    String custom = oClass.getCustom(CustomConstants.CUSTOM_TELEGRAM_SEARCH);
+                    String custom = oClass.getCustom(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH);
                     LOG.debug("custom: " + custom);
                     if (custom != null && new Boolean(custom)) {
                         classCache.put(oClass.getName(), oClass);
@@ -63,9 +62,14 @@ public class OTelegramBot extends TelegramLongPollingBot {
     public static void createQueryCache() {
         QUERY_CACHE = new HashMap<>();
         if (CLASS_CACHE == null) createClassCache();
+        CustomAttribute customAttribute = CustomAttribute.get(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH_QUERY);
         for (OClass oClass : CLASS_CACHE.values()) {
-            QUERY_CACHE.put(oClass.getName(), oClass.getCustom(CustomConstants.CUSTOM_TELEGRAM_SEARCH_QUERY));
+            QUERY_CACHE.put(oClass.getName(), (String) customAttribute.getValue(oClass));
         }
+    }
+
+    public static Map<String, String> getQueryCache() {
+        return QUERY_CACHE;
     }
 
     public static Map<String, OClass> getClassCache() {
@@ -304,14 +308,14 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 builder.append(oClass.getName());
                 builder.append("\n");
                 builder.append("<strong>Super classes: </strong>");
-                List<String> superClasses = new ArrayList<>();
-                for (OClass oClass1 : oClass.getSuperClasses()) {
-                    if (CLASS_CACHE.containsKey(oClass.getName())) {
-                        superClasses.add("/" + oClass1.getName() + " ");
+                List<String> superClassNames = new ArrayList<>();
+                for (OClass superClass : oClass.getSuperClasses()) {
+                    if (CLASS_CACHE.containsKey(superClass.getName())) {
+                        superClassNames.add("/" + superClass.getName() + " ");
                     }
                 }
-                if (superClasses.size() > 0) {
-                    for (String str : superClasses) {
+                if (superClassNames.size() > 0) {
+                    for (String str : superClassNames) {
                         builder.append(str);
                     }
                 } else builder.append("without superclasses");

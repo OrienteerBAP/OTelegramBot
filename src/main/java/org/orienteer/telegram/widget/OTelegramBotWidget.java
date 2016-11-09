@@ -21,7 +21,7 @@ import org.orienteer.core.component.property.DisplayMode;
 import org.orienteer.core.component.structuretable.OrienteerStructureTable;
 import org.orienteer.core.widget.AbstractModeAwareWidget;
 import org.orienteer.core.widget.Widget;
-import org.orienteer.telegram.CustomConstants;
+import org.orienteer.telegram.CustomConfiguration;
 import org.orienteer.telegram.bot.OTelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,8 +40,6 @@ import ru.ydn.wicket.wicketorientdb.security.OrientPermission;
 @Widget(domain="class", tab="telegram", id="telegram-list", autoEnable=true)
 public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 	private static final long serialVersionUID = 1L;
-
-
 	private static final Logger LOG = LoggerFactory.getLogger(OTelegramBotWidget.class);
 
 	private OrienteerStructureTable<OClass, String> structureTable;
@@ -51,9 +49,8 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 	public OTelegramBotWidget(String id, IModel<OClass> model, IModel<ODocument> widgetDocumentModel) {
 		super(id, model, widgetDocumentModel);
 		Form<OClass> form = new TransactionlessForm<OClass>("form");
-		propertiesList.add(CustomConstants.CUSTOM_TELEGRAM_SEARCH);
-		propertiesList.add(CustomConstants.CUSTOM_TELEGRAM_SEARCH_QUERY);
-		modifyCustomAttributes();
+		propertiesList.add(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH);
+		propertiesList.add(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH_QUERY);
 		structureTable = new OrienteerStructureTable<OClass, String>("attributes", model, propertiesList) {
 
 			@Override
@@ -62,7 +59,7 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 					@Override
 					protected Object getValue(OClass entity, String critery) {
 						CustomAttribute customAttribute = CustomAttribute.get(critery);
-						LOG.debug("customAttribute = " + customAttribute.getName());
+						LOG.debug("customAttribute = " + customAttribute.getName() + " default value: " + customAttribute.getDefaultValue());
 						return customAttribute.getValue(entity);
 					}
 
@@ -97,13 +94,6 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 		structureTable.addCommand(new SaveSchemaCommand<OClass>(structureTable, getModeModel()));
 		form.add(structureTable);
 		add(form);
-	}
-
-	private void modifyCustomAttributes() {
-		if (CustomAttribute.getIfExists(propertiesList.get(0)) == null) {
-			CustomAttribute.create(propertiesList.get(0), OType.BOOLEAN, false, false);
-			CustomAttribute.create(propertiesList.get(1), OType.STRING, "SELECT FROM " + getModel().getObject().getName(), true);
-		}
 	}
 
     @Override

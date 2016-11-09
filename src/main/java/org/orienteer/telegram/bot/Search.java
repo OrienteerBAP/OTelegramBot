@@ -1,10 +1,12 @@
 package org.orienteer.telegram.bot;
 
+import com.google.common.base.Strings;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
@@ -32,7 +34,7 @@ public class Search {
     private final String className;
 
     private final Map<String, OClass> CLASS_CACHE = OTelegramBot.getClassCache();
-    private final Map<String, String> SEARCH_QUERY_CACHE = new HashMap<>();
+    private final Map<String, String> QUERY_CACHE = OTelegramBot.getQueryCache();
 
     public Search(String searchWord) {
         this.searchWord = searchWord;
@@ -100,14 +102,20 @@ public class Search {
     private List<String> getResultOfGlobalSearch() {
         return (List<String>) new DBClosure() {
             @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+            protected Object execute(ODatabaseDocument db) {
                 List<String> fieldNamesList = new LinkedList<>();
                 List<String> fieldValuesList = new LinkedList<>();
                 List<String> documentNamesList = new LinkedList<>();
                 List<String> classesNamesList = new LinkedList<>();
                 classesNamesList.addAll(searchInClassNames());
                 for (OClass oClass : CLASS_CACHE.values()) {
-                    ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
+                    Iterable<ODocument>  oDocuments;
+                    if (Strings.isNullOrEmpty(QUERY_CACHE.get(oClass.getName()))) {
+                        oDocuments = db.browseClass(oClass.getName());
+                    } else {
+                        OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(oClass.getName()));
+                        oDocuments = (Iterable<ODocument>) (query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
+                    }
                     for (ODocument oDocument : oDocuments) {
                         fieldNamesList.addAll(searchInFieldNames(oDocument));
                         fieldValuesList.addAll(searchInFieldValues(oDocument));
@@ -241,10 +249,16 @@ public class Search {
     private List<String> getResultOfFieldNamesSearch() {
         return (List<String>) new DBClosure() {
             @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+            protected Object execute(ODatabaseDocument db) {
                 List<String> fieldsList = new LinkedList<>();
                 for (OClass oClass : CLASS_CACHE.values()) {
-                    ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
+                    Iterable<ODocument> oDocuments;
+                    if (Strings.isNullOrEmpty(QUERY_CACHE.get(oClass.getName()))) {
+                        oDocuments = (Iterable<ODocument>) db.browseClass(oClass.getName());
+                    } else {
+                        OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(oClass.getName()));
+                        oDocuments = (Iterable<ODocument>)(query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
+                    }
                     for (ODocument oDocument : oDocuments) {
                        fieldsList.addAll(searchInFieldNames(oDocument));
                     }
@@ -262,10 +276,16 @@ public class Search {
     private List<String> getResultOfFieldValuesSearch() {
         return (List<String>) new DBClosure() {
             @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+            protected Object execute(ODatabaseDocument db) {
                 List<String> valuesList = new LinkedList<>();
                 for (OClass oClass : CLASS_CACHE.values()) {
-                    ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
+                    Iterable<ODocument> oDocuments;
+                    if (Strings.isNullOrEmpty(QUERY_CACHE.get(oClass.getName()))) {
+                        oDocuments = db.browseClass(oClass.getName());
+                    } else {
+                        OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(oClass.getName()));
+                        oDocuments = (Iterable<ODocument>)(query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
+                    }
                     for (ODocument oDocument : oDocuments) {
                         valuesList.addAll(searchInFieldValues(oDocument));
                     }
@@ -282,10 +302,16 @@ public class Search {
     private List<String> getResultOfSearchDocumentGlobal() {
         return (List<String>) new DBClosure() {
             @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+            protected Object execute(ODatabaseDocument db) {
                 List<String> docsList = new LinkedList<>();
                 for (OClass oClass : CLASS_CACHE.values()) {
-                    ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
+                    Iterable<ODocument> oDocuments;
+                    if (Strings.isNullOrEmpty(QUERY_CACHE.get(oClass.getName()))) {
+                        oDocuments = db.browseClass(oClass.getName());
+                    } else {
+                        OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(oClass.getName()));
+                        oDocuments = (Iterable<ODocument>)(query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
+                    }
                     for (ODocument oDocument: oDocuments) {
                         String doc = searchDocument(oDocument);
                         if (doc != null) docsList.add(doc);
@@ -304,11 +330,17 @@ public class Search {
     private List<String> getResultOfSearchInClassAllOptions() {
         return (List<String>) new DBClosure() {
             @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+            protected Object execute(ODatabaseDocument db) {
                 List<String> fieldNamesList = new LinkedList<>();
                 List<String> fieldValuesList = new LinkedList<>();
                 List<String> docNamesList = new LinkedList<>();
-                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
+                Iterable<ODocument> oDocuments;
+                if (Strings.isNullOrEmpty(QUERY_CACHE.get(className))) {
+                    oDocuments = (Iterable<ODocument>) db.browseClass(className);
+                } else {
+                    OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(className));
+                    oDocuments = (Iterable<ODocument>)(query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
+                }
                 for (ODocument oDocument : oDocuments) {
                     fieldNamesList.addAll(searchInFieldNames(oDocument));
                     fieldValuesList.addAll(searchInFieldValues(oDocument));
