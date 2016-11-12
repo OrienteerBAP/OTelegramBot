@@ -16,16 +16,7 @@ import java.util.*;
 /**
  * @author Vitaliy Gonchar
  */
-public class Search {
-    private static final Logger LOG = LoggerFactory.getLogger(Search.class);
-    private boolean globalFieldNamesSearch;
-    private boolean globalFieldValuesSearch;
-    private boolean globalDocumentNamesSearch;
-
-    private boolean classFieldNamesSearch;
-    private boolean classFieldValuesSearch;
-    private boolean classDocumentNamesSearch;
-
+class Search {
     private boolean globalSearch;
     private boolean globalClassSearch;
 
@@ -50,27 +41,15 @@ public class Search {
         List<String> result = null;
         if (globalSearch) {
             result = getResultOfGlobalSearch();
-        } else if (globalFieldNamesSearch) {
-            result = getResultOfFieldNamesSearch();
-        } else if (globalFieldValuesSearch) {
-            result = getResultOfFieldValuesSearch();
-        } else if (globalDocumentNamesSearch) {
-            result = getResultOfSearchDocumentGlobal();
         } else if (globalClassSearch) {
             result = className != null ? getResultOfSearchInClassAllOptions() : Arrays.asList(BotMessage.ERROR_MSG);
-        } else if (classFieldNamesSearch) {
-            result = className != null ? getResultOfSearchFieldNamesInClass() : Arrays.asList(BotMessage.ERROR_MSG);
-        } else if (classFieldValuesSearch) {
-            result = className != null ? getResultOfSearchFieldValuesInClass() : Arrays.asList(BotMessage.ERROR_MSG);
-        } else if (classDocumentNamesSearch) {
-            result = className != null ? getResultOfSearchDocumentsInClass() : Arrays.asList(BotMessage.ERROR_MSG);
         }
         return result;
     }
 
     private List<String> getResultListOfSearch(List<String> fields, List<String> values,
                                                List<String> docs, List<String> classes) {
-        List<String> resultList = new LinkedList<>();
+        List<String> resultList = new ArrayList<>();
         if (fields == null) fields = new ArrayList<>();
         if (values == null) values = new ArrayList<>();
         if (docs == null) docs = new ArrayList<>();
@@ -103,10 +82,10 @@ public class Search {
         return (List<String>) new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument db) {
-                List<String> fieldNamesList = new LinkedList<>();
-                List<String> fieldValuesList = new LinkedList<>();
-                List<String> documentNamesList = new LinkedList<>();
-                List<String> classesNamesList = new LinkedList<>();
+                List<String> fieldNamesList = new ArrayList<>();
+                List<String> fieldValuesList = new ArrayList<>();
+                List<String> documentNamesList = new ArrayList<>();
+                List<String> classesNamesList = new ArrayList<>();
                 classesNamesList.addAll(searchInClassNames());
                 for (OClass oClass : CLASS_CACHE.values()) {
                     OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(oClass.getName()));
@@ -126,7 +105,7 @@ public class Search {
 
 
     private List<String> splitBigResult(List<String> bigResult, String info, int counter) {
-        List<String> resultList = new LinkedList<>();
+        List<String> resultList = new ArrayList<>();
         String head = BotMessage.SEARCH_RESULT_SUCCESS_MSG;
         StringBuilder builder = new StringBuilder();
         builder.append(head);
@@ -150,7 +129,7 @@ public class Search {
      * @return result list of getResultOfSearch
      */
     private List<String> searchInClassNames() {
-        List<String> resultList = new LinkedList<>();
+        List<String> resultList = new ArrayList<>();
         String searchClass;
         for (OClass oClass : CLASS_CACHE.values()) {
             if (isWordInLine(searchWord, oClass.getName())) {
@@ -194,7 +173,7 @@ public class Search {
      * @return list of strings with result of getResultOfSearch
      */
     private List<String> searchInFieldNames(ODocument oDocument) {
-        List<String> resultOfSearch = new LinkedList<>();
+        List<String> resultOfSearch = new ArrayList<>();
         String searchName;
         String [] fieldNames = oDocument.fieldNames();
         String docName = oDocument.field("name", OType.STRING);
@@ -220,7 +199,7 @@ public class Search {
      */
     private List<String> searchInFieldValues(ODocument oDocument) {
         String searchValue;
-        List<String> resultList = new LinkedList<>();
+        List<String> resultList = new ArrayList<>();
         String[] fieldNames = oDocument.fieldNames();
         String docName = oDocument.field("name", OType.STRING);
         if (docName == null) docName = "without document name";
@@ -238,71 +217,6 @@ public class Search {
         return resultList;
     }
 
-    /**
-     * getResultOfSearch similar words in field names in all database
-     * @return string with result of getResultOfSearch
-     */
-    private List<String> getResultOfFieldNamesSearch() {
-        return (List<String>) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument db) {
-                List<String> fieldsList = new LinkedList<>();
-                for (OClass oClass : CLASS_CACHE.values()) {
-                    OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(oClass.getName()));
-                    Iterable<ODocument> oDocuments = (Iterable<ODocument>) (query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
-                    for (ODocument oDocument : oDocuments) {
-                       fieldsList.addAll(searchInFieldNames(oDocument));
-                    }
-                }
-
-                return getResultListOfSearch(fieldsList, null, null, null);
-            }
-        }.execute();
-    }
-
-    /**
-     * Search similar words with word in field values in all database
-     * @return string with result of getResultOfSearch
-     */
-    private List<String> getResultOfFieldValuesSearch() {
-        return (List<String>) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument db) {
-                List<String> valuesList = new LinkedList<>();
-                for (OClass oClass : CLASS_CACHE.values()) {
-                    OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(oClass.getName()));
-                    Iterable<ODocument> oDocuments = (Iterable<ODocument>) (query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
-                    for (ODocument oDocument : oDocuments) {
-                        valuesList.addAll(searchInFieldValues(oDocument));
-                    }
-                }
-                return getResultListOfSearch(null, valuesList, null, null);
-            }
-        }.execute();
-    }
-
-    /**
-     * Search documents with similar names from all database
-     * @return result of getResultOfSearch
-     */
-    private List<String> getResultOfSearchDocumentGlobal() {
-        return (List<String>) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument db) {
-                List<String> docsList = new LinkedList<>();
-                for (OClass oClass : CLASS_CACHE.values()) {
-                    OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(oClass.getName()));
-                    Iterable<ODocument> oDocuments = (Iterable<ODocument>) (query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
-                    for (ODocument oDocument: oDocuments) {
-                        String doc = searchDocument(oDocument);
-                        if (doc != null) docsList.add(doc);
-                    }
-                }
-
-                return getResultListOfSearch(null, null, docsList, null);
-            }
-        }.execute();
-    }
 
     /**
      * getResultOfSearch similar words with word in class
@@ -312,9 +226,9 @@ public class Search {
         return (List<String>) new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument db) {
-                List<String> fieldNamesList = new LinkedList<>();
-                List<String> fieldValuesList = new LinkedList<>();
-                List<String> docNamesList = new LinkedList<>();
+                List<String> fieldNamesList = new ArrayList<>();
+                List<String> fieldValuesList = new ArrayList<>();
+                List<String> docNamesList = new ArrayList<>();
                 OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(className));
                 Iterable<ODocument> oDocuments = (Iterable<ODocument>) (query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
                 for (ODocument oDocument : oDocuments) {
@@ -329,64 +243,6 @@ public class Search {
     }
 
     /**
-     * getResultOfSearch similar field names with fieldName
-     * @return result of getResultOfSearch
-     */
-    private List<String> getResultOfSearchFieldNamesInClass() {
-        return (List<String>) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument db) {
-                OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(className));
-                Iterable<ODocument> oDocuments = (Iterable<ODocument>) (query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
-                List<String> fieldsList = new LinkedList<>();
-                for (ODocument oDocument : oDocuments) {
-                    fieldsList.addAll(searchInFieldNames(oDocument));
-                }
-                return getResultListOfSearch(fieldsList, null, null, null);
-            }
-        }.execute();
-    }
-
-    /**
-     * getResultOfSearch similar field values with valueName
-     * @return result of getResultOfSearch
-     */
-    private List<String> getResultOfSearchFieldValuesInClass() {
-        return (List<String>) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
-                List<String> fieldValuesList = new LinkedList<>();
-                for (ODocument oDocument : oDocuments) {
-                    fieldValuesList.addAll(searchInFieldValues(oDocument));
-                }
-                return getResultListOfSearch(null, fieldValuesList, null, null);
-            }
-        }.execute();
-    }
-
-    /**
-     * Search documents with similar names from target class
-     * @return result of getResultOfSearch
-     */
-    private List<String> getResultOfSearchDocumentsInClass() {
-        return(List<String>) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                List<String> docList = new LinkedList<>();
-                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(className);
-                for (ODocument oDocument : oDocuments) {
-                    String doc = searchDocument(oDocument);
-                    if (doc != null) docList.add(doc);
-                }
-
-                return getResultListOfSearch(null, null, docList, null);
-            }
-        }.execute();
-
-    }
-
-    /**
      * getResultOfSearch word in line
      * @param word getResultOfSearch word
      * @param line string where word can be
@@ -398,74 +254,8 @@ public class Search {
         return isIn;
     }
 
-//    private List<String> searchFieldNames()
-
-    public boolean isGlobalFieldNamesSearch() {
-        return globalFieldNamesSearch;
-    }
-
-    public void setGlobalFieldNamesSearch(boolean globalFieldNamesSearch) {
-        this.globalFieldNamesSearch = globalFieldNamesSearch;
-    }
-
-    public boolean isGlobalFieldValuesSearch() {
-        return globalFieldValuesSearch;
-    }
-
-    public void setGlobalFieldValuesSearch(boolean globalFieldValuesSearch) {
-        this.globalFieldValuesSearch = globalFieldValuesSearch;
-    }
-
-    public boolean isGlobalDocumentNamesSearch() {
-        return globalDocumentNamesSearch;
-    }
-
-    public void setGlobalDocumentNamesSearch(boolean globalDocumentNamesSearch) {
-        this.globalDocumentNamesSearch = globalDocumentNamesSearch;
-    }
-
-    public boolean isGlobalClassSearch() {
-        return globalClassSearch;
-    }
-
     public void setGlobalClassSearch(boolean globalClassSearch) {
         this.globalClassSearch = globalClassSearch;
-    }
-
-    public String getSearchWord() {
-        return searchWord;
-    }
-
-    public boolean isClassFieldNamesSearch() {
-        return classFieldNamesSearch;
-    }
-
-    public void setClassFieldNamesSearch(boolean classFieldNamesSearch) {
-        this.classFieldNamesSearch = classFieldNamesSearch;
-    }
-
-    public boolean isClassFieldValuesSearch() {
-        return classFieldValuesSearch;
-    }
-
-    public void setClassFieldValuesSearch(boolean classFieldValuesSearch) {
-        this.classFieldValuesSearch = classFieldValuesSearch;
-    }
-
-    public boolean isClassDocumentNamesSearch() {
-        return classDocumentNamesSearch;
-    }
-
-    public void setClassDocumentNamesSearch(boolean classDocumentNamesSearch) {
-        this.classDocumentNamesSearch = classDocumentNamesSearch;
-    }
-
-    public int getN() {
-        return N;
-    }
-
-    public boolean isGlobalSearch() {
-        return globalSearch;
     }
 
     public void setGlobalSearch(boolean globalSearch) {

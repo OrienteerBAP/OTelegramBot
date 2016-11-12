@@ -20,6 +20,7 @@ import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
@@ -47,8 +48,6 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 Map<String, OClass> classCache = new HashMap<>();
                 CustomAttribute customAttribute = CustomAttribute.get(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH);
                 for (OClass oClass : db.getMetadata().getSchema().getClasses()) {
-//                    String custom = oClass.getCustom(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH);
-//                    LOG.debug("custom: " + custom);
                     if (customAttribute.getValue(oClass)) {
                         classCache.put(oClass.getName(), oClass);
                     }
@@ -129,57 +128,38 @@ public class OTelegramBot extends TelegramLongPollingBot {
             userSession = new UserSession();
             userSession.setBotState(getBotState(message.getText()));
         }
-
-        switch (getBotState(message.getText())) {
+        BotState state = getBotState(message.getText());
+        state = state == BotState.BACK ? userSession.getPreviousBotState() : state;
+        switch (state) {
             case START:
                 sendResponseMessage = getMainMenuMessage(message);
-                userSession.setBotState(BotState.SEARCH_GLOBAL);
-                break;
-            case GLOBAL_FIELD_NAMES_SEARCH_BUT:
-                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_FIELD_NAMES_MSG);
-                userSession.setBotState(BotState.SEARCH_GLOBAL_FIELD_NAMES);
-                break;
-            case GLOBAL_FIELD_VALUES_SEARCH_BUT:
-                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_FIELD_VALUES_MSG);
-                userSession.setBotState(BotState.SEARCH_GLOBAL_FIELD_VALUES);
-                break;
-            case GLOBAL_DOC_NAMES_SEARCH_BUT:
-                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_DOCUMENT_NAMES_MSG);
-                userSession.setBotState(BotState.SEARCH_GLOBAL_DOC_NAMES);
-                break;
-            case CLASS_MENU_SEARCH_BUT:
-                sendResponseMessage = getClassesMenuMessage(message);
-                userSession.setBotState(BotState.ClASS_MENU_OPTIONS);
+                userSession.setBotState(BotState.START);
+                userSession.setPreviousBotState(BotState.START);
                 userSession.setTargetClass(null);
                 break;
-            case ClASS_MENU_OPTIONS:
-                if (userSession.getTargetClass() == null) {
-                    userSession.setTargetClass(message.getText().substring(BotMessage.CLASS_BUT.length()));
-                }
-                sendResponseMessage = getClassOptionMenuMessage(message);
+            case NEW_GLOBAL_SEARCH:
+                sendResponseMessage = getBackMenuMessage(message, BotMessage.SEARCH_MSG);
+                userSession.setBotState(BotState.SEARCH_GLOBAL);
+                userSession.setPreviousBotState(BotState.START);
+                break;
+            case NEW_CLASS_SEARCH:
+                sendResponseMessage = getClassesMenuMessage(message);
+                userSession.setBotState(BotState.NEW_CLASS_SEARCH);
+                userSession.setPreviousBotState(BotState.START);
+                break;
+            case CLASS_SEARCH:
+                userSession.setTargetClass(message.getText().substring(BotMessage.CLASS_BUT.length()));
                 userSession.setBotState(BotState.SEARCH_IN_CLASS_GLOBAL);
-                break;
-            case CLASS_FIELD_NAMES_SEARCH_BUT:
-                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_CLASS_FIELD_NAMES_MSG);
-                userSession.setBotState(BotState.SEARCH_CLASS_FIELD_NAMES);
-                break;
-            case CLASS_FIELD_VALUES_SEARCH_BUT:
-                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_CLASS_FIELD_VALUES_MSG);
-                userSession.setBotState(BotState.SEARCH_CLASS_FIELD_VALUES);
-                break;
-            case CLASS_DOC_NAMES_SEARCH_BUT:
-                sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_CLASS_DOCUMENT_NAMES_MSG);
-                userSession.setBotState(BotState.SEARCH_CLASS_DOC_NAMES);
+                userSession.setPreviousBotState(BotState.NEW_CLASS_SEARCH);
+                sendResponseMessage = getBackMenuMessage(message, String.format(BotMessage.CLASS_SEARCH_MSG, "/" + userSession.getTargetClass()));
                 break;
             case NEXT_RESULT:
                 sendResponseMessage = getTextMessage(message, userSession.getNextResult());
-                sendMessage(sendResponseMessage);
-                sendResponseMessage = getNextPreviousMenuMessage(message);
+                sendMessage(getNextPreviousMenuMessage(message, userSession.hasNextResult(), userSession.hasPreviousResult()));
                 break;
             case PREVIOUS_RESULT:
                 sendResponseMessage = getTextMessage(message, userSession.getPreviousResult());
-                sendMessage(sendResponseMessage);
-                sendResponseMessage = getNextPreviousMenuMessage(message);
+                sendMessage(getNextPreviousMenuMessage(message, userSession.hasNextResult(), userSession.hasPreviousResult()));
                 break;
             case GO_TO_DOCUMENT:
                 sendResponseMessage = getTextMessage(message, goToTargetDocument(message.getText()));
@@ -203,36 +183,9 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 search.setGlobalSearch(true);
                 result = search.getResultOfSearch();
                 break;
-            case SEARCH_GLOBAL_FIELD_NAMES:
-                search.setGlobalFieldNamesSearch(true);
-                result = search.getResultOfSearch();
-                break;
-            case SEARCH_GLOBAL_FIELD_VALUES:
-                search.setGlobalFieldValuesSearch(true);
-                result = search.getResultOfSearch();
-                break;
-            case SEARCH_GLOBAL_DOC_NAMES:
-                search.setGlobalDocumentNamesSearch(true);
-                result = search.getResultOfSearch();
-                break;
             case SEARCH_IN_CLASS_GLOBAL:
                 search = new Search(message.getText(), userSession.getTargetClass());
                 search.setGlobalClassSearch(true);
-                result = search.getResultOfSearch();
-                break;
-            case SEARCH_CLASS_FIELD_NAMES:
-                search = new Search(message.getText(), userSession.getTargetClass());
-                search.setClassFieldNamesSearch(true);
-                result = search.getResultOfSearch();
-                break;
-            case SEARCH_CLASS_FIELD_VALUES:
-                search = new Search(message.getText(), userSession.getTargetClass());
-                search.setClassFieldValuesSearch(true);
-                result = search.getResultOfSearch();
-                break;
-            case SEARCH_CLASS_DOC_NAMES:
-                search = new Search(message.getText(), userSession.getTargetClass());
-                search.setClassDocumentNamesSearch(true);
                 result = search.getResultOfSearch();
                 break;
         }
@@ -240,9 +193,11 @@ public class OTelegramBot extends TelegramLongPollingBot {
             userSession.setResultOfSearch(result);
             if (result.size() > 1) {
                 sendResponseMessage = getTextMessage(message, userSession.getNextResult());
-                sendMessage(sendResponseMessage);
-                sendResponseMessage = getNextPreviousMenuMessage(message);
-            } else sendResponseMessage = getTextMessage(message, userSession.getNextResult());
+                sendMessage(getNextPreviousMenuMessage(message, userSession.hasNextResult(), userSession.hasPreviousResult()));
+            } else {
+                sendMessage(getTextMessage(message, BotMessage.START_SEARCH_MSG));
+                sendResponseMessage = getTextMessage(message, userSession.getNextResult());
+            }
         } else sendResponseMessage = getTextMessage(message, BotMessage.SEARCH_RESULT_FAILED_MSG);
         sendMessage(sendResponseMessage);
         return userSession;
@@ -354,15 +309,16 @@ public class OTelegramBot extends TelegramLongPollingBot {
         return result;
     }
 
-    private SendMessage getNextPreviousMenuMessage(Message message) {
+    private SendMessage getNextPreviousMenuMessage(Message message, boolean hasNext, boolean hasPrevious) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.enableHtml(true);
         sendMessage.enableMarkdown(true);
-        sendMessage.setText(BotMessage.NEXT_PREVIOUS_MSG);
+        sendMessage.setText(BotMessage.START_SEARCH_MSG);
         List<String> buttons = new ArrayList<>();
-        buttons.add(BotMessage.NEXT_RESULT_BUT);
-        buttons.add(BotMessage.PREVIOUS_RESULT_BUT);
+        if (hasNext) buttons.add(BotMessage.NEXT_RESULT_BUT);
+        if (hasPrevious) buttons.add(BotMessage.PREVIOUS_RESULT_BUT);
+        buttons.add(BotMessage.BACK);
         sendMessage.setReplyMarkup(getMenuMarkup(buttons));
         return sendMessage;
     }
@@ -377,20 +333,8 @@ public class OTelegramBot extends TelegramLongPollingBot {
             buttonNames.add(BotMessage.CLASS_BUT + oClass.getName());
         }
         Collections.sort(buttonNames);
+        buttonNames.add(BotMessage.BACK);
         sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
-        return sendMessage;
-    }
-
-    private SendMessage getClassOptionMenuMessage(Message message) {
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(message.getChatId().toString());
-        sendMessage.enableMarkdown(true);
-        sendMessage.setText(BotMessage.CLASS_OPTION_MENU_MSG);
-        List<String> buttons = new ArrayList<>();
-        buttons.add(BotMessage.CLASS_FIELD_NAMES_BUT);
-        buttons.add(BotMessage.CLASS_FIELD_VALUES_BUT);
-        buttons.add(BotMessage.CLASS_DOC_NAMES_BUT);
-        sendMessage.setReplyMarkup(getMenuMarkup(buttons));
         return sendMessage;
     }
 
@@ -402,16 +346,26 @@ public class OTelegramBot extends TelegramLongPollingBot {
         return sendMessage;
     }
 
+    private SendMessage getBackMenuMessage(Message message, String text) {
+        List<String> keyboard = new ArrayList<>(1);
+        keyboard.add(BotMessage.BACK);
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(message.getChatId().toString());
+        sendMessage.enableMarkdown(true);
+
+        sendMessage.setText(text);
+        sendMessage.setReplyMarkup(getMenuMarkup(keyboard));
+        return sendMessage;
+    }
+
     private SendMessage getMainMenuMessage(Message message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.enableMarkdown(true);
         sendMessage.setText(BotMessage.MAIN_MENU_MSG);
         List<String> buttonNames = new ArrayList<>();
-        buttonNames.add(BotMessage.FIELD_NAMES_BUT);
-        buttonNames.add(BotMessage.FIELD_VALUES_BUT);
-        buttonNames.add(BotMessage.DOC_NAMES_BUT);
-        buttonNames.add(BotMessage.CLASS_SEARCH_BUT);
+        buttonNames.add(BotMessage.NEW_GLOBAL_SEARCH_BUT);
+        buttonNames.add(BotMessage.NEW_CLASS_SEARCH_BUT);
         sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
         return sendMessage;
     }
@@ -448,7 +402,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
             } else if (text.startsWith("/")) {
                 return BotState.GO_TO_CLASS;
             } else if (text.startsWith(BotMessage.CLASS_BUT)) {
-                return BotState.ClASS_MENU_OPTIONS;
+                return BotState.CLASS_SEARCH;
             }
         }
         return state;
