@@ -4,32 +4,25 @@ package org.orienteer.telegram.bot;
  * @author  Vitaliy Gonchar
  */
 interface BotMessage {
-    String MAIN_MENU_MSG = "Change options or send me word and I will try to find it.";
+    String MAIN_MENU_MSG = "Change options and I will try to find it.";
+    String NEW_GLOBAL_SEARCH_BUT = "New global search";
+    String NEW_CLASS_SEARCH_BUT = "New class search";
+    String BACK = "Back";
+    String CLASS_SEARCH_MSG = "Send me word and I will try to find it in %s";
+    String START_SEARCH_MSG = "Start search...";
     String CLASS_MENU_MSG = "Choose class in the list.";
-    String CLASS_OPTION_MENU_MSG = "Choose search option in class.\nOr type word for global search in class";
-
 
     String ERROR_MSG = "<strong>I don't understand you :(</strong>";
-    String SEARCH_MSG = "Send me name of class or property or document and I will try to find it in .";
-    String SEARCH_FIELD_NAMES_MSG = "Send me word and I will try to find it in field names.";
-    String SEARCH_FIELD_VALUES_MSG = "Send me word and I will try to find it in field values.";
-    String SEARCH_DOCUMENT_NAMES_MSG = "Send me word and I will try to find it in document names";
-
-    String SEARCH_CLASS_FIELD_NAMES_MSG = "Send me word and I will try to find it in class field names.";
-    String SEARCH_CLASS_FIELD_VALUES_MSG = "Send me word and I will try to find it in class field values.";
-    String SEARCH_CLASS_DOCUMENT_NAMES_MSG = "Send me word and I will try to find it in class document names.";
+    String SEARCH_MSG = "Send me word and I will try to find it in .";
 
     String SEARCH_RESULT_SUCCESS_MSG = "<strong>To get information about document click on link.</strong>";
     String SEARCH_RESULT_FAILED_MSG = "<strong>I cannot found something!</strong>";
 
     String CLASS_DESCRIPTION_MSG = "Class description: ";
-    String CLASS_NAME = "Class name: ";
     String CLASS_DOCUMENTS = "Class documents: ";
     String SEARCH_FAILED_CLASS_BY_NAME = "<strong>Cannot found class by this class name</strong>";
     String DOCUMENT_DESCRIPTION_MSG = "Document description: ";
     String FAILED_DOCUMENT_BY_RID = "Cannot found document by this id";
-
-    String GLOBAL_SEARCH_BUT = "Global search";
 
     String BACK_TO_CLASS_SEARCH_BUT = "Back to class search";
 
@@ -55,9 +48,4 @@ interface BotMessage {
 
     String NEXT_RESULT_BUT = "Next result of search";
     String PREVIOUS_RESULT_BUT = "Previous result of search";
-    String NEXT_PREVIOUS_MSG = "Click on 'Next result of search' and I will send you next 10 results of search." +
-            " Or click on 'Previous result of search' and I will send you previous 10 results of search";
-    String START_OF_RESULT = "<strong>Start of result</strong>";
-    String END_OF_RESULT = "<strong>End of result</strong>";
-    int MAX_LENGTH = 4096;
 }
