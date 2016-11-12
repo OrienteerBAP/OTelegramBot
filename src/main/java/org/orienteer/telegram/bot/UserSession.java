@@ -1,15 +1,17 @@
 package org.orienteer.telegram.bot;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 /**
  * @author  Vitaliy Gonchar
  */
 class UserSession {
     private BotState botState;
+    private BotState previousBotState;
     private String targetClass;
-    private ListIterator<String> resultIterator;
+    private ArrayList<String> resultList;
+    private int counter;
 
     public BotState getBotState() {
         return botState;
@@ -28,27 +30,37 @@ class UserSession {
     }
 
     public void setResultOfSearch(List<String> resultOfSearch) {
-        this.resultIterator = resultOfSearch.listIterator();
+        resultList = new ArrayList<>();
+        for (String result : resultOfSearch) {
+            resultList.add(result);
+        }
+        counter = -1;
     }
 
     public String getNextResult() {
-        if (resultIterator.hasNext()) {
-            return resultIterator.next();
-        } else return BotMessage.END_OF_RESULT;
+        counter++;
+        return resultList.get(counter);
     }
 
     public String getPreviousResult() {
-        if (resultIterator.hasPrevious()) {
-            return resultIterator.previous();
-        } else return BotMessage.START_OF_RESULT;
+        counter--;
+        return resultList.get(counter);
     }
 
     public boolean hasNextResult() {
-        return resultIterator.hasNext();
+        return counter < resultList.size() - 1;
     }
 
     public boolean hasPreviousResult() {
-        return resultIterator.hasPrevious();
+        return counter > 0;
+    }
+
+    public BotState getPreviousBotState() {
+        return previousBotState;
+    }
+
+    public void setPreviousBotState(BotState previousBotState) {
+        this.previousBotState = previousBotState;
     }
 
     @Override
