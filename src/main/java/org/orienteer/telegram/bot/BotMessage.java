@@ -34,4 +34,10 @@ interface BotMessage {
 
     String NEXT_RESULT_BUT = "Next result of search";
     String PREVIOUS_RESULT_BUT = "Previous result of search";
+
+    String ABOUT_MSG = "OTelegramBot is a Telegram bot for platform Orienteer.\n" +
+            "This bot can search information from database.\n" +
+            "For start using bot: /start\n" +
+            "<strong>Bot is in develop mode</strong>\n" +
+            "Author: Vitaliy Gonchar";
 }

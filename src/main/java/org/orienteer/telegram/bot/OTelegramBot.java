@@ -167,6 +167,12 @@ public class OTelegramBot extends TelegramLongPollingBot {
             case GO_TO_CLASS:
                 sendResponseMessage = getTextMessage(message, goToTargetClass(message.getText()));
                 break;
+            case LANGUAGE:
+                sendResponseMessage = getTextMessage(message, "<strong>Localization is in develop mode.</strong>");
+                break;
+            case ABOUT:
+                sendResponseMessage = getTextMessage(message, BotMessage.ABOUT_MSG);
+                break;
             default:
                 userSession = handleSearchRequest(message, userSession);
         }
