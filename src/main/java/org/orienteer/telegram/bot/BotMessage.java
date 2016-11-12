@@ -24,21 +24,7 @@ interface BotMessage {
     String DOCUMENT_DESCRIPTION_MSG = "Document description: ";
     String FAILED_DOCUMENT_BY_RID = "Cannot found document by this id";
 
-    String BACK_TO_CLASS_SEARCH_BUT = "Back to class search";
-
-
-    String CLASS_SEARCH_BUT = "Search in classes";
-    String CLASS_FIELD_NAMES_BUT = "Search in class field names";
-    String CLASS_FIELD_VALUES_BUT = "Search in class field values";
-    String CLASS_DOC_NAMES_BUT = "Search in class document names";
     String CLASS_BUT = "Class: ";
-
-    String FIELD_NAMES_BUT = "Search in field names";
-    String FIELD_VALUES_BUT = "Search in field values";
-    String DOC_NAMES_BUT = "Search in document names";
-
-    String BACK_TO_MAIN_MENU_BUT = "Back to main menu";
-
     String HTML_STRONG_TEXT = "<strong>%s</strong>";
 
     String SEARCH_FIELD_NAMES_RESULT = "In field names: ";
