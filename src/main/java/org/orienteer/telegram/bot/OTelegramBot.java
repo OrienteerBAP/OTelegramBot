@@ -20,7 +20,6 @@ import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
@@ -161,8 +160,11 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 sendResponseMessage = getTextMessage(message, userSession.getPreviousResult());
                 sendMessage(getNextPreviousMenuMessage(message, userSession.hasNextResult(), userSession.hasPreviousResult()));
                 break;
-            case GO_TO_DOCUMENT:
-                sendResponseMessage = getTextMessage(message, goToTargetDocument(message.getText()));
+            case GO_TO_DOCUMENT_SHORT_DESCRIPTION:
+                sendResponseMessage = getTextMessage(message, goToTargetDocument(message.getText(), false));
+                break;
+            case GO_TO_DOCUMENT_ALL_DESCRIPTION:
+                sendResponseMessage = getTextMessage(message, goToTargetDocument(message.getText(), true));
                 break;
             case GO_TO_CLASS:
                 sendResponseMessage = getTextMessage(message, goToTargetClass(message.getText()));
@@ -214,7 +216,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
      * @param document string like "/<className><RID>"
      * @return string with description document
      */
-    private String goToTargetDocument(final String document) {
+    private String goToTargetDocument(final String document, final boolean isAllProperties) {
         String [] split = document.substring(BotState.GO_TO_CLASS.command.length()).split("_");
         final int clusterID = Integer.valueOf(split[1]);
         final long recordID = Long.valueOf(split[2]);
@@ -223,7 +225,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
             @Override
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
                 StringBuilder builder = new StringBuilder(String.format(
-                        BotMessage.HTML_STRONG_TEXT, BotMessage.DOCUMENT_DESCRIPTION_MSG) + "\n\n"
+                        BotMessage.HTML_STRONG_TEXT, BotMessage.SHORT_DOCUMENT_DESCRIPTION_MSG) + "\n\n"
                         + String.format(BotMessage.HTML_STRONG_TEXT, "Class:  "));
                 ODocument oDocument;
                 try {
@@ -234,13 +236,25 @@ public class OTelegramBot extends TelegramLongPollingBot {
                     builder.append("\n\n");
                     String[] fieldNames = oDocument.fieldNames();
                     List<String> resultList = new ArrayList<>();
+                    OClass oClass = oDocument.getSchemaClass();
+                    CustomAttribute displayable = CustomAttribute.DISPLAYABLE;
+                    boolean isWihoutDetails = false;
                     for (String fieldName : fieldNames) {
-                        resultList.add(String.format(BotMessage.HTML_STRONG_TEXT, fieldName) + ":  "
+                        if (!isAllProperties) {
+                            OProperty property = oClass.getProperty(fieldName);
+                            if (displayable.getValue(property)) {
+                                resultList.add(String.format(BotMessage.HTML_STRONG_TEXT, fieldName) + ":  "
+                                        + oDocument.field(fieldName, OType.STRING) + "\n");
+                            } else isWihoutDetails = true;
+                        } else  resultList.add(String.format(BotMessage.HTML_STRONG_TEXT, fieldName) + ":  "
                                 + oDocument.field(fieldName, OType.STRING) + "\n");
                     }
                     Collections.sort(resultList);
                     for (String str : resultList) {
                         builder.append(str);
+                    }
+                    if (isWihoutDetails) {
+                        builder.append("\n" + BotMessage.DOCUMENT_DETAILS_MSG + document + "_details");
                     }
                 } catch (ORecordNotFoundException ex) {
                     LOG.warn("Record: " + oRecordId + " was not found.");
@@ -401,8 +415,10 @@ public class OTelegramBot extends TelegramLongPollingBot {
             }
         }
         if (state == BotState.ERROR) {
-            if (text.startsWith(BotState.GO_TO_CLASS.command) && text.contains("_")) {
-                return BotState.GO_TO_DOCUMENT;
+            if (text.startsWith(BotState.GO_TO_CLASS.command) && text.endsWith("_details")) {
+                return BotState.GO_TO_DOCUMENT_ALL_DESCRIPTION;
+            } if (text.startsWith(BotState.GO_TO_CLASS.command) && text.contains("_")) {
+                return BotState.GO_TO_DOCUMENT_SHORT_DESCRIPTION;
             } else if (text.startsWith(BotState.GO_TO_CLASS.command)) {
                 return BotState.GO_TO_CLASS;
             } else if (text.startsWith("/")) {

@@ -1,6 +1,9 @@
 package org.orienteer.telegram.module;
 
 import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
+import com.orientechnologies.orient.core.metadata.schema.OProperty;
+import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.module.AbstractOrienteerModule;
 import org.orienteer.core.util.OSchemaHelper;
@@ -14,7 +17,9 @@ import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.logging.BotLogger;
+import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
+import java.util.Iterator;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 
@@ -60,7 +65,6 @@ public class OTelegramModule extends AbstractOrienteerModule{
 			if (LOG.isDebugEnabled()) e.printStackTrace();
 		}
 	}
-
 
 	protected BotConfig readBotConfig(ODatabaseDocument db) {
 		ORecordIteratorClass<ODocument> oTelegramBots = db.browseClass(OCLASS_NAME);

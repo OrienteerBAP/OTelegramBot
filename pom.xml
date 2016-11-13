@@ -16,8 +16,8 @@
    limitations under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.orienteer</groupId>
@@ -65,21 +65,21 @@
             <artifactId>orienteer-graph</artifactId>
             <version>${orienteer.version}</version>
         </dependency>-->
-        <!-- <dependency>
+		<!-- <dependency>
             <groupId>org.orienteer</groupId>
             <artifactId>orienteer-pages</artifactId>
             <version>${orienteer.version}</version>
         </dependency>-->
-        <!-- <dependency>
+		<!-- <dependency>
             <groupId>org.orienteer</groupId>
             <artifactId>orienteer-pivottable</artifactId>
             <version>${orienteer.version}</version>
         </dependency>-->
-    <!--     <dependency>
-            <groupId>org.orienteer</groupId>
-            <artifactId>orienteer-devutils</artifactId>
-            <version>${orienteer.version}</version>
-        </dependency> -->
+		<!--     <dependency>
+                <groupId>org.orienteer</groupId>
+                <artifactId>orienteer-devutils</artifactId>
+                <version>${orienteer.version}</version>
+            </dependency> -->
 		<!-- ORIENTEER TESTS for TESTING -->
 		<dependency>
 			<groupId>org.orienteer</groupId>
@@ -148,15 +148,15 @@
 		</testResources>
 		<plugins>
 			<plugin>
-			      <groupId>org.apache.felix</groupId>
-			      <artifactId>maven-bundle-plugin</artifactId>
-			      <version>2.3.6</version>
-			      <extensions>true</extensions>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<version>2.3.6</version>
+				<extensions>true</extensions>
 			</plugin>
 			<plugin>
-			    <groupId>org.apache.maven.plugins</groupId>
-			    <artifactId>maven-war-plugin</artifactId>
-			    <version>2.6</version>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-war-plugin</artifactId>
+				<version>2.6</version>
 			</plugin>
 			<plugin>
 				<inherited>true</inherited>
@@ -230,4 +230,4 @@
 			<url>https://jitpack.io</url>
 		</repository>
 	</repositories>
-	</project>
+</project>

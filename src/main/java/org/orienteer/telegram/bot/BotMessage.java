@@ -21,9 +21,10 @@ interface BotMessage {
     String CLASS_DESCRIPTION_MSG = "Class description: ";
     String CLASS_DOCUMENTS = "Class documents: ";
     String SEARCH_FAILED_CLASS_BY_NAME = "<strong>Cannot found class by this class name</strong>";
-    String DOCUMENT_DESCRIPTION_MSG = "Document description: ";
+    String SHORT_DOCUMENT_DESCRIPTION_MSG = "Short document description: ";
+    String DOCUMENT_DESCRIPTION = "Document description: ";
     String FAILED_DOCUMENT_BY_RID = "Cannot found document by this id";
-
+    String DOCUMENT_DETAILS_MSG = "<strong>Details of document: </strong>";
     String CLASS_BUT = "Class: ";
     String HTML_STRONG_TEXT = "<strong>%s</strong>";
 
