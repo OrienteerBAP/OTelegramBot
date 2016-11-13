@@ -227,14 +227,11 @@ public class OTelegramBot extends TelegramLongPollingBot {
         final int clusterID = Integer.valueOf(split[1]);
         final long recordID = Long.valueOf(split[2]);
         final ORecordId oRecordId = new ORecordId(clusterID, recordID);
-        String result = (String) new DBClosure() {
+        final String result = (String) new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                StringBuilder builder = isAllProperties ? new StringBuilder(String.format(
-                        BotMessage.HTML_STRONG_TEXT, BotMessage.DOCUMENT_DETAILS_MSG) + "\n\n"
-                        + String.format(BotMessage.HTML_STRONG_TEXT, "Class:  ")) : new StringBuilder(String.format(
-                        BotMessage.HTML_STRONG_TEXT, BotMessage.SHORT_DOCUMENT_DESCRIPTION_MSG) + "\n\n"
-                        + String.format(BotMessage.HTML_STRONG_TEXT, "Class:  "));
+                StringBuilder builder = new StringBuilder();
+                StringBuilder resultBuilder;
                 ODocument oDocument;
                 try {
                     oDocument = oDatabaseDocument.getRecord(oRecordId);
@@ -261,16 +258,23 @@ public class OTelegramBot extends TelegramLongPollingBot {
                     for (String str : resultList) {
                         builder.append(str);
                     }
+                    resultBuilder = new StringBuilder(String.format(
+                            BotMessage.HTML_STRONG_TEXT, BotMessage.DOCUMENT_DETAILS_MSG) + "\n\n"
+                            + String.format(BotMessage.HTML_STRONG_TEXT, "Class:  "));
                     if (isWihoutDetails) {
+                        resultBuilder = new StringBuilder(String.format(
+                                BotMessage.HTML_STRONG_TEXT, BotMessage.SHORT_DOCUMENT_DESCRIPTION_MSG) + "\n\n"
+                                + String.format(BotMessage.HTML_STRONG_TEXT, "Class:  "));
                         builder.append("\n" + BotMessage.DOCUMENT_DETAILS_MSG + document + "_details");
                     }
+                    resultBuilder.append(builder.toString());
                 } catch (ORecordNotFoundException ex) {
                     LOG.warn("Record: " + oRecordId + " was not found.");
                     if (LOG.isDebugEnabled()) ex.printStackTrace();
-                    builder = new StringBuilder(
+                    resultBuilder = new StringBuilder(
                             String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.FAILED_DOCUMENT_BY_RID));
                 }
-                return builder.toString();
+                return resultBuilder.toString();
             }
         }.execute();
         return result;
