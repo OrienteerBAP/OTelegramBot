@@ -42,7 +42,7 @@ class Search {
         if (globalSearch) {
             result = getResultOfGlobalSearch();
         } else if (globalClassSearch) {
-            result = className != null ? getResultOfSearchInClassAllOptions() : Arrays.asList(BotMessage.ERROR_MSG);
+            result = className != null ? getResultOfSearchInClass() : Arrays.asList(BotMessage.ERROR_MSG);
         } else if (globalClassNamesSearch) {
             result = getResultListOfSearch(null, null, null, searchInClassNames());
         }
@@ -225,7 +225,7 @@ class Search {
      * getResultOfSearch similar words with word in class
      * @return result of getResultOfSearch
      */
-    private List<String> getResultOfSearchInClassAllOptions() {
+    private List<String> getResultOfSearchInClass() {
         return (List<String>) new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument db) {
