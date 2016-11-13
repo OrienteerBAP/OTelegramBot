@@ -38,6 +38,5 @@ interface BotMessage {
     String ABOUT_MSG = "OTelegramBot is a Telegram bot for platform Orienteer.\n" +
             "This bot can search information from database.\n" +
             "For start using bot: /start\n" +
-            "<strong>Bot is in develop mode</strong>\n" +
             "Author: Vitaliy Gonchar";
 }
