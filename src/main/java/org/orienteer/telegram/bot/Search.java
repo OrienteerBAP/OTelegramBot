@@ -18,6 +18,7 @@ import java.util.Map;
 class Search {
     private boolean globalSearch;
     private boolean globalClassSearch;
+    private boolean globalClassNamesSearch;
 
     private final int N = 10;   // max result in one message
     private final String searchWord;
@@ -42,6 +43,8 @@ class Search {
             result = getResultOfGlobalSearch();
         } else if (globalClassSearch) {
             result = className != null ? getResultOfSearchInClassAllOptions() : Arrays.asList(BotMessage.ERROR_MSG);
+        } else if (globalClassNamesSearch) {
+            result = getResultListOfSearch(null, null, null, searchInClassNames());
         }
         return result;
     }
@@ -57,22 +60,22 @@ class Search {
         if (fields.size() > 0 || values.size() > 0 || docs.size() > 0 || classes.size() > 0) {
             int counter = 0;
             if (classes.size() > 0) {
-                String info = "\n" + BotMessage.SEARCH_CLASS_NAMES_RESULT + "\n";
+                String info = "\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_CLASS_NAMES_RESULT) + "\n";
                 resultList.addAll(splitBigResult(classes, info, counter));
             }
             if (docs.size() > 0) {
-                String info = "\n" + BotMessage.SEARCH_DOCUMENT_NAMES_RESULT + "\n";
+                String info = "\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_DOCUMENT_NAMES_RESULT) + "\n";
                 resultList.addAll(splitBigResult(docs, info, counter));
             }
             if (fields.size() > 0) {
-                String info = "\n" + BotMessage.SEARCH_FIELD_NAMES_RESULT + "\n";
+                String info = "\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_FIELD_NAMES_RESULT) + "\n";
                 resultList.addAll(splitBigResult(fields, info, counter));
             }
             if (values.size() > 0) {
-                String info = "\n" + BotMessage.SEARCH_FIELD_VALUES_RESULT + "\n";
+                String info = "\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_FIELD_VALUES_RESULT) + "\n";
                 resultList.addAll(splitBigResult(values, info, counter));
             }
-        } else resultList.add(BotMessage.SEARCH_RESULT_FAILED_MSG);
+        } else resultList.add(String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_FAILED_MSG));
         return resultList;
     }
 
@@ -105,7 +108,7 @@ class Search {
 
     private List<String> splitBigResult(List<String> bigResult, String info, int counter) {
         List<String> resultList = new ArrayList<>();
-        String head = BotMessage.SEARCH_RESULT_SUCCESS_MSG;
+        String head = String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_SUCCESS_MSG);
         StringBuilder builder = new StringBuilder();
         builder.append(head);
         builder.append(info);
@@ -132,7 +135,7 @@ class Search {
         String searchClass;
         for (OClass oClass : CLASS_CACHE.values()) {
             if (isWordInLine(searchWord, oClass.getName())) {
-                searchClass = "-  class name: " + oClass.getName() + " "
+                searchClass = "•  class name: " + oClass.getName() + " "
                         + BotState.GO_TO_CLASS.command + oClass.getName() + "\n";
                 resultList.add(searchClass);
             }
@@ -155,7 +158,7 @@ class Search {
                 + "_" + oDocument.getIdentity().getClusterPosition()
                 + " : " + docName;
         if (isWordInLine(searchWord, docName)) {
-            builder.append("- ");
+            builder.append("• ");
             builder.append(docName);
             builder.append(" ");
             builder.append(documentLink);
@@ -183,7 +186,7 @@ class Search {
                 + " : " + docName;
         for (String name : fieldNames) {
             if (name != null && isWordInLine(searchWord, name)) {
-                searchName = "- " + name + " : "
+                searchName = "• " + name + " : "
                         + oDocument.field(name, OType.STRING) + " " + documentLink + "\n";
                 resultOfSearch.add(searchName);
             }
@@ -209,7 +212,7 @@ class Search {
         for (String name : fieldNames) {
             String fieldValue = oDocument.field(name, OType.STRING);
             if (name != null && fieldValue != null && isWordInLine(searchWord, fieldValue)) {
-                searchValue = "- " + name + " : " + fieldValue + " " + documentLink + "\n";
+                searchValue = "• " + name + " : " + fieldValue + " " + documentLink + "\n";
                 resultList.add(searchValue);
             }
         }
@@ -261,5 +264,8 @@ class Search {
         this.globalSearch = globalSearch;
     }
 
+    public void setGlobalClassNamesSearch(boolean globalClassNamesSearch) {
+        this.globalClassNamesSearch = globalClassNamesSearch;
+    }
 
 }

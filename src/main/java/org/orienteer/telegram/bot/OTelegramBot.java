@@ -176,7 +176,9 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 sendResponseMessage = getTextMessage(message, BotMessage.ABOUT_MSG);
                 break;
             default:
-                userSession = handleSearchRequest(message, userSession);
+                if (userSession.getBotState() == BotState.START) {
+                    sendResponseMessage = getTextMessage(message, BotMessage.MAIN_MENU_ERROR_MSG);
+                } else userSession = handleSearchRequest(message, userSession);
         }
         SESSIONS.put(message.getFrom().getId(), userSession);
         if (sendResponseMessage != null) sendMessage(sendResponseMessage);
@@ -194,6 +196,10 @@ public class OTelegramBot extends TelegramLongPollingBot {
             case SEARCH_IN_CLASS_GLOBAL:
                 search = new Search(message.getText(), userSession.getTargetClass());
                 search.setGlobalClassSearch(true);
+                result = search.getResultOfSearch();
+                break;
+            case NEW_CLASS_SEARCH:
+                search.setGlobalClassNamesSearch(true);
                 result = search.getResultOfSearch();
                 break;
         }
@@ -224,7 +230,9 @@ public class OTelegramBot extends TelegramLongPollingBot {
         String result = (String) new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                StringBuilder builder = new StringBuilder(String.format(
+                StringBuilder builder = isAllProperties ? new StringBuilder(String.format(
+                        BotMessage.HTML_STRONG_TEXT, BotMessage.DOCUMENT_DETAILS_MSG) + "\n\n"
+                        + String.format(BotMessage.HTML_STRONG_TEXT, "Class:  ")) : new StringBuilder(String.format(
                         BotMessage.HTML_STRONG_TEXT, BotMessage.SHORT_DOCUMENT_DESCRIPTION_MSG) + "\n\n"
                         + String.format(BotMessage.HTML_STRONG_TEXT, "Class:  "));
                 ODocument oDocument;
