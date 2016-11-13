@@ -94,8 +94,10 @@ class Search {
                     Iterable<ODocument> oDocuments = (Iterable<ODocument>) (query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
 
                     for (ODocument oDocument : oDocuments) {
-                        fieldNamesList.addAll(searchInFieldNames(oDocument));
-                        fieldValuesList.addAll(searchInFieldValues(oDocument));
+                        List<String> result = searchInFieldNames(oDocument);
+                        if (result != null) fieldNamesList.addAll(result);
+                        result = searchInFieldValues(oDocument);
+                        if (result != null) fieldValuesList.addAll(result);
                         String doc = searchDocument(oDocument);
                         if (doc != null) documentNamesList.add(doc);
                     }
@@ -152,7 +154,7 @@ class Search {
     private String searchDocument(ODocument oDocument) {
         StringBuilder builder = new StringBuilder();
         String docName = oDocument.field("name", OType.STRING);
-        if (docName == null) docName = "without document name";
+        if (docName == null) return null;
         String documentLink = BotState.GO_TO_CLASS.command + oDocument.getClassName()
                 + "_" + oDocument.getIdentity().getClusterId()
                 + "_" + oDocument.getIdentity().getClusterPosition()
@@ -164,8 +166,7 @@ class Search {
             builder.append(documentLink);
             builder.append("\n");
         }
-        if (builder.length() > 0) return builder.toString();
-        return null;
+       return builder.length() > 0 ? builder.toString() : null;
     }
 
 
@@ -191,7 +192,7 @@ class Search {
                 resultOfSearch.add(searchName);
             }
         }
-        return resultOfSearch;
+        return resultOfSearch.size() > 0 ? resultOfSearch : null;
     }
 
     /**
@@ -216,7 +217,7 @@ class Search {
                 resultList.add(searchValue);
             }
         }
-        return resultList;
+        return resultList.size() > 0 ? resultList : null;
     }
 
 
@@ -233,9 +234,12 @@ class Search {
                 List<String> docNamesList = new ArrayList<>();
                 OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(className));
                 Iterable<ODocument> oDocuments = (Iterable<ODocument>) (query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
+
                 for (ODocument oDocument : oDocuments) {
-                    fieldNamesList.addAll(searchInFieldNames(oDocument));
-                    fieldValuesList.addAll(searchInFieldValues(oDocument));
+                    List<String> result = searchInFieldNames(oDocument);
+                    if (result != null) fieldNamesList.addAll(result);
+                    result = searchInFieldValues(oDocument);
+                    if (result != null) fieldValuesList.addAll(result);
                     String doc = searchDocument(oDocument);
                     if (doc != null) docNamesList.add(doc);
                 }
