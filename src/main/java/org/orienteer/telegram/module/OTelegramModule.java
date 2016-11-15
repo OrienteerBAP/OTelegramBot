@@ -53,63 +53,26 @@ public class OTelegramModule extends AbstractOrienteerModule{
 
 	@Override
 	public void onInitialize(OrienteerWebApplication app, ODatabaseDocument db) {
-		test();
-		BotConfig botConfig = readBotConfig(db);
-		LOG.debug(botConfig.toString());
+		String username = null;
+		String token = null;
+		long userSession = 0;
+		ODocument bot = db.browseClass(OCLASS_NAME).next();
+		if (bot.field(OMODULE_ACTIVATE)) {
+			username = bot.field(OPROPERTY_USERNAME, OType.STRING);
+			token = bot.field(OPROPERTY_TOKEN, OType.STRING);
+			userSession = bot.field(OPROPERTY_USER_SESSION, OType.LONG);
+		}
+		BotConfig botConfig = new BotConfig(username, token, userSession);
+		LOG.debug("\n" + botConfig.toString());
 		TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
-		BotLogger.setLevel(Level.WARNING);
-		BotLogger.registerLogger(new ConsoleHandler());
+		BotLogger.setLevel(Level.OFF);
 		try {
-			LOG.debug("Register bot " + botConfig.USERNAME);
 			telegramBotsApi.registerBot(OTelegramBot.getOrienteerTelegramBot(botConfig));
 		} catch (TelegramApiRequestException e) {
 			LOG.error("Cannot register bot");
 			if (LOG.isDebugEnabled()) e.printStackTrace();
 		}
 	}
-
-	private void test() {
-		new DBClosure() {
-			@Override
-			protected Object execute(ODatabaseDocument db) {
-				ORecordIteratorClass<ODocument> oPerspectiveItem = db.browseClass("OPerspectiveItem");
-				OClass oClass = db.getMetadata().getSchema().getClass("OPerspectiveItem");
-				System.out.println();
-				LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-				LOG.debug("Class - " + oClass.getName());
-				for (ODocument doc : oPerspectiveItem) {
-					LOG.debug("document name: " + doc.field("name") + " document:\n" + doc.toString());
-					String fieldValues = "";
-					for (String name : doc.fieldNames()) {
-						fieldValues += name + "  -  " + doc.field(name) + "\n";
-					}
-					LOG.debug("fields of document: \n" + fieldValues);
-					LOG.debug("document" + doc.field("name") + " to JSON:\n" + doc.toJSON());
-				}
-				LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-				return null;
-			}
-		}.execute();
-	}
-
-	protected BotConfig readBotConfig(ODatabaseDocument db) {
-		ORecordIteratorClass<ODocument> oTelegramBots = db.browseClass(OCLASS_NAME);
-		String username = null;
-		String token = null;
-		long userSession = 0;
-		if (oTelegramBots.hasNext()) {
-			ODocument bot = oTelegramBots.next();
-			if (bot.field(OMODULE_ACTIVATE)) {
-				username = bot.field(OPROPERTY_USERNAME, OType.STRING);
-				token = bot.field(OPROPERTY_TOKEN, OType.STRING);
-				userSession = bot.field(OPROPERTY_USER_SESSION, OType.LONG);
-			}
-		}
-		LOG.info("Bot USERNAME: " + username);
-		LOG.info("Bot token: " + token);
-		LOG.info("User session: " + userSession);
-		return new BotConfig(username, token, userSession);
-    }
 
     public class BotConfig {
         public final String USERNAME;
