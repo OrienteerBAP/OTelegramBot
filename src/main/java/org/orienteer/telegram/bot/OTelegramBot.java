@@ -131,25 +131,25 @@ public class OTelegramBot extends TelegramLongPollingBot {
         state = state == BotState.BACK ? userSession.getPreviousBotState() : state;
         switch (state) {
             case START:
-                sendResponseMessage = getMainMenuMessage(message);
-                userSession.setBotState(BotState.START);
-                userSession.setPreviousBotState(BotState.START);
-                userSession.setTargetClass(null);
-                break;
-            case NEW_GLOBAL_SEARCH:
-                sendResponseMessage = getBackMenuMessage(message, BotMessage.SEARCH_MSG);
-                userSession.setBotState(BotState.SEARCH_GLOBAL);
-                userSession.setPreviousBotState(BotState.START);
-                break;
-            case NEW_CLASS_SEARCH:
+//                sendResponseMessage = getMainMenuMessage(message);
                 sendResponseMessage = getClassesMenuMessage(message);
                 userSession.setBotState(BotState.NEW_CLASS_SEARCH);
                 userSession.setPreviousBotState(BotState.START);
                 break;
+//            case NEW_GLOBAL_SEARCH:
+//                sendResponseMessage = getBackMenuMessage(message, BotMessage.SEARCH_MSG);
+//                userSession.setBotState(BotState.SEARCH_GLOBAL);
+//                userSession.setPreviousBotState(BotState.START);
+//                break;
+//            case NEW_CLASS_SEARCH:
+//                sendResponseMessage = getClassesMenuMessage(message);
+//                userSession.setBotState(BotState.NEW_CLASS_SEARCH);
+//                userSession.setPreviousBotState(BotState.START);
+//                break;
             case CLASS_SEARCH:
                 userSession.setTargetClass(message.getText().substring(BotMessage.CLASS_BUT.length()));
                 userSession.setBotState(BotState.SEARCH_IN_CLASS_GLOBAL);
-                userSession.setPreviousBotState(BotState.NEW_CLASS_SEARCH);
+                userSession.setPreviousBotState(BotState.START);
                 sendResponseMessage = getBackMenuMessage(message, String.format(BotMessage.CLASS_SEARCH_MSG, "/" + userSession.getTargetClass()));
                 break;
             case NEXT_RESULT:
@@ -189,10 +189,10 @@ public class OTelegramBot extends TelegramLongPollingBot {
         List<String> result = null;
         Search search = new Search(message.getText());
         switch (userSession.getBotState()) {
-            case SEARCH_GLOBAL:
-                search.setGlobalSearch(true);
-                result = search.getResultOfSearch();
-                break;
+//            case SEARCH_GLOBAL:
+//                search.setGlobalSearch(true);
+//                result = search.getResultOfSearch();
+//                break;
             case SEARCH_IN_CLASS_GLOBAL:
                 search = new Search(message.getText(), userSession.getTargetClass());
                 search.setGlobalClassSearch(true);
@@ -365,7 +365,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
             buttonNames.add(BotMessage.CLASS_BUT + oClass.getName());
         }
         Collections.sort(buttonNames);
-        buttonNames.add(BotMessage.BACK);
+//        buttonNames.add(BotMessage.BACK);
         sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
         return sendMessage;
     }
@@ -390,17 +390,17 @@ public class OTelegramBot extends TelegramLongPollingBot {
         return sendMessage;
     }
 
-    private SendMessage getMainMenuMessage(Message message) {
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(message.getChatId().toString());
-        sendMessage.enableMarkdown(true);
-        sendMessage.setText(BotMessage.MAIN_MENU_MSG);
-        List<String> buttonNames = new ArrayList<>();
-        buttonNames.add(BotMessage.NEW_GLOBAL_SEARCH_BUT);
-        buttonNames.add(BotMessage.NEW_CLASS_SEARCH_BUT);
-        sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
-        return sendMessage;
-    }
+//    private SendMessage getMainMenuMessage(Message message) {
+//        SendMessage sendMessage = new SendMessage();
+//        sendMessage.setChatId(message.getChatId().toString());
+//        sendMessage.enableMarkdown(true);
+//        sendMessage.setText(BotMessage.MAIN_MENU_MSG);
+//        List<String> buttonNames = new ArrayList<>();
+//        buttonNames.add(BotMessage.NEW_GLOBAL_SEARCH_BUT);
+//        buttonNames.add(BotMessage.NEW_CLASS_SEARCH_BUT);
+//        sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
+//        return sendMessage;
+//    }
 
     private ReplyKeyboardMarkup getMenuMarkup(List<String> buttonNames) {
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();

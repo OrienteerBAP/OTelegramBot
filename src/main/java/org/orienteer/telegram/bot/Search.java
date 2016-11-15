@@ -16,7 +16,7 @@ import java.util.Map;
  * @author Vitaliy Gonchar
  */
 class Search {
-    private boolean globalSearch;
+//    private boolean globalSearch;
     private boolean globalClassSearch;
     private boolean globalClassNamesSearch;
 
@@ -39,9 +39,10 @@ class Search {
 
     public List<String> getResultOfSearch() {
         List<String> result = null;
-        if (globalSearch) {
-            result = getResultOfGlobalSearch();
-        } else if (globalClassSearch) {
+//        if (globalSearch) {
+//            result = getResultOfGlobalSearch();
+//        } else
+        if (globalClassSearch) {
             result = className != null ? getResultOfSearchInClass() : Arrays.asList(BotMessage.ERROR_MSG);
         } else if (globalClassNamesSearch) {
             result = getResultListOfSearch(null, null, null, searchInClassNames());
@@ -80,30 +81,30 @@ class Search {
     }
 
 
-    private List<String> getResultOfGlobalSearch() {
-        return (List<String>) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument db) {
-                List<String> fieldNamesList = new ArrayList<>();
-                List<String> fieldValuesList = new ArrayList<>();
-                List<String> documentNamesList = new ArrayList<>();
-                List<String> classesNamesList = new ArrayList<>();
-                classesNamesList.addAll(searchInClassNames());
-                for (OClass oClass : CLASS_CACHE.values()) {
-                    OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(oClass.getName()));
-                    Iterable<ODocument> oDocuments = (Iterable<ODocument>) (query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
-
-                    for (ODocument oDocument : oDocuments) {
-                        List<String> result = searchInFieldValues(oDocument);
-                        if (result != null) fieldValuesList.addAll(result);
-                        String doc = searchDocument(oDocument);
-                        if (doc != null) documentNamesList.add(doc);
-                    }
-                }
-                return getResultListOfSearch(fieldNamesList, fieldValuesList, documentNamesList, classesNamesList);
-            }
-        }.execute();
-    }
+//    private List<String> getResultOfGlobalSearch() {
+//        return (List<String>) new DBClosure() {
+//            @Override
+//            protected Object execute(ODatabaseDocument db) {
+//                List<String> fieldNamesList = new ArrayList<>();
+//                List<String> fieldValuesList = new ArrayList<>();
+//                List<String> documentNamesList = new ArrayList<>();
+//                List<String> classesNamesList = new ArrayList<>();
+//                classesNamesList.addAll(searchInClassNames());
+//                for (OClass oClass : CLASS_CACHE.values()) {
+//                    OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(oClass.getName()));
+//                    Iterable<ODocument> oDocuments = (Iterable<ODocument>) (query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
+//
+//                    for (ODocument oDocument : oDocuments) {
+//                        List<String> result = searchInFieldValues(oDocument);
+//                        if (result != null) fieldValuesList.addAll(result);
+//                        String doc = searchDocument(oDocument);
+//                        if (doc != null) documentNamesList.add(doc);
+//                    }
+//                }
+//                return getResultListOfSearch(fieldNamesList, fieldValuesList, documentNamesList, classesNamesList);
+//            }
+//        }.execute();
+//    }
 
 
     private List<String> splitBigResult(List<String> bigResult, String info, int counter) {
@@ -234,9 +235,9 @@ class Search {
         this.globalClassSearch = globalClassSearch;
     }
 
-    public void setGlobalSearch(boolean globalSearch) {
-        this.globalSearch = globalSearch;
-    }
+//    public void setGlobalSearch(boolean globalSearch) {
+//        this.globalSearch = globalSearch;
+//    }
 
     public void setGlobalClassNamesSearch(boolean globalClassNamesSearch) {
         this.globalClassNamesSearch = globalClassNamesSearch;
