@@ -15,7 +15,7 @@ public class MyWebApplication extends OrienteerWebApplication
 		super.init();
 		CustomConfiguration.initCustom();
 		mountPages("org.orienteer.telegram.web");
-		registerWidgets("org.orienteer.telegram.widget");
+		registerWidgets("org.orienteer.telegram.component.widget");
 		registerModule(OTelegramModule.class);
 	}
 	

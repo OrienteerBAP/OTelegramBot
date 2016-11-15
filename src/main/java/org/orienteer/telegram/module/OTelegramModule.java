@@ -19,6 +19,7 @@ import org.telegram.telegrambots.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.logging.BotLogger;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
+import javax.xml.soap.SAAJResult;
 import java.util.Iterator;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
@@ -52,6 +53,7 @@ public class OTelegramModule extends AbstractOrienteerModule{
 
 	@Override
 	public void onInitialize(OrienteerWebApplication app, ODatabaseDocument db) {
+		test();
 		BotConfig botConfig = readBotConfig(db);
 		LOG.debug(botConfig.toString());
 		TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
@@ -64,6 +66,30 @@ public class OTelegramModule extends AbstractOrienteerModule{
 			LOG.error("Cannot register bot");
 			if (LOG.isDebugEnabled()) e.printStackTrace();
 		}
+	}
+
+	private void test() {
+		new DBClosure() {
+			@Override
+			protected Object execute(ODatabaseDocument db) {
+				ORecordIteratorClass<ODocument> oPerspectiveItem = db.browseClass("OPerspectiveItem");
+				OClass oClass = db.getMetadata().getSchema().getClass("OPerspectiveItem");
+				System.out.println();
+				LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+				LOG.debug("Class - " + oClass.getName());
+				for (ODocument doc : oPerspectiveItem) {
+					LOG.debug("document name: " + doc.field("name") + " document:\n" + doc.toString());
+					String fieldValues = "";
+					for (String name : doc.fieldNames()) {
+						fieldValues += name + "  -  " + doc.field(name) + "\n";
+					}
+					LOG.debug("fields of document: \n" + fieldValues);
+					LOG.debug("document" + doc.field("name") + " to JSON:\n" + doc.toJSON());
+				}
+				LOG.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+				return null;
+			}
+		}.execute();
 	}
 
 	protected BotConfig readBotConfig(ODatabaseDocument db) {

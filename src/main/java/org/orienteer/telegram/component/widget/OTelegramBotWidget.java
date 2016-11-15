@@ -1,4 +1,4 @@
-package org.orienteer.telegram.widget;
+package org.orienteer.telegram.component.widget;
 
 import java.util.*;
 
