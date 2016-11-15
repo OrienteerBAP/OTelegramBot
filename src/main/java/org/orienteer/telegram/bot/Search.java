@@ -94,9 +94,7 @@ class Search {
                     Iterable<ODocument> oDocuments = (Iterable<ODocument>) (query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
 
                     for (ODocument oDocument : oDocuments) {
-                        List<String> result = searchInFieldNames(oDocument);
-                        if (result != null) fieldNamesList.addAll(result);
-                        result = searchInFieldValues(oDocument);
+                        List<String> result = searchInFieldValues(oDocument);
                         if (result != null) fieldValuesList.addAll(result);
                         String doc = searchDocument(oDocument);
                         if (doc != null) documentNamesList.add(doc);
@@ -169,32 +167,6 @@ class Search {
        return builder.length() > 0 ? builder.toString() : null;
     }
 
-
-    /**
-     * getResultOfSearch similar words in field names
-     * @param oDocument document where is getResultOfSearch
-     * @return list of strings with result of getResultOfSearch
-     */
-    private List<String> searchInFieldNames(ODocument oDocument) {
-        List<String> resultOfSearch = new ArrayList<>();
-        String searchName;
-        String [] fieldNames = oDocument.fieldNames();
-        String docName = oDocument.field("name", OType.STRING);
-        if (docName == null) docName = "without document name";
-        String documentLink = BotState.GO_TO_CLASS.command + oDocument.getClassName()
-                + "_" + oDocument.getIdentity().getClusterId()
-                + "_" + oDocument.getIdentity().getClusterPosition()
-                + " : " + docName;
-        for (String name : fieldNames) {
-            if (name != null && isWordInLine(searchWord, name)) {
-                searchName = "• " + name + " : "
-                        + oDocument.field(name, OType.STRING) + " " + documentLink + "\n";
-                resultOfSearch.add(searchName);
-            }
-        }
-        return resultOfSearch.size() > 0 ? resultOfSearch : null;
-    }
-
     /**
      * getResultOfSearch similar words in field values
      * @param oDocument document where is getResultOfSearch
@@ -236,9 +208,7 @@ class Search {
                 Iterable<ODocument> oDocuments = (Iterable<ODocument>) (query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
 
                 for (ODocument oDocument : oDocuments) {
-                    List<String> result = searchInFieldNames(oDocument);
-                    if (result != null) fieldNamesList.addAll(result);
-                    result = searchInFieldValues(oDocument);
+                    List<String> result = searchInFieldValues(oDocument);
                     if (result != null) fieldValuesList.addAll(result);
                     String doc = searchDocument(oDocument);
                     if (doc != null) docNamesList.add(doc);
