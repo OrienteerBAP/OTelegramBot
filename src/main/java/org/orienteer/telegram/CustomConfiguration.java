@@ -10,8 +10,8 @@ import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
  * @author Vitaliy Gonchar
  */
 public abstract class CustomConfiguration {
-    public static final String CUSTOM_TELEGRAM_SEARCH = "orienteer.telegramSearch";
-    public static final String CUSTOM_TELEGRAM_SEARCH_QUERY = "telegramSearchQuery";
+    public static final String CUSTOM_TELEGRAM_SEARCH       = "orienteer.telegramSearch";
+    public static final String CUSTOM_TELEGRAM_SEARCH_QUERY = "orienteer.telegramSearchQuery";
 
     public static void initCustom() {
         CustomAttribute.create(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH, OType.BOOLEAN, false, false);
