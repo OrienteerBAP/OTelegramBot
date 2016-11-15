@@ -9,6 +9,7 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.*;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.model.ResourceModel;
 import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.component.FAIcon;
 import org.orienteer.core.component.FAIconType;
@@ -103,7 +104,7 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 
     @Override
     protected IModel<String> getDefaultTitleModel() {
-        return Model.of("Telegram enable");
+        return new ResourceModel("Telegram enable");
     }
     
     @Override
