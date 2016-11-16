@@ -85,7 +85,6 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 					protected void setValue(OClass entity, String critery, Object value) {
 						CustomAttribute customAttribute = CustomAttribute.get(critery);
 						customAttribute.setValue(entity, value);
-						OTelegramBot.createClassCache();
 					}
 				};
 			}

@@ -43,6 +43,7 @@
 	<properties>
 		<orienteer.version>1.2-SNAPSHOT</orienteer.version>
 		<wicket.orientdb.version>1.2-SNAPSHOT</wicket.orientdb.version>
+		<orientdb.version>2.1.19</orientdb.version>
 		<jetty.version>9.2.11.v20150529</jetty.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<!-- allowed values: R7, 1.0, 1.5, 2.0 or none -->
@@ -113,7 +114,7 @@
 
 	</dependencies>
 	<build>
-		<finalName>OTelegramModule</finalName>
+		<finalName>OTelegramBot</finalName>
 		<resources>
 			<resource>
 				<filtering>false</filtering>

@@ -24,8 +24,8 @@ class Search {
     private final String searchWord;
     private final String className;
 
-    private final Map<String, OClass> CLASS_CACHE = OTelegramBot.getClassCache();
-    private final Map<String, String> QUERY_CACHE = OTelegramBot.getQueryCache();
+    private final Map<String, OClass> CLASS_CACHE = Cache.getClassCache();
+    private final Map<String, String> QUERY_CACHE = Cache.getQueryCache();
 
     public Search(String searchWord) {
         this.searchWord = searchWord;
