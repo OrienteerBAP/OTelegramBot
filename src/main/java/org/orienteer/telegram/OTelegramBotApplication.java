@@ -1,13 +1,14 @@
 package org.orienteer.telegram;
 
+import org.apache.wicket.model.ResourceModel;
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.telegram.module.OTelegramModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MyWebApplication extends OrienteerWebApplication
+public class OTelegramBotApplication extends OrienteerWebApplication
 {
-	private static final Logger LOG = LoggerFactory.getLogger(MyWebApplication.class);
+	private static final Logger LOG = LoggerFactory.getLogger(OTelegramBotApplication.class);
 
 	@Override
 	public void init()
@@ -18,5 +19,4 @@ public class MyWebApplication extends OrienteerWebApplication
 		registerModule(OTelegramModule.class);
 		CustomConfiguration.initCustom();
 	}
-	
 }

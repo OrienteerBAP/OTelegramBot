@@ -325,6 +325,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.enableMarkdown(true);
         sendMessage.setText(BotMessage.CLASS_MENU_MSG);
+        LOG.debug("menu: " + BotMessage.CLASS_MENU_MSG);
         List<String> buttonNames = new ArrayList<>();
         for (OClass oClass: Cache.getClassCache().values()) {
             buttonNames.add(BotMessage.CLASS_BUT + oClass.getName());

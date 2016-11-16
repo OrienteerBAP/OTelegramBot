@@ -14,8 +14,10 @@ public abstract class CustomConfiguration {
     public static final String CUSTOM_TELEGRAM_SEARCH_QUERY = "orienteer.telegramSearchQuery";
 
     public static void initCustom() {
-        CustomAttribute.create(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH, OType.BOOLEAN, false, false);
-        CustomAttribute.create(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH_QUERY, OType.STRING, null, true);
+        CustomAttribute.create(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH, OType.BOOLEAN, false, false, false);
+        CustomAttribute.create(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH_QUERY, OType.STRING, null, true, false);
+
+
         new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument db) {
