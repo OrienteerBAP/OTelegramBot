@@ -17,6 +17,5 @@ public class OTelegramBotApplication extends OrienteerWebApplication
 		mountPages("org.orienteer.telegram.web");
 		registerWidgets("org.orienteer.telegram.component.widget");
 		registerModule(OTelegramModule.class);
-		CustomConfiguration.initCustom();
 	}
 }

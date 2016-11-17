@@ -42,9 +42,8 @@ public abstract class Cache {
             @Override
             protected Object execute(ODatabaseDocument db) {
                 classCache = new HashMap<>();
-                CustomAttribute customAttribute = CustomAttribute.get(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH);
                 for (OClass oClass : db.getMetadata().getSchema().getClasses()) {
-                    if (customAttribute.getValue(oClass)) {
+                    if (CustomConfiguration.TELEGRAM_SEARCH.getValue(oClass)) {
                         classCache.put(oClass.getName(), oClass);
                     }
                 }
@@ -57,9 +56,13 @@ public abstract class Cache {
     private static void createQueryCache() {
         queryCache = new HashMap<>();
         if (classCache == null) createClassCache();
-        CustomAttribute customAttribute = CustomAttribute.get(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH_QUERY);
         for (OClass oClass : classCache.values()) {
-            queryCache.put(oClass.getName(), (String) customAttribute.getValue(oClass));
+            String query = CustomConfiguration.TELEGRAM_SEARCH_QUERY.getValue(oClass);
+            if (query == null){
+                query = "SELECT FROM " + oClass.getName();
+                CustomConfiguration.TELEGRAM_SEARCH_QUERY.setValue(oClass, query);
+            }
+            queryCache.put(oClass.getName(), query);
         }
     }
 
