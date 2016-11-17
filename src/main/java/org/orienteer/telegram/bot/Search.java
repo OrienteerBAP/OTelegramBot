@@ -27,14 +27,18 @@ class Search {
     private final Map<String, OClass> CLASS_CACHE = Cache.getClassCache();
     private final Map<String, String> QUERY_CACHE = Cache.getQueryCache();
 
-    public Search(String searchWord) {
+    private final BotMessage botMessage;
+
+    public Search(String searchWord, BotMessage botMessage) {
         this.searchWord = searchWord;
         this.className = null;
+        this.botMessage = botMessage;
     }
 
-    public Search(String searchWord, String className) {
+    public Search(String searchWord, String className, BotMessage botMessage) {
         this.searchWord = searchWord;
         this.className = CLASS_CACHE.containsKey(className) ? className : null;
+        this.botMessage = botMessage;
     }
 
     public List<String> getResultOfSearch() {
@@ -43,40 +47,35 @@ class Search {
 //            result = getResultOfGlobalSearch();
 //        } else
         if (globalClassSearch) {
-            result = className != null ? getResultOfSearchInClass() : Arrays.asList(BotMessage.ERROR_MSG);
+            result = className != null ? getResultOfSearchInClass() : Arrays.asList(botMessage.ERROR_MSG);
         } else if (globalClassNamesSearch) {
-            result = getResultListOfSearch(null, null, null, searchInClassNames());
+            result = getResultListOfSearch(null, null, searchInClassNames());
         }
         return result;
     }
 
-    private List<String> getResultListOfSearch(List<String> fields, List<String> values,
+    private List<String> getResultListOfSearch(List<String> values,
                                                List<String> docs, List<String> classes) {
         List<String> resultList = new ArrayList<>();
-        if (fields == null) fields = new ArrayList<>();
         if (values == null) values = new ArrayList<>();
         if (docs == null) docs = new ArrayList<>();
         if (classes == null) classes = new ArrayList<>();
 
-        if (fields.size() > 0 || values.size() > 0 || docs.size() > 0 || classes.size() > 0) {
+        if (values.size() > 0 || docs.size() > 0 || classes.size() > 0) {
             int counter = 0;
             if (classes.size() > 0) {
-                String info = "\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_CLASS_NAMES_RESULT) + "\n";
+                String info = "\n" + String.format(botMessage.HTML_STRONG_TEXT, botMessage.SEARCH_CLASS_NAMES_RESULT) + "\n";
                 resultList.addAll(splitBigResult(classes, info, counter));
             }
             if (docs.size() > 0) {
-                String info = "\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_DOCUMENT_NAMES_RESULT) + "\n";
+                String info = "\n" + String.format(botMessage.HTML_STRONG_TEXT, botMessage.SEARCH_DOCUMENT_NAMES_RESULT) + "\n";
                 resultList.addAll(splitBigResult(docs, info, counter));
             }
-            if (fields.size() > 0) {
-                String info = "\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_FIELD_NAMES_RESULT) + "\n";
-                resultList.addAll(splitBigResult(fields, info, counter));
-            }
             if (values.size() > 0) {
-                String info = "\n" + String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_FIELD_VALUES_RESULT) + "\n";
+                String info = "\n" + String.format(botMessage.HTML_STRONG_TEXT, botMessage.SEARCH_FIELD_VALUES_RESULT) + "\n";
                 resultList.addAll(splitBigResult(values, info, counter));
             }
-        } else resultList.add(String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_FAILED_MSG));
+        } else resultList.add(String.format(botMessage.HTML_STRONG_TEXT, botMessage.SEARCH_RESULT_FAILED_MSG));
         return resultList;
     }
 
@@ -85,7 +84,6 @@ class Search {
 //        return (List<String>) new DBClosure() {
 //            @Override
 //            protected Object execute(ODatabaseDocument db) {
-//                List<String> fieldNamesList = new ArrayList<>();
 //                List<String> fieldValuesList = new ArrayList<>();
 //                List<String> documentNamesList = new ArrayList<>();
 //                List<String> classesNamesList = new ArrayList<>();
@@ -101,7 +99,7 @@ class Search {
 //                        if (doc != null) documentNamesList.add(doc);
 //                    }
 //                }
-//                return getResultListOfSearch(fieldNamesList, fieldValuesList, documentNamesList, classesNamesList);
+//                return getResultListOfSearch(fieldValuesList, documentNamesList, classesNamesList);
 //            }
 //        }.execute();
 //    }
@@ -109,7 +107,7 @@ class Search {
 
     private List<String> splitBigResult(List<String> bigResult, String info, int counter) {
         List<String> resultList = new ArrayList<>();
-        String head = String.format(BotMessage.HTML_STRONG_TEXT, BotMessage.SEARCH_RESULT_SUCCESS_MSG);
+        String head = String.format(botMessage.HTML_STRONG_TEXT, botMessage.SEARCH_RESULT_SUCCESS_MSG);
         StringBuilder builder = new StringBuilder();
         builder.append(head);
         builder.append(info);
@@ -202,7 +200,6 @@ class Search {
         return (List<String>) new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument db) {
-                List<String> fieldNamesList = new ArrayList<>();
                 List<String> fieldValuesList = new ArrayList<>();
                 List<String> docNamesList = new ArrayList<>();
                 OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(className));
@@ -214,7 +211,7 @@ class Search {
                     String doc = searchDocument(oDocument);
                     if (doc != null) docNamesList.add(doc);
                 }
-                return  getResultListOfSearch(fieldNamesList, fieldValuesList, docNamesList, null);
+                return  getResultListOfSearch(fieldValuesList, docNamesList, null);
             }
         }.execute();
     }
