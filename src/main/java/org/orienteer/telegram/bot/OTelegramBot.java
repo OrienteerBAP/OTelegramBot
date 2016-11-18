@@ -12,6 +12,8 @@ import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.orienteer.core.CustomAttribute;
+import org.orienteer.telegram.bot.link.Link;
+import org.orienteer.telegram.bot.link.LinkFactory;
 import org.orienteer.telegram.bot.search.Search;
 import org.orienteer.telegram.bot.search.SearchFactory;
 import org.orienteer.telegram.module.OTelegramModule;
@@ -116,13 +118,13 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 sendMessage(getNextPreviousMenuMessage(message, userSession.hasNextResult(), userSession.hasPreviousResult()));
                 break;
             case GO_TO_DOCUMENT_SHORT_DESCRIPTION:
-                sendResponseMessage = getTextMessage(message, goToTargetDocument(message.getText(), false));
+                sendResponseMessage = getTextMessage(message, LinkFactory.getLink(message.getText(), false, botMessage).goTo());
                 break;
             case GO_TO_DOCUMENT_ALL_DESCRIPTION:
-                sendResponseMessage = getTextMessage(message, goToTargetDocument(message.getText(), true));
+                sendResponseMessage = getTextMessage(message, LinkFactory.getLink(message.getText(), true, botMessage).goTo());
                 break;
             case GO_TO_CLASS:
-                sendResponseMessage = getTextMessage(message, goToTargetClass(message.getText()));
+                sendResponseMessage = getTextMessage(message, LinkFactory.getLink(message.getText(), botMessage).goTo());
                 break;
             case LANGUAGE:
                 sendResponseMessage = getTextMessage(message, "<strong>Localization is in develop mode.</strong>");
@@ -165,131 +167,6 @@ public class OTelegramBot extends TelegramLongPollingBot {
         return userSession;
     }
 
-    /**
-     * get description document by class name and RID
-     * @param document string like "/<className><RID>"
-     * @return string with description document
-     */
-    private String goToTargetDocument(final String document, final boolean isAllProperties) {
-        String [] split = document.substring(BotState.GO_TO_CLASS.getCommand().length()).split("_");
-        final int clusterID = Integer.valueOf(split[1]);
-        final long recordID = Long.valueOf(split[2]);
-        final ORecordId oRecordId = new ORecordId(clusterID, recordID);
-        final String result = (String) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                StringBuilder builder = new StringBuilder();
-                StringBuilder resultBuilder;
-                ODocument oDocument;
-                try {
-                    oDocument = oDatabaseDocument.getRecord(oRecordId);
-                    builder.append(oDocument.getClassName());
-                    builder.append(" " + BotState.GO_TO_CLASS.getCommand());
-                    builder.append(oDocument.getClassName());
-                    builder.append("\n\n");
-                    String[] fieldNames = oDocument.fieldNames();
-                    List<String> resultList = new ArrayList<>();
-                    OClass oClass = oDocument.getSchemaClass();
-                    CustomAttribute displayable = CustomAttribute.DISPLAYABLE;
-                    boolean isWihoutDetails = false;
-                    for (String fieldName : fieldNames) {
-                        if (!isAllProperties) {
-                            OProperty property = oClass.getProperty(fieldName);
-                            if (displayable.getValue(property)) {
-                                resultList.add(String.format(botMessage.HTML_STRONG_TEXT, fieldName) + ":  "
-                                        + oDocument.field(fieldName, OType.STRING) + "\n");
-                            } else isWihoutDetails = true;
-                        } else  resultList.add(String.format(botMessage.HTML_STRONG_TEXT, fieldName) + ":  "
-                                + oDocument.field(fieldName, OType.STRING) + "\n");
-                    }
-                    Collections.sort(resultList);
-                    for (String str : resultList) {
-                        builder.append(str);
-                    }
-                    resultBuilder = new StringBuilder(String.format(
-                            botMessage.HTML_STRONG_TEXT, botMessage.DOCUMENT_DETAILS_MSG) + "\n\n"
-                            + String.format(botMessage.HTML_STRONG_TEXT, "Class:  "));
-                    if (isWihoutDetails) {
-                        resultBuilder = new StringBuilder(String.format(
-                                botMessage.HTML_STRONG_TEXT, botMessage.SHORT_DOCUMENT_DESCRIPTION_MSG) + "\n\n"
-                                + String.format(botMessage.HTML_STRONG_TEXT, "Class:  "));
-                        builder.append("\n" + botMessage.DOCUMENT_DETAILS_MSG + document + "_details");
-                    }
-                    resultBuilder.append(builder.toString());
-                } catch (ORecordNotFoundException ex) {
-                    LOG.warn("Record: " + oRecordId + " was not found.");
-                    if (LOG.isDebugEnabled()) ex.printStackTrace();
-                    resultBuilder = new StringBuilder(
-                            String.format(botMessage.HTML_STRONG_TEXT, botMessage.FAILED_DOCUMENT_BY_RID));
-                }
-                return resultBuilder.toString();
-            }
-        }.execute();
-        return result;
-    }
-
-    private String goToTargetClass(final String targetClass) {
-        final String className = targetClass.substring(BotState.GO_TO_CLASS.getCommand().length());
-
-        String result = (String) new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
-                StringBuilder builder = new StringBuilder(
-                        String.format(botMessage.HTML_STRONG_TEXT, botMessage.CLASS_DESCRIPTION_MSG) + "\n\n");
-                Map<String, OClass> classCache = Cache.getClassCache();
-                if (!classCache.containsKey(className)) {
-                    return botMessage.SEARCH_FAILED_CLASS_BY_NAME;
-                }
-                OClass oClass = classCache.get(className);
-                builder.append("<strong>Name: </strong>");
-                builder.append(oClass.getName());
-                builder.append("\n");
-                builder.append("<strong>Super classes: </strong>");
-                List<String> superClassNames = new ArrayList<>();
-                for (OClass superClass : oClass.getSuperClasses()) {
-                    if (classCache.containsKey(superClass.getName())) {
-                        superClassNames.add("/" + superClass.getName() + " ");
-                    }
-                }
-                if (superClassNames.size() > 0) {
-                    for (String str : superClassNames) {
-                        builder.append(str);
-                    }
-                } else builder.append("without superclasses");
-                builder.append("\n");
-                Collection<OProperty> properties = oClass.properties();
-                List<String> resultList = new ArrayList<>();
-                for (OProperty property : properties) {
-                    resultList.add(String.format(botMessage.HTML_STRONG_TEXT, property.getName())
-                        + ": " + property.getDefaultValue() + " (default value)");
-                }
-                Collections.sort(resultList);
-                for (String string : resultList) {
-                    builder.append(string);
-                    builder.append("\n");
-                }
-                builder.append("\n");
-                builder.append(String.format(botMessage.HTML_STRONG_TEXT, botMessage.CLASS_DOCUMENTS));
-                builder.append("\n");
-                ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
-                resultList = new ArrayList<>();
-                for (ODocument oDocument : oDocuments) {
-                    String docId = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
-                            + "_" + oDocument.getIdentity().getClusterId()
-                            + "_" + oDocument.getIdentity().getClusterPosition();
-                    resultList.add(oDocument.field("name") + " " + docId);
-                }
-                Collections.sort(resultList);
-                for (String string : resultList) {
-                    builder.append(string);
-                    builder.append("\n");
-                }
-                return builder.toString();
-            }
-        }.execute();
-        return result;
-    }
-
     private SendMessage getNextPreviousMenuMessage(Message message, boolean hasNext, boolean hasPrevious) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
@@ -316,7 +193,6 @@ public class OTelegramBot extends TelegramLongPollingBot {
             buttonNames.add(botMessage.CLASS_BUT + oClass.getName());
         }
         Collections.sort(buttonNames);
-//        buttonNames.add(BotMessage.BACK);
         sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
         return sendMessage;
     }
@@ -340,18 +216,6 @@ public class OTelegramBot extends TelegramLongPollingBot {
         sendMessage.setReplyMarkup(getMenuMarkup(keyboard));
         return sendMessage;
     }
-
-//    private SendMessage getMainMenuMessage(Message message) {
-//        SendMessage sendMessage = new SendMessage();
-//        sendMessage.setChatId(message.getChatId().toString());
-//        sendMessage.enableMarkdown(true);
-//        sendMessage.setText(BotMessage.MAIN_MENU_MSG);
-//        List<String> buttonNames = new ArrayList<>();
-//        buttonNames.add(BotMessage.NEW_GLOBAL_SEARCH_BUT);
-//        buttonNames.add(BotMessage.NEW_CLASS_SEARCH_BUT);
-//        sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
-//        return sendMessage;
-//    }
 
     private ReplyKeyboardMarkup getMenuMarkup(List<String> buttonNames) {
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
