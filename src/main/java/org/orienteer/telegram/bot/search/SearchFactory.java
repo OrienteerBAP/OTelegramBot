@@ -14,8 +14,8 @@ public abstract class SearchFactory {
      * @param botMessage
      * @return
      */
-    public Search getSearch(String searchWord, String className, BotMessage botMessage) {
-        ClassSearch classSearch = new ClassSearch();
+    public static Search getSearch(String searchWord, String className, BotMessage botMessage) {
+        ClassSearch classSearch = new ClassSearch(searchWord, className, botMessage);
         return classSearch;
     }
 
@@ -25,8 +25,8 @@ public abstract class SearchFactory {
      * @param botMessage
      * @return
      */
-    public Search getSearch(String searchWord, BotMessage botMessage) {
-        GlobalSearch globalSearch = new GlobalSearch();
-        return globalSearch;
+    public static Search getSearch(String searchWord, BotMessage botMessage) {
+        ClassNameSearch classNameSearch = new ClassNameSearch(searchWord, botMessage);
+        return classNameSearch;
     }
 }
