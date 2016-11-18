@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * @author  Vitaliy Gonchar
  */
-class UserSession {
+public class UserSession {
     private BotState botState;
     private BotState previousBotState;
     private String targetClass;
