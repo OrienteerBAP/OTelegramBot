@@ -58,7 +58,7 @@ public class OTelegramModule extends AbstractOrienteerModule{
 		TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
 		BotLogger.setLevel(Level.OFF);
 		try {
-			if (bot.field(OMODULE_ACTIVATE)) {
+			if (username != null) {
 				telegramBotsApi.registerBot(OTelegramBot.getOrienteerTelegramBot(botConfig));
 			}
 		} catch (TelegramApiRequestException e) {
