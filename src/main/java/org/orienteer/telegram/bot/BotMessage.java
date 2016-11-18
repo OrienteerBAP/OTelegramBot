@@ -5,7 +5,7 @@ import org.apache.wicket.model.ResourceModel;
 /**
  * @author  Vitaliy Gonchar
  */
-class BotMessage {
+public class BotMessage {
     final String CLASS_MENU_MSG;
     final String CLASS_BUT;
     final String NEXT_RESULT_BUT;

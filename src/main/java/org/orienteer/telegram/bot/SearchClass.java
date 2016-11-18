@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * @author Vitaliy Gonchar
  */
-class Search {
+class SearchClass {
 //    private boolean globalSearch;
     private boolean globalClassSearch;
     private boolean globalClassNamesSearch;
@@ -29,13 +29,13 @@ class Search {
 
     private final BotMessage botMessage;
 
-    public Search(String searchWord, BotMessage botMessage) {
+    public SearchClass(String searchWord, BotMessage botMessage) {
         this.searchWord = searchWord;
         this.className = null;
         this.botMessage = botMessage;
     }
 
-    public Search(String searchWord, String className, BotMessage botMessage) {
+    public SearchClass(String searchWord, String className, BotMessage botMessage) {
         this.searchWord = searchWord;
         this.className = CLASS_CACHE.containsKey(className) ? className : null;
         this.botMessage = botMessage;

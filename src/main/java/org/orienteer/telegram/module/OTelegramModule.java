@@ -53,12 +53,13 @@ public class OTelegramModule extends AbstractOrienteerModule{
 			token = bot.field(OPROPERTY_TOKEN, OType.STRING);
 			userSession = bot.field(OPROPERTY_USER_SESSION, OType.LONG);
 		}
+		if (username == null) bot.field(OMODULE_ACTIVATE, false);
 		BotConfig botConfig = new BotConfig(username, token, userSession);
 		LOG.debug("\n" + botConfig.toString());
 		TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
 		BotLogger.setLevel(Level.OFF);
 		try {
-			if (username != null) {
+			if (bot.field(OMODULE_ACTIVATE)) {
 				telegramBotsApi.registerBot(OTelegramBot.getOrienteerTelegramBot(botConfig));
 			}
 		} catch (TelegramApiRequestException e) {

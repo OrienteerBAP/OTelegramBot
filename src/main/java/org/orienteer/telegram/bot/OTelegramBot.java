@@ -11,7 +11,6 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import org.apache.wicket.model.ResourceModel;
 import org.orienteer.core.CustomAttribute;
 import org.orienteer.telegram.module.OTelegramModule;
 import org.slf4j.Logger;
@@ -150,20 +149,20 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private UserSession handleSearchRequest(Message message, UserSession userSession) throws TelegramApiException {
         SendMessage sendResponseMessage = null;
         List<String> result = null;
-        Search search = new Search(message.getText(), botMessage);
+        SearchClass searchClass = new SearchClass(message.getText(), botMessage);
         switch (userSession.getBotState()) {
 //            case SEARCH_GLOBAL:
-//                search.setGlobalSearch(true);
-//                result = search.getResultOfSearch();
+//                searchClass.setGlobalSearch(true);
+//                result = searchClass.getResultOfSearch();
 //                break;
             case SEARCH_IN_CLASS_GLOBAL:
-                search = new Search(message.getText(), userSession.getTargetClass(), botMessage);
-                search.setGlobalClassSearch(true);
-                result = search.getResultOfSearch();
+                searchClass = new SearchClass(message.getText(), userSession.getTargetClass(), botMessage);
+                searchClass.setGlobalClassSearch(true);
+                result = searchClass.getResultOfSearch();
                 break;
             case NEW_CLASS_SEARCH:
-                search.setGlobalClassNamesSearch(true);
-                result = search.getResultOfSearch();
+                searchClass.setGlobalClassNamesSearch(true);
+                result = searchClass.getResultOfSearch();
                 break;
         }
         if (result != null) {
