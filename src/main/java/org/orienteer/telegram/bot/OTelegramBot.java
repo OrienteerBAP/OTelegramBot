@@ -12,6 +12,8 @@ import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.orienteer.core.CustomAttribute;
+import org.orienteer.telegram.bot.search.Search;
+import org.orienteer.telegram.bot.search.SearchFactory;
 import org.orienteer.telegram.module.OTelegramModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,21 +97,10 @@ public class OTelegramBot extends TelegramLongPollingBot {
         state = state == BotState.BACK ? userSession.getPreviousBotState() : state;
         switch (state) {
             case START:
-//                sendResponseMessage = getMainMenuMessage(message);
                 sendResponseMessage = getClassesMenuMessage(message);
                 userSession.setBotState(BotState.NEW_CLASS_SEARCH);
                 userSession.setPreviousBotState(BotState.START);
                 break;
-//            case NEW_GLOBAL_SEARCH:
-//                sendResponseMessage = getBackMenuMessage(message, BotMessage.SEARCH_MSG);
-//                userSession.setBotState(BotState.SEARCH_GLOBAL);
-//                userSession.setPreviousBotState(BotState.START);
-//                break;
-//            case NEW_CLASS_SEARCH:
-//                sendResponseMessage = getClassesMenuMessage(message);
-//                userSession.setBotState(BotState.NEW_CLASS_SEARCH);
-//                userSession.setPreviousBotState(BotState.START);
-//                break;
             case CLASS_SEARCH:
                 userSession.setTargetClass(message.getText().substring(botMessage.CLASS_BUT.length()));
                 userSession.setBotState(BotState.SEARCH_IN_CLASS_GLOBAL);
@@ -148,21 +139,16 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
     private UserSession handleSearchRequest(Message message, UserSession userSession) throws TelegramApiException {
         SendMessage sendResponseMessage = null;
-        List<String> result = null;
-        SearchClass searchClass = new SearchClass(message.getText(), botMessage);
+        ArrayList<String> result = null;
+        Search search;
         switch (userSession.getBotState()) {
-//            case SEARCH_GLOBAL:
-//                searchClass.setGlobalSearch(true);
-//                result = searchClass.getResultOfSearch();
-//                break;
             case SEARCH_IN_CLASS_GLOBAL:
-                searchClass = new SearchClass(message.getText(), userSession.getTargetClass(), botMessage);
-                searchClass.setGlobalClassSearch(true);
-                result = searchClass.getResultOfSearch();
+                search = SearchFactory.getSearch(message.getText(), userSession.getTargetClass(), botMessage);
+                result = search.execute();
                 break;
             case NEW_CLASS_SEARCH:
-                searchClass.setGlobalClassNamesSearch(true);
-                result = searchClass.getResultOfSearch();
+                search = SearchFactory.getSearch(message.getText(), botMessage);
+                result = search.execute();
                 break;
         }
         if (result != null) {
@@ -185,7 +171,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
      * @return string with description document
      */
     private String goToTargetDocument(final String document, final boolean isAllProperties) {
-        String [] split = document.substring(BotState.GO_TO_CLASS.command.length()).split("_");
+        String [] split = document.substring(BotState.GO_TO_CLASS.getCommand().length()).split("_");
         final int clusterID = Integer.valueOf(split[1]);
         final long recordID = Long.valueOf(split[2]);
         final ORecordId oRecordId = new ORecordId(clusterID, recordID);
@@ -198,7 +184,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 try {
                     oDocument = oDatabaseDocument.getRecord(oRecordId);
                     builder.append(oDocument.getClassName());
-                    builder.append(" " + BotState.GO_TO_CLASS.command);
+                    builder.append(" " + BotState.GO_TO_CLASS.getCommand());
                     builder.append(oDocument.getClassName());
                     builder.append("\n\n");
                     String[] fieldNames = oDocument.fieldNames();
@@ -243,7 +229,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
     }
 
     private String goToTargetClass(final String targetClass) {
-        final String className = targetClass.substring(BotState.GO_TO_CLASS.command.length());
+        final String className = targetClass.substring(BotState.GO_TO_CLASS.getCommand().length());
 
         String result = (String) new DBClosure() {
             @Override
@@ -288,7 +274,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                 ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
                 resultList = new ArrayList<>();
                 for (ODocument oDocument : oDocuments) {
-                    String docId = BotState.GO_TO_CLASS.command + oDocument.getClassName()
+                    String docId = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
                             + "_" + oDocument.getIdentity().getClusterId()
                             + "_" + oDocument.getIdentity().getClusterPosition();
                     resultList.add(oDocument.field("name") + " " + docId);
@@ -386,18 +372,18 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private BotState getBotState(String text) {
         BotState state = BotState.ERROR;
         for (BotState search : BotState.values()) {
-            if (search.command.equals(text)) {
+            if (search.getCommand().equals(text)) {
                 state = search;
                 break;
             }
         }
         if (state == BotState.ERROR) {
-            if (text.startsWith(BotState.GO_TO_CLASS.command) && text.endsWith("_details")) {
+            if (text.startsWith(BotState.GO_TO_CLASS.getCommand()) && text.endsWith("_details")) {
                 return BotState.GO_TO_DOCUMENT_ALL_DESCRIPTION;
             }
-            if (text.startsWith(BotState.GO_TO_CLASS.command) && text.contains("_")) {
+            if (text.startsWith(BotState.GO_TO_CLASS.getCommand()) && text.contains("_")) {
                 return BotState.GO_TO_DOCUMENT_SHORT_DESCRIPTION;
-            } else if (text.startsWith(BotState.GO_TO_CLASS.command)) {
+            } else if (text.startsWith(BotState.GO_TO_CLASS.getCommand())) {
                 return BotState.GO_TO_CLASS;
             } else if (text.startsWith("/")) {
                 return BotState.GO_TO_CLASS;

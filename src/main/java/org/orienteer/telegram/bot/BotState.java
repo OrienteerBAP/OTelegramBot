@@ -3,7 +3,7 @@ package org.orienteer.telegram.bot;
 /**
  * @author Vitaliy Gonchar
  */
-enum BotState {
+public enum BotState {
     NEW_SEARCH(""),
     NEW_GLOBAL_SEARCH("/newGlobalSearch"),
     NEW_CLASS_SEARCH("/newClassSearch"),
@@ -22,10 +22,13 @@ enum BotState {
     LANGUAGE("/language"),
     ABOUT("/about");
 
-    String command;
+    private String command;
 
     BotState(String command) {
         this.command = command;
     }
 
+    public String getCommand() {
+        return command;
+    }
 }

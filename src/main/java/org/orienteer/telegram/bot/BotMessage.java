@@ -6,30 +6,30 @@ import org.apache.wicket.model.ResourceModel;
  * @author  Vitaliy Gonchar
  */
 public class BotMessage {
-    final String CLASS_MENU_MSG;
-    final String CLASS_BUT;
-    final String NEXT_RESULT_BUT;
-    final String PREVIOUS_RESULT_BUT;
+    public final String CLASS_MENU_MSG;
+    public final String CLASS_BUT;
+    public final String NEXT_RESULT_BUT;
+    public final String PREVIOUS_RESULT_BUT;
 
-    final String START_SEARCH_MSG;
-    final String SEARCH_RESULT_SUCCESS_MSG;
-    final String SEARCH_RESULT_FAILED_MSG;
-    final String ERROR_MSG;
-    final String CLASS_SEARCH_MSG;
-    final String CLASS_DESCRIPTION_MSG;
-    final String CLASS_DOCUMENTS;
-    final String SHORT_DOCUMENT_DESCRIPTION_MSG;
-    final String DOCUMENT_DETAILS_MSG;
-    final String SEARCH_FIELD_VALUES_RESULT;
-    final String BACK;
-    final String SEARCH_FAILED_CLASS_BY_NAME;
-    final String FAILED_DOCUMENT_BY_RID;
-    final String SEARCH_DOCUMENT_NAMES_RESULT;
-    final String SEARCH_CLASS_NAMES_RESULT;
+    public final String START_SEARCH_MSG;
+    public final String SEARCH_RESULT_SUCCESS_MSG;
+    public final String SEARCH_RESULT_FAILED_MSG;
+    public final String ERROR_MSG;
+    public final String CLASS_SEARCH_MSG;
+    public final String CLASS_DESCRIPTION_MSG;
+    public final String CLASS_DOCUMENTS;
+    public final String SHORT_DOCUMENT_DESCRIPTION_MSG;
+    public final String DOCUMENT_DETAILS_MSG;
+    public final String SEARCH_FIELD_VALUES_RESULT;
+    public final String BACK;
+    public final String SEARCH_FAILED_CLASS_BY_NAME;
+    public final String FAILED_DOCUMENT_BY_RID;
+    public final String SEARCH_DOCUMENT_NAMES_RESULT;
+    public final String SEARCH_CLASS_NAMES_RESULT;
 
-    final String ABOUT_MSG;
+    public final String ABOUT_MSG;
 
-    final String HTML_STRONG_TEXT = "<strong>%s</strong>";
+    public final String HTML_STRONG_TEXT = "<strong>%s</strong>";
 
     BotMessage() {
         CLASS_MENU_MSG = new ResourceModel("telegram.bot.menu.classesMenu").getObject();

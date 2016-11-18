@@ -29,11 +29,8 @@ class UserSession {
         this.targetClass = targetClass;
     }
 
-    public void setResultOfSearch(List<String> resultOfSearch) {
-        resultList = new ArrayList<>();
-        for (String result : resultOfSearch) {
-            resultList.add(result);
-        }
+    public void setResultOfSearch(ArrayList<String> resultList) {
+        this.resultList = resultList;
         counter = -1;
     }
 
