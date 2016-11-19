@@ -1,6 +1,14 @@
 package org.orienteer.telegram.bot;
 
+import org.apache.wicket.Localizer;
+import org.apache.wicket.Session;
 import org.apache.wicket.model.ResourceModel;
+import org.orienteer.core.OrienteerWebApplication;
+import org.orienteer.core.OrienteerWebSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Locale;
 
 /**
  * @author  Vitaliy Gonchar
@@ -40,36 +48,41 @@ public class BotMessage {
     public final String EMBEDDED = "_embedded";
     public final String HTML_STRONG_TEXT = "<strong>%s</strong>";
 
+    private static final Logger LOG = LoggerFactory.getLogger(BotMessage.class);
+
     BotMessage() {
-        CLASS_MENU_MSG = new ResourceModel("telegram.bot.menu.classesMenu").getObject();
-        CLASS_BUT = new ResourceModel("telegram.bot.button.class").getObject();
-        START_SEARCH_MSG = new ResourceModel("telegram.bot.message.startSearch").getObject();
-        SEARCH_RESULT_SUCCESS_MSG = new ResourceModel("telegram.bot.message.searchSuccess").getObject();
-        SEARCH_RESULT_FAILED_MSG = new ResourceModel("telegram.bot.message.searchFailed").getObject();
-        ERROR_MSG = new ResourceModel("telegram.bot.message.error").getObject();
-        CLASS_SEARCH_MSG = new ResourceModel("telegram.bot.message.classSearch").getObject();
-        CLASS_DESCRIPTION_MSG = new ResourceModel("telegram.bot.message.classDescription").getObject();
-        CLASS_DOCUMENTS = new ResourceModel("telegram.bot.message.classDocuments").getObject();
-        SHORT_DOCUMENT_DESCRIPTION_MSG = new ResourceModel("telegram.bot.message.shortDocumentDescription").getObject();
-        DOCUMENT_DETAILS_MSG = new ResourceModel("telegram.bot.message.detailDocumentDescription").getObject();
-        SEARCH_FIELD_VALUES_RESULT = new ResourceModel("telegram.bot.message.searchFieldValues").getObject();
-        BACK = new ResourceModel("telegram.bot.button.back").getObject();
-        SEARCH_FAILED_CLASS_BY_NAME = new ResourceModel("telegram.bot.message.failedSearchClassByName").getObject();
-        FAILED_DOCUMENT_BY_RID = new ResourceModel("telegram.bot.message.failedSearchDocumentByRID").getObject();
-        SEARCH_DOCUMENT_NAMES_RESULT = new ResourceModel("telegram.bot.message.searchDocumentNamesResult").getObject();
-        SEARCH_CLASS_NAMES_RESULT = new ResourceModel("telegram.bot.message.searchClassNamesResult").getObject();
+        OrienteerWebApplication application = OrienteerWebApplication.lookupApplication();
+        Localizer localizer = application.getResourceSettings().getLocalizer();
 
-        NAME = new ResourceModel("telegram.bot.message.name").getObject();
-        SUPER_CLASSES = new ResourceModel("telegram.bot.message.superClasses").getObject();
-        WITHOUT_SUPER_CLASSES = new ResourceModel("telegram.bot.message.withoutSuperClasses").getObject();
-        DEFAULT_VALUE = new ResourceModel("telegram.bot.message.defaultValue").getObject();
-        CLASS = new ResourceModel("telegram.bot.message.class").getObject();
-        WITHOUT_NAME = new ResourceModel("telegram.bot.message.withoutName").getObject();
-        CLASS_NAME = new ResourceModel("telegram.bot.message.className").getObject();
+        CLASS_MENU_MSG = localizer.getString("telegram.bot.menu.classesMenu", null);
+        CLASS_BUT = localizer.getString("telegram.bot.button.class", null);
+        START_SEARCH_MSG = localizer.getString("telegram.bot.message.startSearch", null);
+        SEARCH_RESULT_SUCCESS_MSG = localizer.getString("telegram.bot.message.searchSuccess", null);
+        SEARCH_RESULT_FAILED_MSG = localizer.getString("telegram.bot.message.searchFailed", null);
+        ERROR_MSG = localizer.getString("telegram.bot.message.error", null);
+        CLASS_SEARCH_MSG = localizer.getString("telegram.bot.message.classSearch", null);
+        CLASS_DESCRIPTION_MSG = localizer.getString("telegram.bot.message.classDescription", null);
+        CLASS_DOCUMENTS = localizer.getString("telegram.bot.message.classDocuments", null);
+        SHORT_DOCUMENT_DESCRIPTION_MSG = localizer.getString("telegram.bot.message.shortDocumentDescription", null);
+        DOCUMENT_DETAILS_MSG = localizer.getString("telegram.bot.message.detailDocumentDescription", null);
+        SEARCH_FIELD_VALUES_RESULT = localizer.getString("telegram.bot.message.searchFieldValues", null);
+        BACK = localizer.getString("telegram.bot.button.back", null);
+        SEARCH_FAILED_CLASS_BY_NAME = localizer.getString("telegram.bot.message.failedSearchClassByName", null);
+        FAILED_DOCUMENT_BY_RID = localizer.getString("telegram.bot.message.failedSearchDocumentByRID", null);
+        SEARCH_DOCUMENT_NAMES_RESULT = localizer.getString("telegram.bot.message.searchDocumentNamesResult", null);
+        SEARCH_CLASS_NAMES_RESULT = localizer.getString("telegram.bot.message.searchClassNamesResult", null);
 
-        NEXT_RESULT_BUT = new ResourceModel("telegram.bot.button.next").getObject();
-        PREVIOUS_RESULT_BUT = new ResourceModel("telegram.bot.button.previous").getObject();
+        NAME = localizer.getString("telegram.bot.message.name", null);
+        SUPER_CLASSES = localizer.getString("telegram.bot.message.superClasses", null);
+        WITHOUT_SUPER_CLASSES = localizer.getString("telegram.bot.message.withoutSuperClasses", null);
+        DEFAULT_VALUE = localizer.getString("telegram.bot.message.defaultValue", null);
+        CLASS = localizer.getString("telegram.bot.message.class", null);
+        WITHOUT_NAME = localizer.getString("telegram.bot.message.withoutName", null);
+        CLASS_NAME = localizer.getString("telegram.bot.message.className", null);
 
-        ABOUT_MSG = new ResourceModel("telegram.bot.message.about").getObject();
+        NEXT_RESULT_BUT = localizer.getString("telegram.bot.button.next", null);
+        PREVIOUS_RESULT_BUT = localizer.getString("telegram.bot.button.previous", null);
+
+        ABOUT_MSG = localizer.getString("telegram.bot.message.about", null);
     }
 }
