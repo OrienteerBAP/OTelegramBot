@@ -4,21 +4,22 @@ import org.orienteer.telegram.bot.UserSession;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Vitaliy Gonchar
  */
 public class Response {
 
-    private final ArrayList<SendMessage> responses;
+    private final List<SendMessage> responses;
     private final UserSession userSession;
 
-    public Response(ArrayList<SendMessage> responses, UserSession userSession) {
+    public Response(List<SendMessage> responses, UserSession userSession) {
         this.responses = responses;
         this.userSession = userSession;
     }
 
-    public ArrayList<SendMessage> getResponses() {
+    public List<SendMessage> getResponses() {
         return responses;
     }
 

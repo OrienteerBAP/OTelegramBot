@@ -95,7 +95,8 @@ public class OTelegramBot extends TelegramLongPollingBot {
         ResponseFactory responseFactory = new ResponseFactory(message, userSession, botMessage);
         Response response = responseFactory.getResponse();
         SESSIONS.put(message.getFrom().getId(), response.getNewUserSession());
-        for (SendMessage sendMessage : response.getResponses()) {
+        List<SendMessage> responses = response.getResponses();
+        for (SendMessage sendMessage : responses) {
             if (sendMessage != null) sendMessage(sendMessage);
         }
     }

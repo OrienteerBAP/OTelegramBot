@@ -11,6 +11,7 @@ import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,17 +29,17 @@ public class ClassSearch extends Search {
     }
 
     @Override
-    public ArrayList<String> execute() {
-        return (ArrayList<String>) new DBClosure() {
+    public List<String> execute() {
+        return (List<String>) new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument db) {
-                ArrayList<String> fieldValuesList = new ArrayList<>();
-                ArrayList<String> docNamesList = new ArrayList<>();
+                List<String> fieldValuesList = new ArrayList<>();
+                List<String> docNamesList = new ArrayList<>();
                 OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(className));
                 Iterable<ODocument> oDocuments = (Iterable<ODocument>) (query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
 
                 for (ODocument oDocument : oDocuments) {
-                    ArrayList<String> result = searchInFieldValues(oDocument);
+                    List<String> result = searchInFieldValues(oDocument);
                     if (result != null) fieldValuesList.addAll(result);
                     String doc = searchDocument(oDocument);
                     if (doc != null) docNamesList.add(doc);
@@ -76,9 +77,9 @@ public class ClassSearch extends Search {
      * @param oDocument document where is getResultOfSearch
      * @return list of strings with result of getResultOfSearch
      */
-    private ArrayList<String> searchInFieldValues(ODocument oDocument) {
+    private List<String> searchInFieldValues(ODocument oDocument) {
         String searchValue = null;
-        ArrayList<String> resultList = new ArrayList<>();
+        List<String> resultList = new ArrayList<>();
         String docName = oDocument.field("name", OType.STRING);
         if (docName == null) docName = botMessage.WITHOUT_NAME;
         String documentLink = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()

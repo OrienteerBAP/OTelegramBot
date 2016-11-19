@@ -10,6 +10,7 @@ import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Vitaliy Gonchar
@@ -32,7 +33,7 @@ public class ResponseFactory {
         }
         BotState state = getBotState(message.getText());
         state = state == BotState.BACK ? userSession.getPreviousBotState() : state;
-        ArrayList<SendMessage> responseList = new ArrayList<>(2);
+        List<SendMessage> responseList = new ArrayList<>(2);
         switch (state) {
             case START:
                 userSession.setBotState(BotState.NEW_CLASS_SEARCH);
@@ -75,9 +76,9 @@ public class ResponseFactory {
         return new Response(responseList, userSession);
     }
 
-    private ArrayList<SendMessage> handleSearchRequest(Message message, UserSession userSession) {
-        ArrayList<SendMessage> responseList = new ArrayList<>(2);
-        ArrayList<String> result = null;
+    private List<SendMessage> handleSearchRequest(Message message, UserSession userSession) {
+        List<SendMessage> responseList = new ArrayList<>(2);
+        List<String> result = null;
         Search search;
         switch (userSession.getBotState()) {
             case SEARCH_IN_CLASS_GLOBAL:

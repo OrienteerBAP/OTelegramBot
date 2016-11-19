@@ -22,11 +22,11 @@ public abstract class Search {
         this.botMessage = botMessage;
     }
 
-    public abstract ArrayList<String> execute();
+    public abstract List<String> execute();
 
-    protected ArrayList<String> getResultListOfSearch(ArrayList<String> values,
-                                               ArrayList<String> docs, ArrayList<String> classes) {
-        ArrayList<String> resultList = new ArrayList<>();
+    protected List<String> getResultListOfSearch(List<String> values,
+                                               List<String> docs, List<String> classes) {
+        List<String> resultList = new ArrayList<>();
         if (values == null) values = new ArrayList<>();
         if (docs == null) docs = new ArrayList<>();
         if (classes == null) classes = new ArrayList<>();
@@ -49,8 +49,8 @@ public abstract class Search {
         return resultList;
     }
 
-    private ArrayList<String> splitBigResult(List<String> bigResult, String info, int counter) {
-        ArrayList<String> resultList = new ArrayList<>();
+    private List<String> splitBigResult(List<String> bigResult, String info, int counter) {
+        List<String> resultList = new ArrayList<>();
         String head = String.format(botMessage.HTML_STRONG_TEXT, botMessage.SEARCH_RESULT_SUCCESS_MSG);
         StringBuilder builder = new StringBuilder();
         builder.append(head);

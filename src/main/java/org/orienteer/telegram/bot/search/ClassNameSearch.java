@@ -20,8 +20,8 @@ public class ClassNameSearch extends Search {
     }
 
     @Override
-    public ArrayList<String> execute() {
-        ArrayList<String> resultList = new ArrayList<>();
+    public List<String> execute() {
+        List<String> resultList = new ArrayList<>();
         String searchClass;
         for (OClass oClass : CLASS_CACHE.values()) {
             if (isWordInLine(searchWord, oClass.getName())) {

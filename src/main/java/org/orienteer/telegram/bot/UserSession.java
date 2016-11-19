@@ -10,7 +10,7 @@ public class UserSession {
     private BotState botState;
     private BotState previousBotState;
     private String targetClass;
-    private ArrayList<String> resultList;
+    private List<String> resultList;
     private int counter;
 
     public BotState getBotState() {
@@ -29,7 +29,7 @@ public class UserSession {
         this.targetClass = targetClass;
     }
 
-    public void setResultOfSearch(ArrayList<String> resultList) {
+    public void setResultOfSearch(List<String> resultList) {
         this.resultList = resultList;
         counter = -1;
     }
