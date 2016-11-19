@@ -2,6 +2,7 @@ package org.orienteer.telegram;
 
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.OrienteerWebSession;
+import org.orienteer.telegram.bot.BotMessage;
 import org.orienteer.telegram.module.OTelegramModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ public class OTelegramBotApplication extends OrienteerWebApplication
 	public void init()
 	{
 		super.init();
+		LOG.debug("Bot message: " + new BotMessage("en"));
 		mountPages("org.orienteer.telegram.web");
 		registerWidgets("org.orienteer.telegram.component.widget");
 		registerModule(OTelegramModule.class);

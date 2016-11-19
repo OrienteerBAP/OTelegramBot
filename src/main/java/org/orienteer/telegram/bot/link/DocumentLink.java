@@ -8,7 +8,7 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.orienteer.core.CustomAttribute;
 import org.orienteer.telegram.bot.BotMessage;
-import org.orienteer.telegram.bot.BotState;
+import org.orienteer.telegram.bot.response.BotState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;

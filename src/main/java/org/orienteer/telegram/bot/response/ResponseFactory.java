@@ -1,7 +1,6 @@
 package org.orienteer.telegram.bot.response;
 
 import org.orienteer.telegram.bot.BotMessage;
-import org.orienteer.telegram.bot.BotState;
 import org.orienteer.telegram.bot.UserSession;
 import org.orienteer.telegram.bot.link.LinkFactory;
 import org.orienteer.telegram.bot.search.Search;
@@ -11,6 +10,7 @@ import org.telegram.telegrambots.api.objects.Message;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @author Vitaliy Gonchar
@@ -20,17 +20,17 @@ public class ResponseFactory {
     private UserSession userSession;
     private BotMessage botMessage;
 
-    public ResponseFactory(Message message, UserSession userSession, BotMessage botMessage) {
+    public ResponseFactory(Message message, UserSession userSession) {
         this.message = message;
         this.userSession = userSession;
-        this.botMessage = botMessage;
+        if (this.userSession == null) {
+            this.userSession = new UserSession();
+            this.userSession.setBotState(getBotState(message.getText()));
+        }
+        this.botMessage = this.userSession.getBotMessage();
     }
 
     public Response getResponse() {
-        if (userSession == null) {
-            userSession = new UserSession();
-            userSession.setBotState(getBotState(message.getText()));
-        }
         BotState state = getBotState(message.getText());
         state = state == BotState.BACK ? userSession.getPreviousBotState() : state;
         List<SendMessage> responseList = new ArrayList<>(2);
@@ -63,8 +63,15 @@ public class ResponseFactory {
             case GO_TO_CLASS:
                 responseList.add(ResponseMessage.getTextMessage(message, LinkFactory.getLink(message.getText(), botMessage).goTo()));
                 break;
+            case CHANGE_LANGUAGE:
+                userSession.setBotMessage(changeLanguage(message));
+                userSession.setPreviousBotState(BotState.START);
+                userSession.setBotState(BotState.START);
+                responseList.add(ResponseMessage.getTextMessage(message, botMessage.LANGUAGE_CHANGED));
+                responseList.add(ResponseMessage.getStartMenu(message, botMessage));
+                break;
             case LANGUAGE:
-                responseList.add(ResponseMessage.getTextMessage(message, "<strong>Localization is in develop mode.</strong>"));
+                responseList.add(ResponseMessage.getLanguageMenu(message, botMessage));
                 break;
             case ABOUT:
                 responseList.add(ResponseMessage.getTextMessage(message, botMessage.ABOUT_MSG));
@@ -105,6 +112,17 @@ public class ResponseFactory {
         return responseList;
     }
 
+    private BotMessage changeLanguage(Message message) {
+        String lang = message.getText().substring(botMessage.LANGUAGE_BUT.length());
+        if (lang.equals(botMessage.ENGLISH)) {
+            return new BotMessage("en");
+        } else if (lang.equals(botMessage.RUSSIAN)) {
+            return new BotMessage("ru");
+        } else  {
+            return new BotMessage("uk");
+        }
+    }
+
     private BotState getBotState(String text) {
         BotState state = BotState.ERROR;
         for (BotState search : BotState.values()) {
@@ -116,6 +134,9 @@ public class ResponseFactory {
         if (state == BotState.ERROR) {
             if (text.startsWith(BotState.GO_TO_CLASS.getCommand()) && text.endsWith("_details")) {
                 return BotState.GO_TO_DOCUMENT_ALL_DESCRIPTION;
+            }
+            if (text.startsWith(botMessage.LANGUAGE_BUT)) {
+                return BotState.CHANGE_LANGUAGE;
             }
             if (text.startsWith(BotState.GO_TO_CLASS.getCommand()) && text.contains("_")) {
                 return BotState.GO_TO_DOCUMENT_SHORT_DESCRIPTION;

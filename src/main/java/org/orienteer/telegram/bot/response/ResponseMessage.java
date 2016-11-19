@@ -40,6 +40,21 @@ public abstract class ResponseMessage {
         return sendMessage;
     }
 
+    public static SendMessage getLanguageMenu(Message message, BotMessage botMessage) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(message.getChatId().toString());
+        sendMessage.enableMarkdown(true);
+        sendMessage.setText(botMessage.LANGUAGE_MENU_MSG);
+
+        List<String> buttonNames = new ArrayList<>();
+        buttonNames.add(botMessage.LANGUAGE_BUT + botMessage.ENGLISH);
+        buttonNames.add(botMessage.LANGUAGE_BUT + botMessage.RUSSIAN);
+        buttonNames.add(botMessage.LANGUAGE_BUT + botMessage.UKRAINIAN);
+        buttonNames.add(botMessage.BACK);
+        sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
+        return sendMessage;
+    }
+
     public static SendMessage getBackMenu(Message message, String text, BotMessage botMessage) {
         List<String> keyboard = new ArrayList<>(1);
         keyboard.add(botMessage.BACK);

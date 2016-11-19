@@ -1,10 +1,11 @@
-package org.orienteer.telegram.bot;
+package org.orienteer.telegram.bot.response;
 
 /**
  * @author Vitaliy Gonchar
  */
 public enum BotState {
     NEW_SEARCH(""),
+    CHANGE_LANGUAGE(""),
     NEW_GLOBAL_SEARCH("/newGlobalSearch"),
     NEW_CLASS_SEARCH("/newClassSearch"),
     CLASS_SEARCH("/classMenuOptions"),

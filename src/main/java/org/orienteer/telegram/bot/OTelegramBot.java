@@ -11,7 +11,10 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import org.apache.wicket.Localizer;
 import org.orienteer.core.CustomAttribute;
+import org.orienteer.core.OrienteerWebApplication;
+import org.orienteer.core.OrienteerWebSession;
 import org.orienteer.telegram.bot.link.Link;
 import org.orienteer.telegram.bot.link.LinkFactory;
 import org.orienteer.telegram.bot.response.Response;
@@ -42,12 +45,10 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private final OTelegramModule.BotConfig BOT_CONFIG;
     private final LoadingCache<Integer, UserSession> SESSIONS;
 
-    private final BotMessage botMessage;
-
     private OTelegramBot(OTelegramModule.BotConfig botConfig, LoadingCache<Integer, UserSession> sessions) {
         BOT_CONFIG = botConfig;
         SESSIONS = sessions;
-        botMessage = new BotMessage();
+        LOG.debug("Bot message:\n" + new BotMessage("uk"));
     }
 
     public static OTelegramBot getOrienteerTelegramBot(OTelegramModule.BotConfig botConfig) {
@@ -92,7 +93,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
     private void handleMenuRequest(Message message) throws TelegramApiException {
         UserSession userSession = SESSIONS.getIfPresent(message.getFrom().getId());
-        ResponseFactory responseFactory = new ResponseFactory(message, userSession, botMessage);
+        ResponseFactory responseFactory = new ResponseFactory(message, userSession);
         Response response = responseFactory.getResponse();
         SESSIONS.put(message.getFrom().getId(), response.getNewUserSession());
         List<SendMessage> responses = response.getResponses();

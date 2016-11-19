@@ -1,7 +1,9 @@
 package org.orienteer.telegram.bot;
 
-import java.util.ArrayList;
+import org.orienteer.telegram.bot.response.BotState;
+
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @author  Vitaliy Gonchar
@@ -11,7 +13,20 @@ public class UserSession {
     private BotState previousBotState;
     private String targetClass;
     private List<String> resultList;
+    private BotMessage botMessage;
     private int counter;
+
+    public UserSession() {
+        botMessage = new BotMessage("en");
+    }
+
+    public void setBotMessage(BotMessage botMessage) {
+        this.botMessage = botMessage;
+    }
+
+    public BotMessage getBotMessage() {
+        return botMessage;
+    }
 
     public BotState getBotState() {
         return botState;

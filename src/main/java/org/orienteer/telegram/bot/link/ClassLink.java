@@ -6,7 +6,7 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.orienteer.telegram.bot.BotMessage;
-import org.orienteer.telegram.bot.BotState;
+import org.orienteer.telegram.bot.response.BotState;
 import org.orienteer.telegram.bot.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

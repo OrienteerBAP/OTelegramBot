@@ -6,7 +6,7 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import org.orienteer.telegram.bot.BotMessage;
-import org.orienteer.telegram.bot.BotState;
+import org.orienteer.telegram.bot.response.BotState;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
 import java.util.ArrayList;
