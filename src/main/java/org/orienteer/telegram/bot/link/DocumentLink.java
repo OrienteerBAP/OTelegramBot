@@ -64,11 +64,11 @@ public class DocumentLink implements Link {
                     }
                     resultBuilder = new StringBuilder(String.format(
                             botMessage.HTML_STRONG_TEXT, botMessage.DOCUMENT_DETAILS_MSG) + "\n\n"
-                            + String.format(botMessage.HTML_STRONG_TEXT, "Class:  "));
+                            + String.format(botMessage.HTML_STRONG_TEXT, botMessage.CLASS + " "));
                     if (isWithoutDetails) {
                         resultBuilder = new StringBuilder(String.format(
                                 botMessage.HTML_STRONG_TEXT, botMessage.SHORT_DOCUMENT_DESCRIPTION_MSG) + "\n\n"
-                                + String.format(botMessage.HTML_STRONG_TEXT, "Class:  "));
+                                + String.format(botMessage.HTML_STRONG_TEXT, botMessage.CLASS + " "));
                         builder.append("\n" + botMessage.DOCUMENT_DETAILS_MSG + documentLink + "_details");
                     }
                     resultBuilder.append(builder.toString());
@@ -97,10 +97,10 @@ public class DocumentLink implements Link {
                 if (!isDisplayable) {
                     OProperty property = doc.getSchemaClass().getProperty(fieldName);
                     if (displayable.getValue(property)) {
-                        result.add(String.format(botMessage.HTML_STRONG_TEXT, fieldName) + ":  "
+                        result.add(String.format(botMessage.HTML_STRONG_TEXT, fieldName) + ": "
                                 + fieldValueStr + "\n");
                     } else isWithoutDetails = true;
-                } else result.add(String.format(botMessage.HTML_STRONG_TEXT, fieldName) + ":  "
+                } else result.add(String.format(botMessage.HTML_STRONG_TEXT, fieldName) + ": "
                         + fieldValueStr + "\n");
             }
         }
@@ -118,14 +118,14 @@ public class DocumentLink implements Link {
                     return db.getRecord(linkID);
                 }
             }.execute();
-            String linkName = linkDocument.field("name")!=null?(String)linkDocument.field("name"):"without name";
-            fieldValueStr = linkName + "  " + BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
+            String linkName = linkDocument.field("name")!=null?(String)linkDocument.field("name"):botMessage.WITHOUT_NAME;
+            fieldValueStr = linkName + " " + BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
                     + "_" + linkDocument.getIdentity().getClusterId()
                     + "_" + linkDocument.getIdentity().getClusterPosition();
         } else if (type.isEmbedded()) {
             ODocument value = (ODocument) fieldValue;
-            String valueName = value.field("name")!=null?(String) value.field("name"):"without name";
-            fieldValueStr = valueName + "  " + BotState.GO_TO_CLASS.getCommand() + doc.getClassName()
+            String valueName = value.field("name")!=null?(String) value.field("name"):botMessage.WITHOUT_NAME;
+            fieldValueStr = valueName + " " + BotState.GO_TO_CLASS.getCommand() + doc.getClassName()
                     + "_" + doc.getIdentity().getClusterId()
                     + "_" + doc.getIdentity().getClusterPosition()
                     + "_" + embeddedIdCounter++

@@ -80,7 +80,7 @@ public class ClassSearch extends Search {
         String searchValue = null;
         ArrayList<String> resultList = new ArrayList<>();
         String docName = oDocument.field("name", OType.STRING);
-        if (docName == null) docName = "without document name";
+        if (docName == null) docName = botMessage.WITHOUT_NAME;
         String documentLink = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
                 + "_" + oDocument.getIdentity().getClusterId()
                 + "_" + oDocument.getIdentity().getClusterPosition()
@@ -89,7 +89,7 @@ public class ClassSearch extends Search {
         long embeddedId = 0;
         while (iterator.hasNext()) {
             Map.Entry<String, Object> entry = iterator.next();
-            String name = entry.getKey() != null ? entry.getKey() : "without name";
+            String name = entry.getKey() != null ? entry.getKey() : botMessage.WITHOUT_NAME;
             Object value = entry.getValue();
             OType type = OType.getTypeByValue(value);
             if (type != null) {
@@ -97,14 +97,14 @@ public class ClassSearch extends Search {
                     ODocument eDoc = (ODocument) value;
                     String similarValue = getSimilarDocumentValues(eDoc);
                     if (similarValue == null) continue;
-                    String valueName = eDoc.field("name") != null ? (String) eDoc.field("name") : "without name";
+                    String valueName = eDoc.field("name") != null ? (String) eDoc.field("name") : botMessage.WITHOUT_NAME;
                     String embeddedLink = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
                             + "_" + oDocument.getIdentity().getClusterId()
                             + "_" + oDocument.getIdentity().getClusterPosition()
                             + "_" + embeddedId++
                             + botMessage.EMBEDDED
                             + " : " + valueName;
-                    searchValue = "• " + name + " : " + similarValue + " " + embeddedLink + "\n";
+                    searchValue = String.format(botMessage.HTML_STRONG_TEXT, "• " + name + " : ") + similarValue + " " + embeddedLink + "\n";
                 } else if (type.isLink()) {
                     final ORecordId linkID = (ORecordId) value;
                     ODocument linkDocument = (ODocument) new DBClosure() {
@@ -116,14 +116,14 @@ public class ClassSearch extends Search {
                     String similarValue = getSimilarDocumentValues(linkDocument);
                     if (similarValue == null) continue;
 
-                    String linkName = linkDocument.field("name") != null ? (String) linkDocument.field("name") : "without name";
+                    String linkName = linkDocument.field("name") != null ? (String) linkDocument.field("name") : botMessage.WITHOUT_NAME;
                     String link = BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
                             + "_" + linkDocument.getIdentity().getClusterId()
                             + "_" + linkDocument.getIdentity().getClusterPosition()
                             + " : " + linkName;
-                    searchValue = "• " + name + " : " + similarValue + " " + link + "\n";
+                    searchValue = String.format(botMessage.HTML_STRONG_TEXT, "• " + name + " : ") + similarValue + " " + link + "\n";
                 } else if (isWordInLine(searchWord, value.toString())){
-                    searchValue = "• " + name + " : " + value + " " + documentLink + "\n";
+                    searchValue = String.format(botMessage.HTML_STRONG_TEXT, "• " + name + " : ") + value + " " + documentLink + "\n";
                 }
                 if (searchValue != null) resultList.add(searchValue);
                 searchValue = null;

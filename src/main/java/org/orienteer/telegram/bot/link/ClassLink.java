@@ -40,10 +40,10 @@ public class ClassLink implements Link {
                     return botMessage.SEARCH_FAILED_CLASS_BY_NAME;
                 }
                 OClass oClass = classCache.get(className);
-                builder.append("<strong>Name: </strong>");
+                builder.append(String.format(botMessage.HTML_STRONG_TEXT, botMessage.NAME + " "));
                 builder.append(oClass.getName());
                 builder.append("\n");
-                builder.append("<strong>Super classes: </strong>");
+                builder.append(String.format(botMessage.HTML_STRONG_TEXT, botMessage.SUPER_CLASSES + " "));
                 List<String> superClassNames = new ArrayList<>();
                 for (OClass superClass : oClass.getSuperClasses()) {
                     if (classCache.containsKey(superClass.getName())) {
@@ -54,13 +54,13 @@ public class ClassLink implements Link {
                     for (String str : superClassNames) {
                         builder.append(str);
                     }
-                } else builder.append("without superclasses");
+                } else builder.append(botMessage.WITHOUT_SUPER_CLASSES);
                 builder.append("\n");
                 Collection<OProperty> properties = oClass.properties();
                 List<String> resultList = new ArrayList<>();
                 for (OProperty property : properties) {
                     resultList.add(String.format(botMessage.HTML_STRONG_TEXT, property.getName())
-                            + ": " + property.getDefaultValue() + " (default value)");
+                            + ": " + property.getDefaultValue() + " ("+ botMessage.DEFAULT_VALUE + ")");
                 }
                 Collections.sort(resultList);
                 for (String string : resultList) {

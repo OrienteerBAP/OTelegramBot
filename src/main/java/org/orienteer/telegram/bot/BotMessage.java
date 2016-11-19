@@ -27,6 +27,14 @@ public class BotMessage {
     public final String SEARCH_DOCUMENT_NAMES_RESULT;
     public final String SEARCH_CLASS_NAMES_RESULT;
 
+    public final String NAME;
+    public final String SUPER_CLASSES;
+    public final String WITHOUT_SUPER_CLASSES;
+    public final String DEFAULT_VALUE;
+    public final String CLASS;
+    public final String WITHOUT_NAME;
+    public final String CLASS_NAME;
+
     public final String ABOUT_MSG;
 
     public final String EMBEDDED = "_embedded";
@@ -50,6 +58,14 @@ public class BotMessage {
         FAILED_DOCUMENT_BY_RID = new ResourceModel("telegram.bot.message.failedSearchDocumentByRID").getObject();
         SEARCH_DOCUMENT_NAMES_RESULT = new ResourceModel("telegram.bot.message.searchDocumentNamesResult").getObject();
         SEARCH_CLASS_NAMES_RESULT = new ResourceModel("telegram.bot.message.searchClassNamesResult").getObject();
+
+        NAME = new ResourceModel("telegram.bot.message.name").getObject();
+        SUPER_CLASSES = new ResourceModel("telegram.bot.message.superClasses").getObject();
+        WITHOUT_SUPER_CLASSES = new ResourceModel("telegram.bot.message.withoutSuperClasses").getObject();
+        DEFAULT_VALUE = new ResourceModel("telegram.bot.message.defaultValue").getObject();
+        CLASS = new ResourceModel("telegram.bot.message.class").getObject();
+        WITHOUT_NAME = new ResourceModel("telegram.bot.message.withoutName").getObject();
+        CLASS_NAME = new ResourceModel("telegram.bot.message.className").getObject();
 
         NEXT_RESULT_BUT = new ResourceModel("telegram.bot.button.next").getObject();
         PREVIOUS_RESULT_BUT = new ResourceModel("telegram.bot.button.previous").getObject();
