@@ -29,6 +29,7 @@ public class BotMessage {
 
     public final String ABOUT_MSG;
 
+    public final String EMBEDDED = "_embedded";
     public final String HTML_STRONG_TEXT = "<strong>%s</strong>";
 
     BotMessage() {

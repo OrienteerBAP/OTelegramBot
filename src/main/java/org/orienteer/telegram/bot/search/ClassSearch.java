@@ -1,6 +1,7 @@
 package org.orienteer.telegram.bot.search;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
+import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
@@ -9,6 +10,8 @@ import org.orienteer.telegram.bot.BotState;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * @author Vitaliy Gonchar
@@ -74,22 +77,85 @@ public class ClassSearch extends Search {
      * @return list of strings with result of getResultOfSearch
      */
     private ArrayList<String> searchInFieldValues(ODocument oDocument) {
-        String searchValue;
+        String searchValue = null;
         ArrayList<String> resultList = new ArrayList<>();
-        String[] fieldNames = oDocument.fieldNames();
         String docName = oDocument.field("name", OType.STRING);
         if (docName == null) docName = "without document name";
         String documentLink = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
                 + "_" + oDocument.getIdentity().getClusterId()
                 + "_" + oDocument.getIdentity().getClusterPosition()
                 + " : " + docName;
-        for (String name : fieldNames) {
-            String fieldValue = oDocument.field(name, OType.STRING);
-            if (name != null && fieldValue != null && isWordInLine(searchWord, fieldValue)) {
-                searchValue = "• " + name + " : " + fieldValue + " " + documentLink + "\n";
-                resultList.add(searchValue);
+        Iterator<Map.Entry<String, Object>> iterator = oDocument.iterator();
+        long embeddedId = 0;
+        while (iterator.hasNext()) {
+            Map.Entry<String, Object> entry = iterator.next();
+            String name = entry.getKey() != null ? entry.getKey() : "without name";
+            Object value = entry.getValue();
+            OType type = OType.getTypeByValue(value);
+            if (type != null) {
+                if (type.isEmbedded()) {
+                    ODocument eDoc = (ODocument) value;
+                    String similarValue = getSimilarDocumentValues(eDoc);
+                    if (similarValue == null) continue;
+                    String valueName = eDoc.field("name") != null ? (String) eDoc.field("name") : "without name";
+                    String embeddedLink = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
+                            + "_" + oDocument.getIdentity().getClusterId()
+                            + "_" + oDocument.getIdentity().getClusterPosition()
+                            + "_" + embeddedId++
+                            + botMessage.EMBEDDED
+                            + " : " + valueName;
+                    searchValue = "• " + name + " : " + similarValue + " " + embeddedLink + "\n";
+                } else if (type.isLink()) {
+                    final ORecordId linkID = (ORecordId) value;
+                    ODocument linkDocument = (ODocument) new DBClosure() {
+                        @Override
+                        protected Object execute(ODatabaseDocument db) {
+                            return db.getRecord(linkID);
+                        }
+                    }.execute();
+                    String similarValue = getSimilarDocumentValues(linkDocument);
+                    if (similarValue == null) continue;
+
+                    String linkName = linkDocument.field("name") != null ? (String) linkDocument.field("name") : "without name";
+                    String link = BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
+                            + "_" + linkDocument.getIdentity().getClusterId()
+                            + "_" + linkDocument.getIdentity().getClusterPosition()
+                            + " : " + linkName;
+                    searchValue = "• " + name + " : " + similarValue + " " + link + "\n";
+                } else if (isWordInLine(searchWord, value.toString())){
+                    searchValue = "• " + name + " : " + value + " " + documentLink + "\n";
+                }
+                if (searchValue != null) resultList.add(searchValue);
+                searchValue = null;
             }
         }
         return resultList.size() > 0 ? resultList : null;
+    }
+
+    private String getSimilarDocumentValues(ODocument doc) {
+        String similarValue = null;
+        Iterator<Map.Entry<String, Object>> iterator = doc.iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, Object> entry = iterator.next();
+            final Object value = entry.getValue();
+            OType type = OType.getTypeByValue(value);
+            if (type.isEmbedded()) {
+                similarValue = getSimilarDocumentValues((ODocument) value);
+                if (similarValue != null) break;
+            } else if (type.isLink()) {
+                ODocument document = (ODocument) new DBClosure() {
+                    @Override
+                    protected Object execute(ODatabaseDocument db) {
+                        return db.getRecord((ORecordId) value);
+                    }
+                }.execute();
+                similarValue = getSimilarDocumentValues(document);
+                if (similarValue != null) break;
+            } else {
+                similarValue = isWordInLine(searchWord, value.toString())?value.toString():null;
+                if (similarValue != null) break;
+            }
+        }
+        return similarValue;
     }
 }

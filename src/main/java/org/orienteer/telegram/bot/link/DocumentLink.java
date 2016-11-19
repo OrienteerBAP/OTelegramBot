@@ -3,7 +3,6 @@ package org.orienteer.telegram.bot.link;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.exception.ORecordNotFoundException;
 import com.orientechnologies.orient.core.id.ORecordId;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
@@ -14,9 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Vitaliy Gonchar
@@ -26,8 +23,13 @@ public class DocumentLink implements Link {
     private final BotMessage botMessage;
     private final ORecordId oRecordId;
     private final boolean isDisplayable;
-
+    private boolean isWithoutDetails;
     private static final Logger LOG = LoggerFactory.getLogger(DocumentLink.class);
+
+    private final long embeddedID;
+    private final boolean isEmbeddedLink;
+
+    private long embeddedIdCounter = 0;
 
     public DocumentLink(String documentLink, boolean isDisplayable, BotMessage botMessage) {
         this.documentLink = documentLink;
@@ -37,45 +39,33 @@ public class DocumentLink implements Link {
         int clusterID = Integer.valueOf(split[1]);
         long recordID = Long.valueOf(split[2]);
         oRecordId = new ORecordId(clusterID, recordID);
+        isEmbeddedLink = documentLink.contains(botMessage.EMBEDDED);
+        embeddedID = isEmbeddedLink?Long.valueOf(split[3]):-1;
     }
 
     @Override
     public String goTo() {
         return  (String) new DBClosure() {
             @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+            protected Object execute(ODatabaseDocument db) {
                 StringBuilder builder = new StringBuilder();
                 StringBuilder resultBuilder;
                 ODocument oDocument;
                 try {
-                    oDocument = oDatabaseDocument.getRecord(oRecordId);
+                    oDocument = db.getRecord(oRecordId);
                     builder.append(oDocument.getClassName());
                     builder.append(" " + BotState.GO_TO_CLASS.getCommand());
                     builder.append(oDocument.getClassName());
                     builder.append("\n\n");
-                    String[] fieldNames = oDocument.fieldNames();
-                    List<String> resultList = new ArrayList<>();
-                    OClass oClass = oDocument.getSchemaClass();
-                    CustomAttribute displayable = CustomAttribute.DISPLAYABLE;
-                    boolean isWihoutDetails = false;
-                    for (String fieldName : fieldNames) {
-                        if (!isDisplayable) {
-                            OProperty property = oClass.getProperty(fieldName);
-                            if (displayable.getValue(property)) {
-                                resultList.add(String.format(botMessage.HTML_STRONG_TEXT, fieldName) + ":  "
-                                        + oDocument.field(fieldName, OType.STRING) + "\n");
-                            } else isWihoutDetails = true;
-                        } else  resultList.add(String.format(botMessage.HTML_STRONG_TEXT, fieldName) + ":  "
-                                + oDocument.field(fieldName, OType.STRING) + "\n");
-                    }
-                    Collections.sort(resultList);
-                    for (String str : resultList) {
+                    List<String> result = isEmbeddedLink ? buildEmbeddedResultList(oDocument) : buildResultList(oDocument);
+                    if (result == null) throw new ORecordNotFoundException("Not found");
+                    for (String str : result) {
                         builder.append(str);
                     }
                     resultBuilder = new StringBuilder(String.format(
                             botMessage.HTML_STRONG_TEXT, botMessage.DOCUMENT_DETAILS_MSG) + "\n\n"
                             + String.format(botMessage.HTML_STRONG_TEXT, "Class:  "));
-                    if (isWihoutDetails) {
+                    if (isWithoutDetails) {
                         resultBuilder = new StringBuilder(String.format(
                                 botMessage.HTML_STRONG_TEXT, botMessage.SHORT_DOCUMENT_DESCRIPTION_MSG) + "\n\n"
                                 + String.format(botMessage.HTML_STRONG_TEXT, "Class:  "));
@@ -91,5 +81,76 @@ public class DocumentLink implements Link {
                 return resultBuilder.toString();
             }
         }.execute();
+    }
+
+    private List<String> buildResultList(ODocument doc) {
+        List<String> result = new ArrayList<>();
+        CustomAttribute displayable = CustomAttribute.DISPLAYABLE;
+        Iterator<Map.Entry<String, Object>> iterator = doc.iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, Object> field = iterator.next();
+            String fieldName = field.getKey();
+            Object fieldValue = field.getValue();
+            OType type = OType.getTypeByValue(fieldValue);
+            if (type != null) {
+                String fieldValueStr = buildValueString(type, fieldValue, doc);
+                if (!isDisplayable) {
+                    OProperty property = doc.getSchemaClass().getProperty(fieldName);
+                    if (displayable.getValue(property)) {
+                        result.add(String.format(botMessage.HTML_STRONG_TEXT, fieldName) + ":  "
+                                + fieldValueStr + "\n");
+                    } else isWithoutDetails = true;
+                } else result.add(String.format(botMessage.HTML_STRONG_TEXT, fieldName) + ":  "
+                        + fieldValueStr + "\n");
+            }
+        }
+        Collections.sort(result);
+        return result;
+    }
+
+    private String buildValueString(OType type, Object fieldValue, ODocument doc) {
+        String fieldValueStr;
+        if (type.isLink()) {
+            final ORecordId linkID = (ORecordId) fieldValue;
+            ODocument linkDocument = (ODocument) new DBClosure() {
+                @Override
+                protected Object execute(ODatabaseDocument db) {
+                    return db.getRecord(linkID);
+                }
+            }.execute();
+            String linkName = linkDocument.field("name")!=null?(String)linkDocument.field("name"):"without name";
+            fieldValueStr = linkName + "  " + BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
+                    + "_" + linkDocument.getIdentity().getClusterId()
+                    + "_" + linkDocument.getIdentity().getClusterPosition();
+        } else if (type.isEmbedded()) {
+            ODocument value = (ODocument) fieldValue;
+            String valueName = value.field("name")!=null?(String) value.field("name"):"without name";
+            fieldValueStr = valueName + "  " + BotState.GO_TO_CLASS.getCommand() + doc.getClassName()
+                    + "_" + doc.getIdentity().getClusterId()
+                    + "_" + doc.getIdentity().getClusterPosition()
+                    + "_" + embeddedIdCounter++
+                    + botMessage.EMBEDDED;
+        } else if (type.isMultiValue()) {
+            fieldValueStr = fieldValue.getClass().toString();
+        } else fieldValueStr = fieldValue.toString();
+
+        return fieldValueStr;
+    }
+
+    private List<String> buildEmbeddedResultList(ODocument doc) {
+        Iterator<Map.Entry<String, Object>> iterator = doc.iterator();
+        ODocument document = null;
+        while (iterator.hasNext()) {
+            Map.Entry<String, Object> entry = iterator.next();
+            Object value = entry.getValue();
+            OType type = OType.getTypeByValue(value);
+            if (type != null && type.isEmbedded()) {
+                if (embeddedID == embeddedIdCounter) {
+                    document = (ODocument) value;
+                    break;
+                } else embeddedIdCounter++;
+            }
+        }
+        return document != null ? buildResultList(document) : null;
     }
 }
