@@ -34,6 +34,7 @@ public class ResponseFactory {
         BotState state = getBotState(message.getText());
         state = state == BotState.BACK ? userSession.getPreviousBotState() : state;
         List<SendMessage> responseList = new ArrayList<>(2);
+        Response response = null;
         switch (state) {
             case START:
                 userSession.setBotState(BotState.NEW_CLASS_SEARCH);
@@ -77,13 +78,13 @@ public class ResponseFactory {
                 responseList.add(ResponseMessage.getTextMessage(message, botMessage.ABOUT_MSG));
                 break;
             default:
-                responseList = handleSearchRequest(message, userSession);
+                response = handleSearchRequest(message, userSession);
         }
 
-        return new Response(responseList, userSession);
+        return response != null ? response : new Response(responseList, userSession);
     }
 
-    private List<SendMessage> handleSearchRequest(Message message, UserSession userSession) {
+    private Response handleSearchRequest(Message message, UserSession userSession) {
         List<SendMessage> responseList = new ArrayList<>(2);
         List<String> result = null;
         Search search;
@@ -109,7 +110,7 @@ public class ResponseFactory {
             }
         } else responseList.add(ResponseMessage.getTextMessage(message, botMessage.SEARCH_RESULT_FAILED_MSG));
 
-        return responseList;
+        return new Response(responseList, userSession);
     }
 
     private BotMessage changeLanguage(Message message) {
