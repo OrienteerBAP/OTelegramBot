@@ -76,7 +76,8 @@ public class ClassLink implements Link {
                     String docId = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
                             + "_" + oDocument.getIdentity().getClusterId()
                             + "_" + oDocument.getIdentity().getClusterPosition();
-                    resultList.add(oDocument.field("name") + " " + docId);
+                    String docName = oDocument.field("name") != null ? (String) oDocument.field("name") : MessageKey.WITHOUT_NAME.getString(locale);
+                    resultList.add(docName + " " + docId);
                 }
                 Collections.sort(resultList);
                 for (String string : resultList) {
