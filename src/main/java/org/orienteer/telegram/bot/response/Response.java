@@ -44,12 +44,14 @@ public class Response {
                 responses.add(ResponseMessage.getBackMenu(message, String.format(MessageKey.CLASS_SEARCH_MSG.getString(userSession.getLocale()), "/" + userSession.getTargetClass())));
                 break;
             case NEXT_RESULT:
-                responses.add(ResponseMessage.getTextMessage(message, userSession.getNextResult()));
+                String next = userSession.getNextResult();
                 responses.add(ResponseMessage.getNextPreviousMenu(message, userSession.hasNextResult(), userSession.hasPreviousResult()));
+                responses.add(ResponseMessage.getTextMessage(message, next));
                 break;
             case PREVIOUS_RESULT:
-                responses.add(ResponseMessage.getTextMessage(message, userSession.getPreviousResult()));
+                String previous = userSession.getPreviousResult();
                 responses.add(ResponseMessage.getNextPreviousMenu(message, userSession.hasNextResult(), userSession.hasPreviousResult()));
+                responses.add(ResponseMessage.getTextMessage(message, previous));
                 break;
             case GO_TO_DOCUMENT_SHORT_DESCRIPTION:
                 responses.add(ResponseMessage.getTextMessage(message, Link.getLink(message.getText(), false).goTo()));
@@ -101,7 +103,6 @@ public class Response {
             } else {
                 responses.add(ResponseMessage.getTextMessage(message, MessageKey.START_SEARCH_MSG.getString(userSession.getLocale())));
                 responses.add(ResponseMessage.getTextMessage(message, userSession.getNextResult()));
-
             }
         } else responses.add(ResponseMessage.getTextMessage(message, MessageKey.SEARCH_RESULT_FAILED_MSG.getString(userSession.getLocale())));
     }
