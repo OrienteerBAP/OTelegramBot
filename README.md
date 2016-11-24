@@ -1,3 +1,2 @@
-Telegram bot for https://github.com/OrienteerBAP/Orienteer
-
-Bot can search documents from OrientDB in Orienteer
+Telegram bot for access your data in Orienteer.
+Bot can search documents and classes from OrientDB in Orienteer.
