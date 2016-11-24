@@ -7,6 +7,7 @@ import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.orienteer.core.CustomAttribute;
+import org.orienteer.telegram.bot.Cache;
 import org.orienteer.telegram.bot.MessageKey;
 import org.orienteer.telegram.bot.response.BotState;
 import org.slf4j.Logger;
@@ -53,8 +54,10 @@ public class DocumentLink implements Link {
                 ODocument oDocument;
                 try {
                     oDocument = db.getRecord(oRecordId);
-                    builder.append(oDocument.getClassName());
-                    builder.append(" " + BotState.GO_TO_CLASS.getCommand());
+                    if (Cache.getClassCache().containsKey(oDocument.getClassName())) {
+                        builder.append(oDocument.getClassName());
+                        builder.append(" " + BotState.GO_TO_CLASS.getCommand());
+                    }
                     builder.append(oDocument.getClassName());
                     builder.append("\n\n");
                     List<String> result = isEmbeddedLink ? buildEmbeddedResultList(oDocument) : buildResultList(oDocument);
