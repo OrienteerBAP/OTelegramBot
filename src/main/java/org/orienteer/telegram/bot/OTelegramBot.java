@@ -3,39 +3,20 @@ package org.orienteer.telegram.bot;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
-import com.orientechnologies.orient.core.exception.ORecordNotFoundException;
-import com.orientechnologies.orient.core.id.ORecordId;
-import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
-import com.orientechnologies.orient.core.metadata.schema.OClass;
-import com.orientechnologies.orient.core.metadata.schema.OProperty;
-import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.apache.wicket.Localizer;
 import org.apache.wicket.ThreadContext;
-import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.OrienteerWebApplication;
-import org.orienteer.core.OrienteerWebSession;
-import org.orienteer.telegram.bot.link.Link;
-import org.orienteer.telegram.bot.link.LinkFactory;
 import org.orienteer.telegram.bot.response.BotState;
 import org.orienteer.telegram.bot.response.Response;
-import org.orienteer.telegram.bot.response.ResponseFactory;
-import org.orienteer.telegram.bot.search.Search;
-import org.orienteer.telegram.bot.search.SearchFactory;
 import org.orienteer.telegram.module.OTelegramModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
-import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
-import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
-import javax.jws.soap.SOAPBinding;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -100,10 +81,8 @@ public class OTelegramBot extends TelegramLongPollingBot {
         UserSession userSession = SESSIONS.getIfPresent(message.getFrom().getId());
         currentSession = userSession == null ? new UserSession() : userSession;
         setApplication();
-        ResponseFactory responseFactory = new ResponseFactory(message);
-        Response response = responseFactory.getResponse();
-        SESSIONS.put(message.getFrom().getId(), response.getNewUserSession());
-        List<SendMessage> responses = response.getResponses();
+        List<SendMessage> responses = new Response(message).getResponse();
+        SESSIONS.put(message.getFrom().getId(), currentSession);
         for (SendMessage sendMessage : responses) {
             if (sendMessage != null) sendMessage(sendMessage);
         }

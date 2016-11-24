@@ -19,7 +19,7 @@ import java.util.*;
 /**
  * @author Vitaliy Gonchar
  */
-public class DocumentLink implements Link {
+public class DocumentLink extends Link {
     private final String documentLink;
     private final Locale locale;
     private final ORecordId oRecordId;

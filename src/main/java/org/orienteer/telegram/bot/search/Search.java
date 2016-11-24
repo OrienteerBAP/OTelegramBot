@@ -25,6 +25,10 @@ public abstract class Search {
 
     public abstract List<String> execute();
 
+    public static Search getSearch(String searchWord, String className, Locale locale) {
+        return className == null ? new ClassNameSearch(searchWord, locale) : new ClassSearch(searchWord, className, locale);
+    }
+
     protected List<String> getResultListOfSearch(List<String> values,
                                                List<String> docs, List<String> classes) {
         List<String> resultList = new ArrayList<>();

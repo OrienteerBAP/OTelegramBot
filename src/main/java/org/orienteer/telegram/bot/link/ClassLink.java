@@ -17,7 +17,7 @@ import java.util.*;
 /**
  * @author Vitaliy Gonchar
  */
-public class ClassLink implements Link {
+public class ClassLink extends Link {
     private final String className;
     private final Locale locale;
 
