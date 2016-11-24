@@ -12,11 +12,13 @@ import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.apache.wicket.Localizer;
+import org.apache.wicket.ThreadContext;
 import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.OrienteerWebSession;
 import org.orienteer.telegram.bot.link.Link;
 import org.orienteer.telegram.bot.link.LinkFactory;
+import org.orienteer.telegram.bot.response.BotState;
 import org.orienteer.telegram.bot.response.Response;
 import org.orienteer.telegram.bot.response.ResponseFactory;
 import org.orienteer.telegram.bot.search.Search;
@@ -33,6 +35,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
+import javax.jws.soap.SOAPBinding;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -45,10 +48,12 @@ public class OTelegramBot extends TelegramLongPollingBot {
     private final OTelegramModule.BotConfig BOT_CONFIG;
     private final LoadingCache<Integer, UserSession> SESSIONS;
 
+    private static OrienteerWebApplication application;
+    private static UserSession currentSession;
+
     private OTelegramBot(OTelegramModule.BotConfig botConfig, LoadingCache<Integer, UserSession> sessions) {
         BOT_CONFIG = botConfig;
         SESSIONS = sessions;
-        LOG.debug("Bot message:\n" + new BotMessage("uk"));
     }
 
     public static OTelegramBot getOrienteerTelegramBot(OTelegramModule.BotConfig botConfig) {
@@ -93,7 +98,9 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
     private void handleMenuRequest(Message message) throws TelegramApiException {
         UserSession userSession = SESSIONS.getIfPresent(message.getFrom().getId());
-        ResponseFactory responseFactory = new ResponseFactory(message, userSession);
+        currentSession = userSession == null ? new UserSession() : userSession;
+        setApplication();
+        ResponseFactory responseFactory = new ResponseFactory(message);
         Response response = responseFactory.getResponse();
         SESSIONS.put(message.getFrom().getId(), response.getNewUserSession());
         List<SendMessage> responses = response.getResponses();
@@ -102,4 +109,36 @@ public class OTelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    public static Localizer getLocalizer() {
+        return application.getResourceSettings().getLocalizer();
+    }
+
+    public static void setApplication() {
+        application = OrienteerWebApplication.lookupApplication();
+        ThreadContext.setApplication(application);
+    }
+
+    public static Locale getCurrentLocale() {
+        return currentSession.getLocale();
+    }
+
+    public static void setCurrentLocale(Locale locale) {
+        currentSession.setLocale(locale);
+    }
+
+    public static BotState getCurrentBotState() {
+        return currentSession.getBotState();
+    }
+
+    public static void setCurrentBotState(BotState botState) {
+        currentSession.setBotState(botState);
+    }
+
+    public static UserSession getCurrentSession() {
+        return currentSession;
+    }
+
+    public static void setCurrentSession(UserSession userSession) {
+        currentSession = userSession;
+    }
 }

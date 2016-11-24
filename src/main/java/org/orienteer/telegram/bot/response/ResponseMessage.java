@@ -1,8 +1,9 @@
 package org.orienteer.telegram.bot.response;
 
 import com.orientechnologies.orient.core.metadata.schema.OClass;
-import org.orienteer.telegram.bot.BotMessage;
 import org.orienteer.telegram.bot.Cache;
+import org.orienteer.telegram.bot.MessageKey;
+import org.orienteer.telegram.bot.OTelegramBot;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboardMarkup;
@@ -25,39 +26,39 @@ public abstract class ResponseMessage {
         return sendMessage;
     }
 
-    public static SendMessage getStartMenu(Message message, BotMessage botMessage) {
+    public static SendMessage getStartMenu(Message message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.enableMarkdown(true);
-        sendMessage.setText(botMessage.CLASS_MENU_MSG);
+        sendMessage.setText(MessageKey.CLASS_MENU_MSG.getString(OTelegramBot.getCurrentLocale()));
 
         List<String> buttonNames = new ArrayList<>();
         for (OClass oClass: Cache.getClassCache().values()) {
-            buttonNames.add(botMessage.CLASS_BUT + oClass.getName());
+            buttonNames.add(MessageKey.CLASS_BUT.getString(OTelegramBot.getCurrentLocale())+ oClass.getName());
         }
         Collections.sort(buttonNames);
         sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
         return sendMessage;
     }
 
-    public static SendMessage getLanguageMenu(Message message, BotMessage botMessage) {
+    public static SendMessage getLanguageMenu(Message message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.enableMarkdown(true);
-        sendMessage.setText(botMessage.LANGUAGE_MENU_MSG);
+        sendMessage.setText(MessageKey.LANGUAGE_MENU_MSG.getString(OTelegramBot.getCurrentLocale()));
 
         List<String> buttonNames = new ArrayList<>();
-        buttonNames.add(botMessage.LANGUAGE_BUT + botMessage.ENGLISH);
-        buttonNames.add(botMessage.LANGUAGE_BUT + botMessage.RUSSIAN);
-        buttonNames.add(botMessage.LANGUAGE_BUT + botMessage.UKRAINIAN);
-        buttonNames.add(botMessage.BACK);
+        buttonNames.add(MessageKey.LANGUAGE_BUT.getString(OTelegramBot.getCurrentLocale()) + MessageKey.ENGLISH.toString());
+        buttonNames.add(MessageKey.LANGUAGE_BUT.getString(OTelegramBot.getCurrentLocale()) + MessageKey.RUSSIAN.toString());
+        buttonNames.add(MessageKey.LANGUAGE_BUT.getString(OTelegramBot.getCurrentLocale()) + MessageKey.UKRAINIAN.toString());
+        buttonNames.add(MessageKey.BACK.getString(OTelegramBot.getCurrentLocale()));
         sendMessage.setReplyMarkup(getMenuMarkup(buttonNames));
         return sendMessage;
     }
 
-    public static SendMessage getBackMenu(Message message, String text, BotMessage botMessage) {
+    public static SendMessage getBackMenu(Message message, String text) {
         List<String> keyboard = new ArrayList<>(1);
-        keyboard.add(botMessage.BACK);
+        keyboard.add(MessageKey.BACK.getString(OTelegramBot.getCurrentLocale()));
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.enableMarkdown(true);
@@ -67,16 +68,16 @@ public abstract class ResponseMessage {
         return sendMessage;
     }
 
-    public static SendMessage getNextPreviousMenu(Message message, boolean hasNext, boolean hasPrevious, BotMessage botMessage) {
+    public static SendMessage getNextPreviousMenu(Message message, boolean hasNext, boolean hasPrevious) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.enableHtml(true);
         sendMessage.enableMarkdown(true);
-        sendMessage.setText(botMessage.START_SEARCH_MSG);
+        sendMessage.setText(MessageKey.START_SEARCH_MSG.getString(OTelegramBot.getCurrentLocale()));
         List<String> buttons = new ArrayList<>();
-        if (hasNext) buttons.add(botMessage.NEXT_RESULT_BUT);
-        if (hasPrevious) buttons.add(botMessage.PREVIOUS_RESULT_BUT);
-        buttons.add(botMessage.BACK);
+        if (hasNext) buttons.add(MessageKey.NEXT_RESULT_BUT.getString(OTelegramBot.getCurrentLocale()));
+        if (hasPrevious) buttons.add(MessageKey.PREVIOUS_RESULT_BUT.getString(OTelegramBot.getCurrentLocale()));
+        buttons.add(MessageKey.BACK.getString(OTelegramBot.getCurrentLocale()));
         sendMessage.setReplyMarkup(getMenuMarkup(buttons));
         return sendMessage;
     }

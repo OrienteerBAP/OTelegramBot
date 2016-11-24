@@ -13,19 +13,20 @@ public class UserSession {
     private BotState previousBotState;
     private String targetClass;
     private List<String> resultList;
-    private BotMessage botMessage;
+    private Locale locale;
     private int counter;
 
     public UserSession() {
-        botMessage = new BotMessage("en");
+        locale = new Locale("en");
+        botState = BotState.START;
     }
 
-    public void setBotMessage(BotMessage botMessage) {
-        this.botMessage = botMessage;
+    public void setLocale(Locale locale) {
+        this.locale = locale;
     }
 
-    public BotMessage getBotMessage() {
-        return botMessage;
+    public Locale getLocale() {
+        return locale;
     }
 
     public BotState getBotState() {

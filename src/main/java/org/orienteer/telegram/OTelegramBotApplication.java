@@ -17,7 +17,6 @@ public class OTelegramBotApplication extends OrienteerWebApplication
 	public void init()
 	{
 		super.init();
-		LOG.debug("Bot message: " + new BotMessage("en"));
 		mountPages("org.orienteer.telegram.web");
 		registerWidgets("org.orienteer.telegram.component.widget");
 		registerModule(OTelegramModule.class);

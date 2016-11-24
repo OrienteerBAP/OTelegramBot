@@ -7,7 +7,7 @@ import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.orienteer.core.CustomAttribute;
-import org.orienteer.telegram.bot.BotMessage;
+import org.orienteer.telegram.bot.MessageKey;
 import org.orienteer.telegram.bot.response.BotState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +20,7 @@ import java.util.*;
  */
 public class DocumentLink implements Link {
     private final String documentLink;
-    private final BotMessage botMessage;
+    private final Locale locale;
     private final ORecordId oRecordId;
     private final boolean isDisplayable;
     private boolean isWithoutDetails;
@@ -31,15 +31,15 @@ public class DocumentLink implements Link {
 
     private long embeddedIdCounter = 0;
 
-    public DocumentLink(String documentLink, boolean isDisplayable, BotMessage botMessage) {
+    public DocumentLink(String documentLink, boolean isDisplayable, Locale locale) {
         this.documentLink = documentLink;
         this.isDisplayable = isDisplayable;
-        this.botMessage = botMessage;
+        this.locale = locale;
         String [] split = documentLink.substring(BotState.GO_TO_CLASS.getCommand().length()).split("_");
         int clusterID = Integer.valueOf(split[1]);
         long recordID = Long.valueOf(split[2]);
         oRecordId = new ORecordId(clusterID, recordID);
-        isEmbeddedLink = documentLink.contains(botMessage.EMBEDDED);
+        isEmbeddedLink = documentLink.contains(MessageKey.EMBEDDED.toString());
         embeddedID = isEmbeddedLink?Long.valueOf(split[3]):-1;
     }
 
@@ -63,20 +63,20 @@ public class DocumentLink implements Link {
                         builder.append(str);
                     }
                     resultBuilder = new StringBuilder(String.format(
-                            botMessage.HTML_STRONG_TEXT, botMessage.DOCUMENT_DETAILS_MSG) + "\n\n"
-                            + String.format(botMessage.HTML_STRONG_TEXT, botMessage.CLASS + " "));
+                            MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.DOCUMENT_DETAILS_MSG.getString(locale)) + "\n\n"
+                            + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.CLASS.getString(locale) + " "));
                     if (isWithoutDetails) {
                         resultBuilder = new StringBuilder(String.format(
-                                botMessage.HTML_STRONG_TEXT, botMessage.SHORT_DOCUMENT_DESCRIPTION_MSG) + "\n\n"
-                                + String.format(botMessage.HTML_STRONG_TEXT, botMessage.CLASS + " "));
-                        builder.append("\n" + botMessage.DOCUMENT_DETAILS_MSG + documentLink + "_details");
+                                MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SHORT_DOCUMENT_DESCRIPTION_MSG.getString(locale)) + "\n\n"
+                                + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.CLASS.getString(locale) + " "));
+                        builder.append("\n" + MessageKey.DOCUMENT_DETAILS_MSG.getString(locale) + documentLink + "_details");
                     }
                     resultBuilder.append(builder.toString());
                 } catch (ORecordNotFoundException ex) {
                     LOG.warn("Record: " + oRecordId + " was not found.");
                     if (LOG.isDebugEnabled()) ex.printStackTrace();
                     resultBuilder = new StringBuilder(
-                            String.format(botMessage.HTML_STRONG_TEXT, botMessage.FAILED_DOCUMENT_BY_RID));
+                            String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.FAILED_DOCUMENT_BY_RID.getString(locale)));
                 }
                 return resultBuilder.toString();
             }
@@ -97,10 +97,10 @@ public class DocumentLink implements Link {
                 if (!isDisplayable) {
                     OProperty property = doc.getSchemaClass().getProperty(fieldName);
                     if (displayable.getValue(property)) {
-                        result.add(String.format(botMessage.HTML_STRONG_TEXT, fieldName) + ": "
+                        result.add(String.format(MessageKey.HTML_STRONG_TEXT.toString(), fieldName) + ": "
                                 + fieldValueStr + "\n");
                     } else isWithoutDetails = true;
-                } else result.add(String.format(botMessage.HTML_STRONG_TEXT, fieldName) + ": "
+                } else result.add(String.format(MessageKey.HTML_STRONG_TEXT.toString(), fieldName) + ": "
                         + fieldValueStr + "\n");
             }
         }
@@ -118,18 +118,18 @@ public class DocumentLink implements Link {
                     return db.getRecord(linkID);
                 }
             }.execute();
-            String linkName = linkDocument.field("name")!=null?(String)linkDocument.field("name"):botMessage.WITHOUT_NAME;
+            String linkName = linkDocument.field("name")!=null?(String)linkDocument.field("name"):MessageKey.WITHOUT_NAME.getString(locale);
             fieldValueStr = linkName + " " + BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
                     + "_" + linkDocument.getIdentity().getClusterId()
                     + "_" + linkDocument.getIdentity().getClusterPosition();
         } else if (type.isEmbedded()) {
             ODocument value = (ODocument) fieldValue;
-            String valueName = value.field("name")!=null?(String) value.field("name"):botMessage.WITHOUT_NAME;
+            String valueName = value.field("name")!=null?(String) value.field("name"):MessageKey.WITHOUT_NAME.getString(locale);
             fieldValueStr = valueName + " " + BotState.GO_TO_CLASS.getCommand() + doc.getClassName()
                     + "_" + doc.getIdentity().getClusterId()
                     + "_" + doc.getIdentity().getClusterPosition()
                     + "_" + embeddedIdCounter++
-                    + botMessage.EMBEDDED;
+                    + MessageKey.EMBEDDED.toString();
         } else if (type.isMultiValue()) {
             fieldValueStr = fieldValue.getClass().toString();
         } else fieldValueStr = fieldValue.toString();

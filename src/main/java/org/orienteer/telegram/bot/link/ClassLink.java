@@ -5,9 +5,9 @@ import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import org.orienteer.telegram.bot.BotMessage;
-import org.orienteer.telegram.bot.response.BotState;
 import org.orienteer.telegram.bot.Cache;
+import org.orienteer.telegram.bot.MessageKey;
+import org.orienteer.telegram.bot.response.BotState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
@@ -19,12 +19,12 @@ import java.util.*;
  */
 public class ClassLink implements Link {
     private final String className;
-    private final BotMessage botMessage;
+    private final Locale locale;
 
     private static final Logger LOG = LoggerFactory.getLogger(ClassLink.class);
 
-    public ClassLink(String classLink, BotMessage botMessage) {
-        this.botMessage = botMessage;
+    public ClassLink(String classLink, Locale locale) {
+        this.locale = locale;
         className = classLink.substring(BotState.GO_TO_CLASS.getCommand().length());
     }
 
@@ -34,16 +34,16 @@ public class ClassLink implements Link {
             @Override
             protected Object execute(ODatabaseDocument oDatabaseDocument) {
                 StringBuilder builder = new StringBuilder(
-                        String.format(botMessage.HTML_STRONG_TEXT, botMessage.CLASS_DESCRIPTION_MSG) + "\n\n");
+                        String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.CLASS_DESCRIPTION_MSG.getString(locale)) + "\n\n");
                 Map<String, OClass> classCache = Cache.getClassCache();
                 if (!classCache.containsKey(className)) {
-                    return botMessage.SEARCH_FAILED_CLASS_BY_NAME;
+                    return MessageKey.SEARCH_FAILED_CLASS_BY_NAME.getString(locale);
                 }
                 OClass oClass = classCache.get(className);
-                builder.append(String.format(botMessage.HTML_STRONG_TEXT, botMessage.NAME + " "));
+                builder.append(String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.NAME.getString(locale) + " "));
                 builder.append(oClass.getName());
                 builder.append("\n");
-                builder.append(String.format(botMessage.HTML_STRONG_TEXT, botMessage.SUPER_CLASSES + " "));
+                builder.append(String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SUPER_CLASSES.getString(locale) + " "));
                 List<String> superClassNames = new ArrayList<>();
                 for (OClass superClass : oClass.getSuperClasses()) {
                     if (classCache.containsKey(superClass.getName())) {
@@ -54,13 +54,13 @@ public class ClassLink implements Link {
                     for (String str : superClassNames) {
                         builder.append(str);
                     }
-                } else builder.append(botMessage.WITHOUT_SUPER_CLASSES);
+                } else builder.append(MessageKey.WITHOUT_SUPER_CLASSES.getString(locale));
                 builder.append("\n");
                 Collection<OProperty> properties = oClass.properties();
                 List<String> resultList = new ArrayList<>();
                 for (OProperty property : properties) {
-                    resultList.add(String.format(botMessage.HTML_STRONG_TEXT, property.getName())
-                            + ": " + property.getDefaultValue() + " ("+ botMessage.DEFAULT_VALUE + ")");
+                    resultList.add(String.format(MessageKey.HTML_STRONG_TEXT.toString(), property.getName())
+                            + ": " + property.getDefaultValue() + " ("+ MessageKey.DEFAULT_VALUE.getString(locale) + ")");
                 }
                 Collections.sort(resultList);
                 for (String string : resultList) {
@@ -68,7 +68,7 @@ public class ClassLink implements Link {
                     builder.append("\n");
                 }
                 builder.append("\n");
-                builder.append(String.format(botMessage.HTML_STRONG_TEXT, botMessage.CLASS_DOCUMENTS));
+                builder.append(String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.CLASS_DOCUMENTS.getString(locale)));
                 builder.append("\n");
                 ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
                 resultList = new ArrayList<>();

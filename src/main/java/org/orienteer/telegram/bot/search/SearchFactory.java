@@ -1,32 +1,20 @@
 package org.orienteer.telegram.bot.search;
 
-import org.orienteer.telegram.bot.BotMessage;
+import java.util.Locale;
 
 /**
  * @author Vitaliy Gonchar
  */
 public abstract class SearchFactory {
 
-    /**
-     * Get search in class
-     * @param searchWord
-     * @param className
-     * @param botMessage
-     * @return
-     */
-    public static Search getSearch(String searchWord, String className, BotMessage botMessage) {
-        ClassSearch classSearch = new ClassSearch(searchWord, className, botMessage);
+
+    public static Search getSearch(String searchWord, String className, Locale locale) {
+        ClassSearch classSearch = new ClassSearch(searchWord, className, locale);
         return classSearch;
     }
 
-    /**
-     * Global search is in develop mode.
-     * @param searchWord
-     * @param botMessage
-     * @return
-     */
-    public static Search getSearch(String searchWord, BotMessage botMessage) {
-        ClassNameSearch classNameSearch = new ClassNameSearch(searchWord, botMessage);
+    public static Search getSearch(String searchWord, Locale locale) {
+        ClassNameSearch classNameSearch = new ClassNameSearch(searchWord, locale);
         return classNameSearch;
     }
 }

@@ -3,7 +3,6 @@ package org.orienteer.telegram.bot.response;
 import org.orienteer.telegram.bot.UserSession;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
