@@ -1,18 +1,16 @@
 package org.orienteer.telegram.component.widget;
 
-import java.util.*;
-
-import com.orientechnologies.orient.core.metadata.schema.*;
+import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.security.ORule;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.apache.wicket.Component;
 import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.markup.html.form.*;
+import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.ResourceModel;
-import org.apache.wicket.model.StringResourceModel;
 import org.orienteer.core.CustomAttribute;
-import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.component.FAIcon;
 import org.orienteer.core.component.FAIconType;
 import org.orienteer.core.component.command.EditSchemaCommand;
@@ -24,16 +22,15 @@ import org.orienteer.core.component.property.DisplayMode;
 import org.orienteer.core.component.structuretable.OrienteerStructureTable;
 import org.orienteer.core.widget.AbstractModeAwareWidget;
 import org.orienteer.core.widget.Widget;
-import org.orienteer.telegram.CustomConfiguration;
-import org.orienteer.telegram.bot.OTelegramBot;
+import org.orienteer.telegram.module.OTelegramModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.orientechnologies.orient.core.record.impl.ODocument;
-
 import ru.ydn.wicket.wicketorientdb.components.TransactionlessForm;
 import ru.ydn.wicket.wicketorientdb.security.OSecurityHelper;
 import ru.ydn.wicket.wicketorientdb.security.OrientPermission;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 
@@ -52,8 +49,8 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 	public OTelegramBotWidget(String id, IModel<OClass> model, IModel<ODocument> widgetDocumentModel) {
 		super(id, model, widgetDocumentModel);
 		Form<OClass> form = new TransactionlessForm<OClass>("form");
-		propertiesList.add(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH);
-		propertiesList.add(CustomConfiguration.CUSTOM_TELEGRAM_SEARCH_QUERY);
+		propertiesList.add(OTelegramModule.TELEGRAM_SEARCH.getName());
+		propertiesList.add(OTelegramModule.TELEGRAM_SEARCH_QUERY.getName());
 		structureTable = new OrienteerStructureTable<OClass, String>("attributes", model, propertiesList) {
 
 			@Override

@@ -2,8 +2,7 @@ package org.orienteer.telegram.bot;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
-import org.orienteer.core.CustomAttribute;
-import org.orienteer.telegram.CustomConfiguration;
+import org.orienteer.telegram.module.OTelegramModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
@@ -43,7 +42,7 @@ public abstract class Cache {
             protected Object execute(ODatabaseDocument db) {
                 classCache = new HashMap<>();
                 for (OClass oClass : db.getMetadata().getSchema().getClasses()) {
-                    if (CustomConfiguration.TELEGRAM_SEARCH.getValue(oClass)) {
+                    if (OTelegramModule.TELEGRAM_SEARCH.getValue(oClass)) {
                         classCache.put(oClass.getName(), oClass);
                     }
                 }
@@ -57,10 +56,10 @@ public abstract class Cache {
         queryCache = new HashMap<>();
         if (classCache == null) createClassCache();
         for (OClass oClass : classCache.values()) {
-            String query = CustomConfiguration.TELEGRAM_SEARCH_QUERY.getValue(oClass);
+            String query = OTelegramModule.TELEGRAM_SEARCH_QUERY.getValue(oClass);
             if (query == null){
                 query = "SELECT FROM " + oClass.getName();
-                CustomConfiguration.TELEGRAM_SEARCH_QUERY.setValue(oClass, query);
+                OTelegramModule.TELEGRAM_SEARCH_QUERY.setValue(oClass, query);
             }
             queryCache.put(oClass.getName(), query);
         }

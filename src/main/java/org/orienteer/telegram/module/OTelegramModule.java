@@ -4,6 +4,7 @@ import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.apache.wicket.Localizer;
+import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.module.AbstractOrienteerModule;
 import org.orienteer.core.util.OSchemaHelper;
@@ -29,6 +30,9 @@ public class OTelegramModule extends AbstractOrienteerModule {
 	public static final String OPROPERTY_USERNAME = "username";
 	public static final String OPROPERTY_TOKEN = "token";
 	public static final String OPROPERTY_USER_SESSION = "user_session";
+
+	public static final CustomAttribute TELEGRAM_SEARCH = CustomAttribute.create("orienteer.telegramSearch", OType.BOOLEAN, false, false, false);
+	public static final CustomAttribute TELEGRAM_SEARCH_QUERY = CustomAttribute.create("orienteer.telegramSearchQuery", OType.STRING, null, true, false);
 
 	private BotSession botSession;
 
