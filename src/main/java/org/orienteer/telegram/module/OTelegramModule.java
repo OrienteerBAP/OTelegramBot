@@ -13,13 +13,15 @@ import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.logging.BotLogger;
+import org.telegram.telegrambots.updatesreceivers.BotSession;
 
+import java.net.SocketException;
 import java.util.logging.Level;
 
 /**
  * @author Vitaliy Gonchar
  */
-public class OTelegramModule extends AbstractOrienteerModule{
+public class OTelegramModule extends AbstractOrienteerModule {
 
 	private static final Logger LOG = LoggerFactory.getLogger(OTelegramModule.class);
 	public static final String NAME = "telegram";
@@ -27,6 +29,8 @@ public class OTelegramModule extends AbstractOrienteerModule{
 	public static final String OPROPERTY_USERNAME = "username";
 	public static final String OPROPERTY_TOKEN = "token";
 	public static final String OPROPERTY_USER_SESSION = "user_session";
+
+	private BotSession botSession;
 
 	protected OTelegramModule() {
 		super(NAME, 1);
@@ -44,15 +48,15 @@ public class OTelegramModule extends AbstractOrienteerModule{
 	}
 
 	@Override
-	public void onInitialize(OrienteerWebApplication app, ODatabaseDocument db) {
+	public void onInitialize(OrienteerWebApplication app, ODatabaseDocument db, ODocument moduleDoc) {
 		String username = null;
 		String token = null;
 		long userSession = 0;
-		ODocument bot = db.browseClass(OCLASS_NAME).next();
-		if (bot.field(OMODULE_ACTIVATE)) {
-			username = bot.field(OPROPERTY_USERNAME, OType.STRING);
-			token = bot.field(OPROPERTY_TOKEN, OType.STRING);
-			userSession = bot.field(OPROPERTY_USER_SESSION, OType.LONG);
+		LOG.debug("moduleDoc: " + moduleDoc.toString());
+		if (moduleDoc.field(OMODULE_ACTIVATE)) {
+			username = moduleDoc.field(OPROPERTY_USERNAME, OType.STRING);
+			token = moduleDoc.field(OPROPERTY_TOKEN, OType.STRING);
+			userSession = moduleDoc.field(OPROPERTY_USER_SESSION, OType.LONG);
 		}
 		BotConfig botConfig = new BotConfig(username, token, userSession);
 		LOG.debug("\n" + botConfig.toString());
@@ -60,7 +64,7 @@ public class OTelegramModule extends AbstractOrienteerModule{
 		BotLogger.setLevel(Level.ALL);
 		try {
 			if (username !=  null) {
-				telegramBotsApi.registerBot(OTelegramBot.getOrienteerTelegramBot(botConfig));
+				botSession = telegramBotsApi.registerBot(OTelegramBot.getOrienteerTelegramBot(botConfig));
 			}
 		} catch (TelegramApiRequestException e) {
 			LOG.error("Cannot register bot");
@@ -68,7 +72,13 @@ public class OTelegramModule extends AbstractOrienteerModule{
 		}
 	}
 
-    public class BotConfig {
+	@Override
+	public void onDestroy(OrienteerWebApplication app, ODatabaseDocument db, ODocument moduleDoc) {
+		if (botSession != null) botSession.close();
+	}
+
+
+	public class BotConfig {
         public final String USERNAME;
         public final String TOKEN;
 		public final long USER_SESSION;
