@@ -26,15 +26,15 @@ import java.util.concurrent.TimeUnit;
 public class OTelegramBot extends TelegramLongPollingBot {
 
     private static final Logger LOG = LoggerFactory.getLogger(OTelegramBot.class);
-    private final OTelegramModule.BotConfig BOT_CONFIG;
-    private final LoadingCache<Integer, UserSession> SESSIONS;
+    private final OTelegramModule.BotConfig botConfig;
+    private final LoadingCache<Integer, UserSession> sessions;
 
     private static OrienteerWebApplication application;
     private static UserSession currentSession;
 
     private OTelegramBot(OTelegramModule.BotConfig botConfig, LoadingCache<Integer, UserSession> sessions) {
-        BOT_CONFIG = botConfig;
-        SESSIONS = sessions;
+        this.botConfig = botConfig;
+        this.sessions = sessions;
     }
 
     public static OTelegramBot getOrienteerTelegramBot(OTelegramModule.BotConfig botConfig) {
@@ -53,12 +53,12 @@ public class OTelegramBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotToken() {
-        return BOT_CONFIG.TOKEN;
+        return botConfig.TOKEN;
     }
 
     @Override
     public String getBotUsername() {
-        return BOT_CONFIG.USERNAME;
+        return botConfig.USERNAME;
     }
 
 
@@ -78,11 +78,11 @@ public class OTelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleMenuRequest(Message message) throws TelegramApiException {
-        UserSession userSession = SESSIONS.getIfPresent(message.getFrom().getId());
+        UserSession userSession = sessions.getIfPresent(message.getFrom().getId());
         currentSession = userSession == null ? new UserSession() : userSession;
         setApplication();
         List<SendMessage> responses = new Response(message).getResponse();
-        SESSIONS.put(message.getFrom().getId(), currentSession);
+        sessions.put(message.getFrom().getId(), currentSession);
         for (SendMessage sendMessage : responses) {
             if (sendMessage != null) sendMessage(sendMessage);
         }
