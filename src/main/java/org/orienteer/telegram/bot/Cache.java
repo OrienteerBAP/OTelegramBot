@@ -21,13 +21,13 @@ public abstract class Cache {
 
     private static final Logger LOG = LoggerFactory.getLogger(Cache.class);
 
-    public static void initCache() {
+    public static synchronized void initCache() {
         new DBClosure() {
             @Override
             protected Object execute(ODatabaseDocument db) {
                 int newVersion = db.getMetadata().getSchema().getVersion();
                 if (schemaVersion != newVersion) {
-                    createClassCache();
+                    createClassCache(db);
                     createQueryCache();
                     schemaVersion = newVersion;
                 }
@@ -36,25 +36,18 @@ public abstract class Cache {
         }.execute();
     }
 
-    private static void createClassCache() {
-        new DBClosure() {
-            @Override
-            protected Object execute(ODatabaseDocument db) {
-                classCache = new HashMap<>();
-                for (OClass oClass : db.getMetadata().getSchema().getClasses()) {
-                    if (OTelegramModule.TELEGRAM_SEARCH.getValue(oClass)) {
-                        classCache.put(oClass.getName(), oClass);
-                    }
-                }
-                return null;
+    private static void createClassCache(ODatabaseDocument db) {
+        classCache = new HashMap<>();
+        for (OClass oClass : db.getMetadata().getSchema().getClasses()) {
+            if (OTelegramModule.TELEGRAM_SEARCH.getValue(oClass)) {
+                classCache.put(oClass.getName(), oClass);
             }
-        }.execute();
+        }
         LOG.debug("Class cache size: " + classCache.size());
     }
 
     private static void createQueryCache() {
         queryCache = new HashMap<>();
-        if (classCache == null) createClassCache();
         for (OClass oClass : classCache.values()) {
             String query = OTelegramModule.TELEGRAM_SEARCH_QUERY.getValue(oClass);
             if (query == null){
