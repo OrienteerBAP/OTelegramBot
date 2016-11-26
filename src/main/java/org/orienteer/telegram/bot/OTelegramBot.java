@@ -18,6 +18,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -44,7 +45,7 @@ public class OTelegramBot extends TelegramLongPollingBot {
                         new CacheLoader<Integer, UserSession>() {
                     @Override
                     public UserSession load(Integer key) {
-                        return null;
+                        return new UserSession();
                     }
                 });
         Cache.initCache();
@@ -78,8 +79,12 @@ public class OTelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleMenuRequest(Message message) throws TelegramApiException {
-        UserSession userSession = sessions.getIfPresent(message.getFrom().getId());
-        currentSession = userSession == null ? new UserSession() : userSession;
+        try {
+            currentSession = sessions.get(message.getFrom().getId());
+        } catch (ExecutionException e) {
+            LOG.error("Cannot create user session");
+            if (LOG.isDebugEnabled()) e.printStackTrace();
+        }
         setApplication();
         List<SendMessage> responses = new Response(message).getResponse();
         sessions.put(message.getFrom().getId(), currentSession);
