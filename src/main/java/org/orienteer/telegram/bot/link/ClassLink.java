@@ -25,7 +25,9 @@ public class ClassLink extends Link {
 
     public ClassLink(String classLink, Locale locale) {
         this.locale = locale;
-        className = classLink.substring(BotState.GO_TO_CLASS.getCommand().length());
+        className = classLink.contains("@") ?
+                classLink.substring(0, classLink.indexOf("@")).substring(BotState.GO_TO_CLASS.getCommand().length())
+                : classLink.substring(BotState.GO_TO_CLASS.getCommand().length());
     }
 
     @Override

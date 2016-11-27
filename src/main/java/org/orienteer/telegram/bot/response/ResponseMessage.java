@@ -29,6 +29,7 @@ public abstract class ResponseMessage {
     public static SendMessage getStartMenu(Message message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
+        sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.enableMarkdown(true);
         sendMessage.setText(MessageKey.CLASS_MENU_MSG.getString(OTelegramBot.getCurrentLocale()));
 
@@ -44,6 +45,7 @@ public abstract class ResponseMessage {
     public static SendMessage getLanguageMenu(Message message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
+        sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.enableMarkdown(true);
         sendMessage.setText(MessageKey.LANGUAGE_MENU_MSG.getString(OTelegramBot.getCurrentLocale()));
 
@@ -61,6 +63,7 @@ public abstract class ResponseMessage {
         keyboard.add(MessageKey.BACK.getString(OTelegramBot.getCurrentLocale()));
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
+        sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.enableMarkdown(true);
 
         sendMessage.setText(text);
@@ -73,6 +76,7 @@ public abstract class ResponseMessage {
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.enableHtml(true);
         sendMessage.enableMarkdown(true);
+        sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.setText(MessageKey.START_SEARCH_MSG.getString(OTelegramBot.getCurrentLocale()));
         List<String> buttons = new ArrayList<>();
         if (hasNext) buttons.add(MessageKey.NEXT_RESULT_BUT.getString(OTelegramBot.getCurrentLocale()));

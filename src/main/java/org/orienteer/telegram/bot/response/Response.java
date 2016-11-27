@@ -119,33 +119,34 @@ public class Response {
     }
 
     private BotState getBotState(String text) {
+        String command = text.contains("@") ? text.substring(0, text.indexOf("@")) : text;
         BotState state = BotState.ERROR;
         for (BotState search : BotState.values()) {
-            if (search.getCommand().equals(text)) {
+            if (search.getCommand().equals(command)) {
                 state = search;
                 break;
             }
         }
         if (state == BotState.ERROR) {
-            if (text.startsWith(BotState.GO_TO_CLASS.getCommand()) && text.endsWith("_details")) {
+            if (command.startsWith(BotState.GO_TO_CLASS.getCommand()) && command.endsWith(MessageKey.DETAILS.toString())) {
                 return BotState.GO_TO_DOCUMENT_ALL_DESCRIPTION;
             }
-            if (text.startsWith(MessageKey.LANGUAGE_BUT.getString(OTelegramBot.getCurrentLocale()))) {
+            if (command.startsWith(MessageKey.LANGUAGE_BUT.getString(OTelegramBot.getCurrentLocale()))) {
                 return BotState.CHANGE_LANGUAGE;
             }
-            if (text.startsWith(BotState.GO_TO_CLASS.getCommand()) && text.contains("_")) {
+            if (command.startsWith(BotState.GO_TO_CLASS.getCommand()) && command.contains("_")) {
                 return BotState.GO_TO_DOCUMENT_SHORT_DESCRIPTION;
-            } else if (text.startsWith(BotState.GO_TO_CLASS.getCommand())) {
+            } else if (command.startsWith(BotState.GO_TO_CLASS.getCommand())) {
                 return BotState.GO_TO_CLASS;
-            } else if (text.startsWith("/")) {
+            } else if (command.startsWith("/")) {
                 return BotState.GO_TO_CLASS;
-            } else if (text.startsWith(MessageKey.CLASS_BUT.getString(OTelegramBot.getCurrentLocale()))) {
+            } else if (command.startsWith(MessageKey.CLASS_BUT.getString(OTelegramBot.getCurrentLocale()))) {
                 return BotState.CLASS_SEARCH;
-            } else if (text.equals(MessageKey.NEXT_RESULT_BUT.getString(OTelegramBot.getCurrentLocale()))) {
+            } else if (command.equals(MessageKey.NEXT_RESULT_BUT.getString(OTelegramBot.getCurrentLocale()))) {
                 return BotState.NEXT_RESULT;
-            } else if (text.endsWith(MessageKey.PREVIOUS_RESULT_BUT.getString(OTelegramBot.getCurrentLocale()))) {
+            } else if (command.endsWith(MessageKey.PREVIOUS_RESULT_BUT.getString(OTelegramBot.getCurrentLocale()))) {
                 return BotState.PREVIOUS_RESULT;
-            } else if (text.equals(MessageKey.BACK.getString(OTelegramBot.getCurrentLocale()))) {
+            } else if (command.equals(MessageKey.BACK.getString(OTelegramBot.getCurrentLocale()))) {
                 return BotState.BACK;
             }
         }

@@ -33,10 +33,10 @@ public class DocumentLink extends Link {
     private long embeddedIdCounter = 0;
 
     public DocumentLink(String documentLink, boolean isDisplayable, Locale locale) {
-        this.documentLink = documentLink;
+        this.documentLink = documentLink.contains("@") ? documentLink.substring(0, documentLink.indexOf("@")) : documentLink;
         this.isDisplayable = isDisplayable;
         this.locale = locale;
-        String [] split = documentLink.substring(BotState.GO_TO_CLASS.getCommand().length()).split("_");
+        String [] split = this.documentLink.substring(BotState.GO_TO_CLASS.getCommand().length()).split("_");
         int clusterID = Integer.valueOf(split[1]);
         long recordID = Long.valueOf(split[2]);
         oRecordId = new ORecordId(clusterID, recordID);
@@ -72,7 +72,7 @@ public class DocumentLink extends Link {
                         resultBuilder = new StringBuilder(String.format(
                                 MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SHORT_DOCUMENT_DESCRIPTION_MSG.getString(locale)) + "\n\n"
                                 + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.CLASS.getString(locale) + " "));
-                        builder.append("\n" + MessageKey.DOCUMENT_DETAILS_MSG.getString(locale) + documentLink + "_details");
+                        builder.append("\n" + MessageKey.DOCUMENT_DETAILS_MSG.getString(locale) + documentLink + MessageKey.DETAILS.toString());
                     }
                     resultBuilder.append(builder.toString());
                 } catch (ORecordNotFoundException ex) {

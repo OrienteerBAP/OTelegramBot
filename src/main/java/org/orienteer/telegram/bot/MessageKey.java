@@ -39,6 +39,7 @@ public enum MessageKey {
     CLASS_NAME("telegram.bot.message.className"),
     ABOUT_MSG("telegram.bot.message.about"),
     EMBEDDED("_embedded"),
+    DETAILS("_details"),
     HTML_STRONG_TEXT("<strong>%s</strong>"),
     ENGLISH("English"),
     RUSSIAN("Русский"),
