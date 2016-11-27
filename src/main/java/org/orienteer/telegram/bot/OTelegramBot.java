@@ -69,7 +69,9 @@ public class OTelegramBot extends TelegramLongPollingBot {
             Message message = update.getMessage();
             if (message.hasText()) {
                 try {
+                    LOG.info("Get message from - " + message.getFrom().getFirstName() + " " + message.getFrom().getLastName());
                     handleMenuRequest(message);
+                    LOG.info("Send message to - " + message.getFrom().getFirstName() + " " + message.getFrom().getLastName());
                 } catch (TelegramApiException e) {
                     LOG.error("Cannot send message");
                     if (LOG.isDebugEnabled()) e.printStackTrace();
