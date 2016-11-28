@@ -27,64 +27,62 @@ public class Response {
         responses = new ArrayList<>(2);
     }
 
-    public List<SendMessage> getResponse() {
+    public SendMessage getResponse() {
         BotState state = getBotState(message.getText());
-
+        SendMessage result;
         state = state == BotState.BACK ? userSession.getPreviousBotState() : state;
         switch (state) {
             case START:
                 userSession.setBotState(BotState.NEW_CLASS_SEARCH);
                 userSession.setPreviousBotState(BotState.START);
-                responses.add(ResponseMessage.getStartMenu(message));
+                result = ResponseMessage.getStartMenu(message);
                 break;
             case CLASS_SEARCH:
                 userSession.setTargetClass(message.getText().substring(MessageKey.CLASS_BUT.getString(userSession.getLocale()).length()));
                 userSession.setBotState(BotState.SEARCH_IN_CLASS_GLOBAL);
                 userSession.setPreviousBotState(BotState.START);
-                responses.add(ResponseMessage.getBackMenu(message, String.format(MessageKey.CLASS_SEARCH_MSG.getString(userSession.getLocale()), "/" + userSession.getTargetClass())));
+                result = ResponseMessage.getBackMenu(message, String.format(MessageKey.CLASS_SEARCH_MSG.getString(userSession.getLocale()), "/" + userSession.getTargetClass()));
                 break;
             case NEXT_RESULT:
                 String next = userSession.getNextResult();
-                responses.add(ResponseMessage.getNextPreviousMenu(message, userSession.hasNextResult(), userSession.hasPreviousResult()));
-                responses.add(ResponseMessage.getTextMessage(message, next));
+                result = ResponseMessage.getNextPreviousMenu(message, next, userSession.hasNextResult(), userSession.hasPreviousResult());
                 break;
             case PREVIOUS_RESULT:
                 String previous = userSession.getPreviousResult();
-                responses.add(ResponseMessage.getNextPreviousMenu(message, userSession.hasNextResult(), userSession.hasPreviousResult()));
-                responses.add(ResponseMessage.getTextMessage(message, previous));
+                result = ResponseMessage.getNextPreviousMenu(message, previous, userSession.hasNextResult(), userSession.hasPreviousResult());
                 break;
             case GO_TO_DOCUMENT_SHORT_DESCRIPTION:
-                responses.add(ResponseMessage.getTextMessage(message, Link.getLink(message.getText(), false).goTo()));
+                result = ResponseMessage.getTextMessage(message, Link.getLink(message.getText(), false).goTo());
                 break;
             case GO_TO_DOCUMENT_ALL_DESCRIPTION:
-                responses.add(ResponseMessage.getTextMessage(message, Link.getLink(message.getText(), true).goTo()));
+                result = ResponseMessage.getTextMessage(message, Link.getLink(message.getText(), true).goTo());
                 break;
             case GO_TO_CLASS:
-                responses.add(ResponseMessage.getTextMessage(message, Link.getLink(message.getText()).goTo()));
+                result = ResponseMessage.getTextMessage(message, Link.getLink(message.getText()).goTo());
                 break;
             case CHANGE_LANGUAGE:
                 userSession.setLocale(changeLanguage(message));
                 userSession.setPreviousBotState(BotState.START);
                 userSession.setBotState(BotState.NEW_CLASS_SEARCH);
-                responses.add(ResponseMessage.getTextMessage(message, MessageKey.LANGUAGE_CHANGED.getString(userSession.getLocale())));
-                responses.add(ResponseMessage.getStartMenu(message));
+                result = ResponseMessage.getStartMenu(message);
                 break;
             case LANGUAGE:
-                responses.add(ResponseMessage.getLanguageMenu(message));
+                result = ResponseMessage.getLanguageMenu(message);
                 break;
             case ABOUT:
-                responses.add(ResponseMessage.getTextMessage(message, MessageKey.ABOUT_MSG.getString(userSession.getLocale())));
+                result = ResponseMessage.getTextMessage(message, MessageKey.ABOUT_MSG.getString(userSession.getLocale()));
                 break;
             default:
-                handleSearchRequest(message);
+                result = handleSearchRequest(message);
         }
         OTelegramBot.setCurrentSession(userSession);
-        return responses;
+        return result;
     }
 
-    private void handleSearchRequest(Message message) {
+    private SendMessage handleSearchRequest(Message message) {
         List<String> result = null;
         Search search;
+        SendMessage sendMessage;
         switch (userSession.getBotState()) {
             case SEARCH_IN_CLASS_GLOBAL:
                 search = Search.getSearch(message.getText(), userSession.getTargetClass(), userSession.getLocale());
@@ -98,13 +96,13 @@ public class Response {
         if (result != null) {
             userSession.setResultOfSearch(result);
             if (result.size() > 1) {
-                responses.add(ResponseMessage.getNextPreviousMenu(message, userSession.hasNextResult(), userSession.hasPreviousResult()));
-                responses.add(ResponseMessage.getTextMessage(message, userSession.getNextResult()));
+                sendMessage = ResponseMessage.getNextPreviousMenu(message,  userSession.getNextResult(), userSession.hasNextResult(), userSession.hasPreviousResult());
             } else {
-                responses.add(ResponseMessage.getTextMessage(message, MessageKey.START_SEARCH_MSG.getString(userSession.getLocale())));
-                responses.add(ResponseMessage.getTextMessage(message, userSession.getNextResult()));
+                sendMessage = ResponseMessage.getTextMessage(message, userSession.getNextResult());
             }
-        } else responses.add(ResponseMessage.getTextMessage(message, MessageKey.SEARCH_RESULT_FAILED_MSG.getString(userSession.getLocale())));
+        } else sendMessage = ResponseMessage.getTextMessage(message, MessageKey.SEARCH_RESULT_FAILED_MSG.getString(userSession.getLocale()));
+
+        return sendMessage;
     }
 
     private Locale changeLanguage(Message message) {

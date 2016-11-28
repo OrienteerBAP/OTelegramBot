@@ -3,21 +3,19 @@ package org.orienteer.telegram.module;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import org.apache.wicket.Localizer;
 import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.module.AbstractOrienteerModule;
+import org.orienteer.core.module.IOrienteerModule;
 import org.orienteer.core.util.OSchemaHelper;
+import org.orienteer.telegram.bot.handler.LongPolligHandlerConfig;
 import org.orienteer.telegram.bot.OTelegramBot;
+import org.orienteer.telegram.bot.handler.WebHookHandlerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.exceptions.TelegramApiRequestException;
-import org.telegram.telegrambots.logging.BotLogger;
 import org.telegram.telegrambots.updatesreceivers.BotSession;
-
-import java.net.SocketException;
-import java.util.logging.Level;
 
 /**
  * @author Vitaliy Gonchar
@@ -26,10 +24,17 @@ public class OTelegramModule extends AbstractOrienteerModule {
 
 	private static final Logger LOG = LoggerFactory.getLogger(OTelegramModule.class);
 	public static final String NAME = "telegram";
-	public static final String OCLASS_NAME = "OTelegramBot";
+	public static final String OCLASS_NAME = "OTelegramBotTest";
 	public static final String OPROPERTY_USERNAME = "username";
 	public static final String OPROPERTY_TOKEN = "token";
 	public static final String OPROPERTY_USER_SESSION = "user_session";
+	public static final String OPROPERTY_WEB_HOOK_ENABLE = "web_hook_enable";
+	public static final String OPROPERTY_WEB_HOOK_HOST = "web_hook_host";
+	public static final String OPROPERTY_WEB_HOOK_PORT = "web_hook_port";
+	public static final String OPROPERTY_WEB_HOOK_PATH_TO_CERTIFICATE_KEY = "path_to_certificate_public_key";
+	public static final String OPROPERTY_WEB_HOOK_PATH_TO_CERTIFICATE_STORE = "path_to_certificate_store";
+	public static final String OPROPERTY_WEB_HOOK_CERTIFICATE_PASSWORD = "certificate_password";
+
 
 	public static final CustomAttribute TELEGRAM_SEARCH = CustomAttribute.create("orienteer.telegramSearch", OType.BOOLEAN, false, false, false);
 	public static final CustomAttribute TELEGRAM_SEARCH_QUERY = CustomAttribute.create("orienteer.telegramSearchQuery", OType.STRING, null, true, false);
@@ -46,34 +51,78 @@ public class OTelegramModule extends AbstractOrienteerModule {
 		helper.oClass(OCLASS_NAME, OMODULE_CLASS)
 				.oProperty(OPROPERTY_USERNAME, OType.STRING).notNull()
 				.oProperty(OPROPERTY_TOKEN, OType.STRING).notNull()
-				.oProperty(OPROPERTY_USER_SESSION, OType.LONG).defaultValue("30").notNull();
+				.oProperty(OPROPERTY_WEB_HOOK_ENABLE, OType.BOOLEAN).defaultValue("false")
+				.oProperty(OPROPERTY_WEB_HOOK_HOST, OType.STRING).defaultValue("Your web hook host").notNull()
+				.oProperty(OPROPERTY_WEB_HOOK_PORT, OType.INTEGER).defaultValue("443").notNull()
+				.oProperty(OPROPERTY_WEB_HOOK_PATH_TO_CERTIFICATE_KEY, OType.STRING).defaultValue("Your path to certificate public key").notNull()
+				.oProperty(OPROPERTY_WEB_HOOK_PATH_TO_CERTIFICATE_STORE, OType.STRING).defaultValue("Your path to certificate  store").notNull()
+				.oProperty(OPROPERTY_WEB_HOOK_CERTIFICATE_PASSWORD, OType.STRING)
+				.oProperty(OPROPERTY_USER_SESSION, OType.LONG).defaultValue("30").notNull()
+				.oProperty(IOrienteerModule.OMODULE_ACTIVATE, OType.BOOLEAN).defaultValue("false");
 
 		return new ODocument(helper.getOClass());
 	}
 
 	@Override
 	public void onInitialize(OrienteerWebApplication app, ODatabaseDocument db, ODocument moduleDoc) {
-		String username = null;
-		String token = null;
-		long userSession = 0;
+
 		LOG.debug("moduleDoc: " + moduleDoc.toString());
-		if (moduleDoc.field(OMODULE_ACTIVATE)) {
-			username = moduleDoc.field(OPROPERTY_USERNAME, OType.STRING);
-			token = moduleDoc.field(OPROPERTY_TOKEN, OType.STRING);
-			userSession = moduleDoc.field(OPROPERTY_USER_SESSION, OType.LONG);
-		}
-		BotConfig botConfig = new BotConfig(username, token, userSession);
-		LOG.debug("\n" + botConfig.toString());
-		TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
-		BotLogger.setLevel(Level.ALL);
+
+		TelegramBotsApi telegramBotsApi;
 		try {
-			if (username !=  null) {
-				botSession = telegramBotsApi.registerBot(OTelegramBot.getOrienteerTelegramBot(botConfig));
+			if (moduleDoc.field(IOrienteerModule.OMODULE_ACTIVATE)) {
+				if (moduleDoc.field(OPROPERTY_WEB_HOOK_ENABLE)) {
+					WebHookHandlerConfig config = readWebHookBotConfig(moduleDoc);
+					telegramBotsApi = new TelegramBotsApi(
+							config.pathToCertificateStore,
+							config.certificateStorePassword,
+							config.externalWebHookUrl,
+							config.internalWebHookUrl,
+							config.pathToCertificatePublicKey);
+					telegramBotsApi.registerBot(OTelegramBot.getWebHookBot(config));
+				} else {
+					telegramBotsApi = new TelegramBotsApi();
+					LongPolligHandlerConfig longPolligHandlerConfig = readLongPollingBotConfig(moduleDoc);
+					botSession = telegramBotsApi.registerBot(OTelegramBot.getLongPollingBot(longPolligHandlerConfig));
+				}
 			}
+
 		} catch (TelegramApiRequestException e) {
 			LOG.error("Cannot register bot");
 			if (LOG.isDebugEnabled()) e.printStackTrace();
 		}
+	}
+
+	private LongPolligHandlerConfig readLongPollingBotConfig(ODocument doc) {
+		String username;
+		String token;
+		long userSession;
+		username = doc.field(OPROPERTY_USERNAME, OType.STRING);
+		token = doc.field(OPROPERTY_TOKEN, OType.STRING);
+		userSession = doc.field(OPROPERTY_USER_SESSION, OType.LONG);
+
+		return new LongPolligHandlerConfig(username, token, userSession);
+	}
+
+	private WebHookHandlerConfig readWebHookBotConfig(ODocument doc) {
+		String username;
+		String token;
+		String webHookHost;
+		String pathToCertificatePublicKey;
+		String pathToCertificateStore;
+		String certificateStorePassword;
+		long userSession;
+		long port;
+
+		username = doc.field(OPROPERTY_USERNAME, OType.STRING);
+		token = doc.field(OPROPERTY_TOKEN, OType.STRING);
+		userSession = doc.field(OPROPERTY_USER_SESSION, OType.LONG);
+		webHookHost = doc.field(OPROPERTY_WEB_HOOK_HOST, OType.STRING);
+		pathToCertificatePublicKey = doc.field(OPROPERTY_WEB_HOOK_PATH_TO_CERTIFICATE_KEY, OType.STRING);
+		pathToCertificateStore = doc.field(OPROPERTY_WEB_HOOK_CERTIFICATE_PASSWORD, OType.STRING);certificateStorePassword = doc.field(OPROPERTY_WEB_HOOK_CERTIFICATE_PASSWORD, OType.STRING);
+		port = doc.field(OPROPERTY_WEB_HOOK_PORT, OType.LONG);
+
+		return new WebHookHandlerConfig(username, token, webHookHost, port, userSession, pathToCertificatePublicKey, pathToCertificateStore, certificateStorePassword);
 	}
 
 	@Override
@@ -81,24 +130,4 @@ public class OTelegramModule extends AbstractOrienteerModule {
 		if (botSession != null) botSession.close();
 	}
 
-
-	public class BotConfig {
-        public final String USERNAME;
-        public final String TOKEN;
-		public final long USER_SESSION;
-
-        BotConfig(String username, String token, long userSession) {
-            USERNAME = username;
-            TOKEN = token;
-			USER_SESSION = userSession;
-        }
-
-		@Override
-		public String toString() {
-			return "BotConfig:"
-					+ "\nUsername: " + USERNAME
-					+ "\nBot token: " + TOKEN
-					+ "\nUser session: " + USER_SESSION;
-		}
-	}
 }

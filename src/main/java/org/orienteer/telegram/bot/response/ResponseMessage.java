@@ -30,7 +30,6 @@ public abstract class ResponseMessage {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.setReplyToMessageId(message.getMessageId());
-        sendMessage.enableMarkdown(true);
         sendMessage.setText(MessageKey.CLASS_MENU_MSG.getString(OTelegramBot.getCurrentLocale()));
 
         List<String> buttonNames = new ArrayList<>();
@@ -46,7 +45,6 @@ public abstract class ResponseMessage {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.setReplyToMessageId(message.getMessageId());
-        sendMessage.enableMarkdown(true);
         sendMessage.setText(MessageKey.LANGUAGE_MENU_MSG.getString(OTelegramBot.getCurrentLocale()));
 
         List<String> buttonNames = new ArrayList<>();
@@ -64,20 +62,17 @@ public abstract class ResponseMessage {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.setReplyToMessageId(message.getMessageId());
-        sendMessage.enableMarkdown(true);
-
         sendMessage.setText(text);
         sendMessage.setReplyMarkup(getMenuMarkup(keyboard));
         return sendMessage;
     }
 
-    public static SendMessage getNextPreviousMenu(Message message, boolean hasNext, boolean hasPrevious) {
+    public static SendMessage getNextPreviousMenu(Message message, String text, boolean hasNext, boolean hasPrevious) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.enableHtml(true);
-        sendMessage.enableMarkdown(true);
         sendMessage.setReplyToMessageId(message.getMessageId());
-        sendMessage.setText(MessageKey.START_SEARCH_MSG.getString(OTelegramBot.getCurrentLocale()));
+        sendMessage.setText(text);
         List<String> buttons = new ArrayList<>();
         if (hasNext) buttons.add(MessageKey.NEXT_RESULT_BUT.getString(OTelegramBot.getCurrentLocale()));
         if (hasPrevious) buttons.add(MessageKey.PREVIOUS_RESULT_BUT.getString(OTelegramBot.getCurrentLocale()));

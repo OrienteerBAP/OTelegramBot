@@ -2,6 +2,7 @@ package org.orienteer.telegram.bot.link;
 
 import org.orienteer.telegram.bot.OTelegramBot;
 
+
 /**
  * @author Vitaliy Gonchar
  */
