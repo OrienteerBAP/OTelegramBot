@@ -3,6 +3,7 @@ package org.orienteer.telegram.module;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import org.apache.wicket.model.Model;
 import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.module.AbstractOrienteerModule;
@@ -16,6 +17,8 @@ import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.updatesreceivers.BotSession;
+
+import java.nio.file.Path;
 
 /**
  * @author Vitaliy Gonchar
@@ -54,8 +57,8 @@ public class OTelegramModule extends AbstractOrienteerModule {
 				.oProperty(OPROPERTY_WEB_HOOK_ENABLE, OType.BOOLEAN).defaultValue("false")
 				.oProperty(OPROPERTY_WEB_HOOK_HOST, OType.STRING).defaultValue("Your web hook host").notNull()
 				.oProperty(OPROPERTY_WEB_HOOK_PORT, OType.INTEGER).defaultValue("443").notNull()
-				.oProperty(OPROPERTY_WEB_HOOK_PATH_TO_CERTIFICATE_KEY, OType.STRING).defaultValue("Your path to certificate public key").notNull()
-				.oProperty(OPROPERTY_WEB_HOOK_PATH_TO_CERTIFICATE_STORE, OType.STRING).defaultValue("Your path to certificate  store").notNull()
+				.oProperty(OPROPERTY_WEB_HOOK_PATH_TO_CERTIFICATE_KEY, OType.STRING)
+				.oProperty(OPROPERTY_WEB_HOOK_PATH_TO_CERTIFICATE_STORE, OType.STRING)
 				.oProperty(OPROPERTY_WEB_HOOK_CERTIFICATE_PASSWORD, OType.STRING)
 				.oProperty(OPROPERTY_USER_SESSION, OType.LONG).defaultValue("30").notNull()
 				.oProperty(IOrienteerModule.OMODULE_ACTIVATE, OType.BOOLEAN).defaultValue("false");
@@ -119,7 +122,8 @@ public class OTelegramModule extends AbstractOrienteerModule {
 		userSession = doc.field(OPROPERTY_USER_SESSION, OType.LONG);
 		webHookHost = doc.field(OPROPERTY_WEB_HOOK_HOST, OType.STRING);
 		pathToCertificatePublicKey = doc.field(OPROPERTY_WEB_HOOK_PATH_TO_CERTIFICATE_KEY, OType.STRING);
-		pathToCertificateStore = doc.field(OPROPERTY_WEB_HOOK_CERTIFICATE_PASSWORD, OType.STRING);certificateStorePassword = doc.field(OPROPERTY_WEB_HOOK_CERTIFICATE_PASSWORD, OType.STRING);
+		pathToCertificateStore = doc.field(OPROPERTY_WEB_HOOK_PATH_TO_CERTIFICATE_STORE, OType.STRING);
+		certificateStorePassword = doc.field(OPROPERTY_WEB_HOOK_CERTIFICATE_PASSWORD, OType.STRING);
 		port = doc.field(OPROPERTY_WEB_HOOK_PORT, OType.LONG);
 
 		return new WebHookHandlerConfig(username, token, webHookHost, port, userSession, pathToCertificatePublicKey, pathToCertificateStore, certificateStorePassword);
