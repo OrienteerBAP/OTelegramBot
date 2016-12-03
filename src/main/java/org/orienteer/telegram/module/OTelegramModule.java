@@ -3,9 +3,11 @@ package org.orienteer.telegram.module;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import org.apache.wicket.ThreadContext;
 import org.apache.wicket.model.Model;
 import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.OrienteerWebApplication;
+import org.orienteer.core.model.ODocumentNameModel;
 import org.orienteer.core.module.AbstractOrienteerModule;
 import org.orienteer.core.module.IOrienteerModule;
 import org.orienteer.core.util.OSchemaHelper;
@@ -68,6 +70,7 @@ public class OTelegramModule extends AbstractOrienteerModule {
 
 	@Override
 	public void onInitialize(OrienteerWebApplication app, ODatabaseDocument db, ODocument moduleDoc) {
+
 
 		LOG.debug("moduleDoc: " + moduleDoc.toString());
 

@@ -1,6 +1,16 @@
 package org.orienteer.telegram.bot.handler;
 
 import com.google.common.cache.LoadingCache;
+import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
+import com.orientechnologies.orient.core.record.impl.ODocument;
+import org.apache.wicket.Application;
+import org.apache.wicket.ThreadContext;
+import org.apache.wicket.model.Model;
+import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.cycle.RequestCycleContext;
+import org.orienteer.core.OrienteerWebApplication;
+import org.orienteer.core.OrienteerWebSession;
+import org.orienteer.core.model.ODocumentNameModel;
 import org.orienteer.telegram.bot.OTelegramBot;
 import org.orienteer.telegram.bot.UserSession;
 import org.orienteer.telegram.bot.response.Response;
@@ -11,6 +21,10 @@ import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
+import ru.ydn.wicket.wicketorientdb.OrientDbWebApplication;
+import ru.ydn.wicket.wicketorientdb.OrientDbWebSession;
+import ru.ydn.wicket.wicketorientdb.OrientDefaultExceptionsHandlingListener;
+import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
 import java.util.concurrent.ExecutionException;
 
@@ -53,6 +67,9 @@ public class OTelegramLongPollingHandler extends TelegramLongPollingBot {
             if (LOG.isDebugEnabled()) e.printStackTrace();
         }
         OTelegramBot.setApplication();
+        OTelegramBot.setGroupChat(!message.getChat().isUserChat());
+        LOG.info("Is user chat : " + message.getChat().isUserChat());
+
         SendMessage response = new Response(message).getResponse();
         sessions.put(message.getFrom().getId(), OTelegramBot.getCurrentSession());
         sendMessage(response);

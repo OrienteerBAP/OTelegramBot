@@ -20,6 +20,7 @@ public abstract class ResponseMessage {
 
     public static SendMessage getTextMessage(Message message, String text) {
         SendMessage sendMessage = new SendMessage();
+        if (OTelegramBot.isGroupChat()) sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.enableHtml(true);
         sendMessage.setText(text);
@@ -29,7 +30,7 @@ public abstract class ResponseMessage {
     public static SendMessage getStartMenu(Message message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
-        sendMessage.setReplyToMessageId(message.getMessageId());
+        if (OTelegramBot.isGroupChat()) sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.setText(MessageKey.CLASS_MENU_MSG.getString(OTelegramBot.getCurrentLocale()));
 
         List<String> buttonNames = new ArrayList<>();
@@ -44,7 +45,7 @@ public abstract class ResponseMessage {
     public static SendMessage getLanguageMenu(Message message) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(message.getChatId().toString());
-        sendMessage.setReplyToMessageId(message.getMessageId());
+        if (OTelegramBot.isGroupChat()) sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.setText(MessageKey.LANGUAGE_MENU_MSG.getString(OTelegramBot.getCurrentLocale()));
 
         List<String> buttonNames = new ArrayList<>();
@@ -60,8 +61,8 @@ public abstract class ResponseMessage {
         List<String> keyboard = new ArrayList<>(1);
         keyboard.add(MessageKey.BACK.getString(OTelegramBot.getCurrentLocale()));
         SendMessage sendMessage = new SendMessage();
+        if (OTelegramBot.isGroupChat()) sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.setChatId(message.getChatId().toString());
-        sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.setText(text);
         sendMessage.setReplyMarkup(getMenuMarkup(keyboard));
         return sendMessage;
@@ -69,9 +70,9 @@ public abstract class ResponseMessage {
 
     public static SendMessage getNextPreviousMenu(Message message, String text, boolean hasNext, boolean hasPrevious) {
         SendMessage sendMessage = new SendMessage();
+        if (OTelegramBot.isGroupChat()) sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.enableHtml(true);
-        sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.setText(text);
         List<String> buttons = new ArrayList<>();
         if (hasNext) buttons.add(MessageKey.NEXT_RESULT_BUT.getString(OTelegramBot.getCurrentLocale()));

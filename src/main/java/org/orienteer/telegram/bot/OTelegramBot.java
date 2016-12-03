@@ -25,6 +25,7 @@ public abstract class OTelegramBot {
     private static final Logger LOG = LoggerFactory.getLogger(OTelegramBot.class);
     private static OrienteerWebApplication application;
     private static UserSession currentSession;
+    private static boolean groupChat;
 
     public static synchronized OTelegramLongPollingHandler getLongPollingBot(LongPolligHandlerConfig botConfig) {
         LoadingCache<Integer, UserSession> sessions = setUpDefaultConfig(botConfig.userSession);
@@ -53,6 +54,14 @@ public abstract class OTelegramBot {
     public static synchronized void setApplication() {
         application = OrienteerWebApplication.lookupApplication();
         ThreadContext.setApplication(application);
+    }
+
+    public static boolean isGroupChat() {
+        return groupChat;
+    }
+
+    public static void setGroupChat(boolean isGroupChat) {
+        groupChat = isGroupChat;
     }
 
     public static synchronized Localizer getLocalizer() {
