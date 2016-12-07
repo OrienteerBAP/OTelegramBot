@@ -46,9 +46,9 @@ public class DocumentLink extends Link {
 
     @Override
     public String goTo() {
-        return  (String) new DBClosure() {
+        return  new DBClosure<String>() {
             @Override
-            protected Object execute(ODatabaseDocument db) {
+            protected String execute(ODatabaseDocument db) {
                 StringBuilder builder = new StringBuilder();
                 StringBuilder resultBuilder;
                 ODocument oDocument;

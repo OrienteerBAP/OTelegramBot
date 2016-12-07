@@ -27,9 +27,9 @@ public class ClassSearch extends Search {
 
     @Override
     public List<String> execute() {
-        return (List<String>) new DBClosure() {
+        return new DBClosure<List<String>>() {
             @Override
-            protected Object execute(ODatabaseDocument db) {
+            protected List<String> execute(ODatabaseDocument db) {
                 List<String> fieldValuesList = new ArrayList<>();
                 List<String> docNamesList = new ArrayList<>();
                 OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(className));

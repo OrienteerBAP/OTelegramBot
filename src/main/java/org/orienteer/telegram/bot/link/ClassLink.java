@@ -8,7 +8,9 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.orienteer.telegram.bot.Cache;
 import org.orienteer.telegram.bot.MessageKey;
+import org.orienteer.telegram.bot.OTelegramBot;
 import org.orienteer.telegram.bot.response.BotState;
+import org.orienteer.telegram.module.OTelegramModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
@@ -33,9 +35,9 @@ public class ClassLink extends Link {
 
     @Override
     public String goTo() {
-        return (String) new DBClosure() {
+        return new DBClosure<String>() {
             @Override
-            protected Object execute(ODatabaseDocument oDatabaseDocument) {
+            protected String execute(ODatabaseDocument oDatabaseDocument) {
                 StringBuilder builder = new StringBuilder(
                         String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.CLASS_DESCRIPTION_MSG.getString(locale)) + "\n\n");
                 Map<String, OClass> classCache = Cache.getClassCache();
@@ -70,17 +72,20 @@ public class ClassLink extends Link {
                     builder.append(string);
                     builder.append("\n");
                 }
-                builder.append("\n");
-                builder.append(String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.CLASS_DOCUMENTS.getString(locale)));
-                builder.append("\n");
+
                 ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
                 resultList = new ArrayList<>();
-                for (ODocument oDocument : oDocuments) {
-                    String docId = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
-                            + "_" + oDocument.getIdentity().getClusterId()
-                            + "_" + oDocument.getIdentity().getClusterPosition();
-                    String docName = oDocument.field("name", OType.STRING) != null ? (String) oDocument.field("name", OType.STRING) : MessageKey.WITHOUT_NAME.getString(locale);
-                    resultList.add(docName + " " + docId);
+                if (OTelegramModule.TELEGRAM_DOCUMENTS_LIST.getValue(oClass)) {
+                    builder.append("\n");
+                    builder.append(String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.CLASS_DOCUMENTS.getString(locale)));
+                    builder.append("\n");
+                    for (ODocument oDocument : oDocuments) {
+                        String docId = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
+                                + "_" + oDocument.getIdentity().getClusterId()
+                                + "_" + oDocument.getIdentity().getClusterPosition();
+                        String docName = oDocument.field("name", OType.STRING) != null ? (String) oDocument.field("name", OType.STRING) : MessageKey.WITHOUT_NAME.getString(locale);
+                        resultList.add(docName + " " + docId);
+                    }
                 }
                 Collections.sort(resultList);
                 for (String string : resultList) {
