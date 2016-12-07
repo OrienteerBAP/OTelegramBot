@@ -9,6 +9,7 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.orienteer.core.CustomAttribute;
 import org.orienteer.telegram.bot.Cache;
 import org.orienteer.telegram.bot.MessageKey;
+import org.orienteer.telegram.bot.OTelegramBot;
 import org.orienteer.telegram.bot.response.BotState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,19 +116,19 @@ public class DocumentLink extends Link {
         String fieldValueStr;
         if (type.isLink()) {
             final ORecordId linkID = (ORecordId) fieldValue;
-            ODocument linkDocument = (ODocument) new DBClosure() {
+            ODocument linkDocument = new DBClosure<ODocument>() {
                 @Override
-                protected Object execute(ODatabaseDocument db) {
+                protected ODocument execute(ODatabaseDocument db) {
                     return db.getRecord(linkID);
                 }
             }.execute();
-            String linkName = linkDocument.field("name")!=null?(String)linkDocument.field("name"):MessageKey.WITHOUT_NAME.getString(locale);
+            String linkName = OTelegramBot.getDocName(linkDocument);
             fieldValueStr = linkName + " " + BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
                     + "_" + linkDocument.getIdentity().getClusterId()
                     + "_" + linkDocument.getIdentity().getClusterPosition();
         } else if (type.isEmbedded()) {
             ODocument value = (ODocument) fieldValue;
-            String valueName = value.field("name")!=null?(String) value.field("name"):MessageKey.WITHOUT_NAME.getString(locale);
+            String valueName = OTelegramBot.getDocName(value);
             fieldValueStr = valueName + " " + BotState.GO_TO_CLASS.getCommand() + doc.getClassName()
                     + "_" + doc.getIdentity().getClusterId()
                     + "_" + doc.getIdentity().getClusterPosition()

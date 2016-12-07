@@ -3,24 +3,19 @@ package org.orienteer.telegram.module;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import org.apache.wicket.ThreadContext;
-import org.apache.wicket.model.Model;
 import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.OrienteerWebApplication;
-import org.orienteer.core.model.ODocumentNameModel;
 import org.orienteer.core.module.AbstractOrienteerModule;
 import org.orienteer.core.module.IOrienteerModule;
 import org.orienteer.core.util.OSchemaHelper;
-import org.orienteer.telegram.bot.handler.LongPolligHandlerConfig;
 import org.orienteer.telegram.bot.OTelegramBot;
+import org.orienteer.telegram.bot.handler.LongPolligHandlerConfig;
 import org.orienteer.telegram.bot.handler.WebHookHandlerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.updatesreceivers.BotSession;
-
-import java.nio.file.Path;
 
 /**
  * @author Vitaliy Gonchar

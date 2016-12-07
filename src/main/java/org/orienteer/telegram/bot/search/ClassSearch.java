@@ -6,6 +6,7 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import org.orienteer.telegram.bot.MessageKey;
+import org.orienteer.telegram.bot.OTelegramBot;
 import org.orienteer.telegram.bot.response.BotState;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
@@ -53,7 +54,7 @@ public class ClassSearch extends Search {
      */
     private String searchDocument(ODocument oDocument) {
         StringBuilder builder = new StringBuilder();
-        String docName = oDocument.field("name", OType.STRING);
+        String docName = OTelegramBot.getDocName(oDocument);
         if (docName == null) return null;
         String documentLink = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
                 + "_" + oDocument.getIdentity().getClusterId()
@@ -77,7 +78,7 @@ public class ClassSearch extends Search {
     private List<String> searchInFieldValues(ODocument oDocument) {
         String searchValue = null;
         List<String> resultList = new ArrayList<>();
-        String docName = oDocument.field("name", OType.STRING);
+        String docName = OTelegramBot.getDocName(oDocument);
         if (docName == null) docName = MessageKey.WITHOUT_NAME.getString(locale);
         String documentLink = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
                 + "_" + oDocument.getIdentity().getClusterId()
@@ -95,7 +96,7 @@ public class ClassSearch extends Search {
                     ODocument eDoc = (ODocument) value;
                     String similarValue = getSimilarDocumentValues(eDoc);
                     if (similarValue == null) continue;
-                    String valueName = eDoc.field("name") != null ? (String) eDoc.field("name") : MessageKey.WITHOUT_NAME.getString(locale);
+                    String valueName = OTelegramBot.getDocName(eDoc);
                     String embeddedLink = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
                             + "_" + oDocument.getIdentity().getClusterId()
                             + "_" + oDocument.getIdentity().getClusterPosition()
@@ -105,16 +106,16 @@ public class ClassSearch extends Search {
                     searchValue = String.format(MessageKey.HTML_STRONG_TEXT.toString(), "• " + name + " : ") + similarValue + " " + embeddedLink + "\n";
                 } else if (type.isLink()) {
                     final ORecordId linkID = (ORecordId) value;
-                    ODocument linkDocument = (ODocument) new DBClosure() {
+                    ODocument linkDocument = new DBClosure<ODocument>() {
                         @Override
-                        protected Object execute(ODatabaseDocument db) {
+                        protected ODocument execute(ODatabaseDocument db) {
                             return db.getRecord(linkID);
                         }
                     }.execute();
                     String similarValue = getSimilarDocumentValues(linkDocument);
                     if (similarValue == null) continue;
 
-                    String linkName = linkDocument.field("name") != null ? (String) linkDocument.field("name") : MessageKey.WITHOUT_NAME.getString(locale);
+                    String linkName = OTelegramBot.getDocName(linkDocument);
                     String link = BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
                             + "_" + linkDocument.getIdentity().getClusterId()
                             + "_" + linkDocument.getIdentity().getClusterPosition()
@@ -141,9 +142,9 @@ public class ClassSearch extends Search {
                 similarValue = getSimilarDocumentValues((ODocument) value);
                 if (similarValue != null) break;
             } else if (type.isLink()) {
-                ODocument document = (ODocument) new DBClosure() {
+                ODocument document = new DBClosure<ODocument>() {
                     @Override
-                    protected Object execute(ODatabaseDocument db) {
+                    protected ODocument execute(ODatabaseDocument db) {
                         return db.getRecord((ORecordId) value);
                     }
                 }.execute();

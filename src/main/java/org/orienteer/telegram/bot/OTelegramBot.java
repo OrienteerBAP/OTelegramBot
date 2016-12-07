@@ -3,9 +3,13 @@ package org.orienteer.telegram.bot;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.orientechnologies.orient.core.metadata.schema.OProperty;
+import com.orientechnologies.orient.core.metadata.schema.OType;
+import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.apache.wicket.Localizer;
 import org.apache.wicket.ThreadContext;
 import org.orienteer.core.OrienteerWebApplication;
+import org.orienteer.core.util.CommonUtils;
 import org.orienteer.telegram.bot.handler.LongPolligHandlerConfig;
 import org.orienteer.telegram.bot.handler.OTelegramLongPollingHandler;
 import org.orienteer.telegram.bot.handler.OTelegramWebHookHandler;
@@ -48,6 +52,30 @@ public abstract class OTelegramBot {
                             }
                         });
         return sessions;
+    }
+
+    public static String getDocName(ODocument doc) {
+        Locale locale = OTelegramBot.getCurrentLocale();
+        OProperty nameProp = OrienteerWebApplication.lookupApplication().getOClassIntrospector().getNameProperty(doc.getSchemaClass());
+        if (nameProp == null) return MessageKey.WITHOUT_NAME.getString(locale);
+
+        OType type = nameProp.getType();
+        Object value = doc.field(nameProp.getName());
+
+        switch (type) {
+            case DATE:
+                return OrienteerWebApplication.DATE_CONVERTER.convertToString((Date) value, locale);
+            case DATETIME:
+                return OrienteerWebApplication.DATE_TIME_CONVERTER.convertToString((Date) value, locale);
+            case LINK:
+                return getDocName((ODocument) value);
+            case EMBEDDEDMAP:
+                Map<String, Object> localizations = (Map<String, Object>) value;
+                Object localized = CommonUtils.localizeByMap(localizations, true, locale.getLanguage(), Locale.getDefault().getLanguage());
+                if (localized != null) return localized.toString();
+            default:
+                return value.toString();
+        }
     }
 
 

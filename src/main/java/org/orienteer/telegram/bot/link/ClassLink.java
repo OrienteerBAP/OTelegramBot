@@ -4,7 +4,6 @@ import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
-import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.orienteer.telegram.bot.Cache;
 import org.orienteer.telegram.bot.MessageKey;
@@ -83,7 +82,7 @@ public class ClassLink extends Link {
                         String docId = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
                                 + "_" + oDocument.getIdentity().getClusterId()
                                 + "_" + oDocument.getIdentity().getClusterPosition();
-                        String docName = oDocument.field("name", OType.STRING) != null ? (String) oDocument.field("name", OType.STRING) : MessageKey.WITHOUT_NAME.getString(locale);
+                        String docName = OTelegramBot.getDocName(oDocument);
                         resultList.add(docName + " " + docId);
                     }
                 }

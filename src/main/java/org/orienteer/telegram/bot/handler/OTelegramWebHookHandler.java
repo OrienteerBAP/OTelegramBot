@@ -1,7 +1,6 @@
 package org.orienteer.telegram.bot.handler;
 
 import com.google.common.cache.LoadingCache;
-import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.telegram.bot.OTelegramBot;
 import org.orienteer.telegram.bot.UserSession;
 import org.orienteer.telegram.bot.response.Response;
