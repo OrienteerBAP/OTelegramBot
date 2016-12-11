@@ -4,9 +4,13 @@ import com.orientechnologies.orient.core.metadata.schema.OClass;
 import org.orienteer.telegram.bot.Cache;
 import org.orienteer.telegram.bot.MessageKey;
 import org.orienteer.telegram.bot.OTelegramBot;
+import org.orienteer.telegram.bot.UserSession;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
+import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.api.objects.Message;
+import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardRow;
 
 import java.util.ArrayList;
@@ -80,6 +84,49 @@ public abstract class ResponseMessage {
         buttons.add(MessageKey.BACK.getString(OTelegramBot.getCurrentLocale()));
         sendMessage.setReplyMarkup(getMenuMarkup(buttons));
         return sendMessage;
+    }
+
+    public static SendMessage getPagingMenu(Message message, UserSession userSession) {
+        SendMessage sendMessage = new SendMessage();
+        if (OTelegramBot.isGroupChat()) sendMessage.setReplyToMessageId(message.getMessageId());
+        sendMessage.setChatId(message.getChatId().toString());
+        sendMessage.enableHtml(true);
+        sendMessage.setText(userSession.getResultInPage());
+        sendMessage.setReplyMarkup(getInlineMarkup(userSession.getStart(), userSession.getEnd(), userSession.getResultSize()));
+        return sendMessage;
+    }
+
+    public static InlineKeyboardMarkup getInlineMarkup(int start, int end, int size) {
+        InlineKeyboardMarkup inlineMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> buttons = new ArrayList<>();
+        List<InlineKeyboardButton> pageButtons = new ArrayList<>();
+        List<InlineKeyboardButton> nextPreviousBut = new ArrayList<>();
+        InlineKeyboardButton button;
+        int i = start;
+        while (i < end) {
+            button = new InlineKeyboardButton();
+            button.setText(" " + (i + 1));
+            button.setCallbackData("" + (i + 1));
+            pageButtons.add(button);
+            i++;
+        }
+
+        if (start != 0) {
+            button = new InlineKeyboardButton();
+            button.setText("" + '\u23EA');
+            button.setCallbackData(BotState.PREVIOUS_RESULT.getCommand());
+            nextPreviousBut.add(button);
+        }
+        if (end != size) {
+            button = new InlineKeyboardButton();
+            button.setText("" + '\u23E9');
+            button.setCallbackData(BotState.NEXT_RESULT.getCommand());
+            nextPreviousBut.add(button);
+        }
+        buttons.add(pageButtons);
+        buttons.add(nextPreviousBut);
+        inlineMarkup.setKeyboard(buttons);
+        return inlineMarkup;
     }
 
     private static ReplyKeyboardMarkup getMenuMarkup(List<String> buttonNames) {

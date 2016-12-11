@@ -6,8 +6,11 @@ import org.orienteer.telegram.bot.UserSession;
 import org.orienteer.telegram.bot.response.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.telegram.telegrambots.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.api.methods.BotApiMethod;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
+import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.api.objects.CallbackQuery;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramWebhookBot;
@@ -21,21 +24,29 @@ import java.util.concurrent.ExecutionException;
 public class OTelegramWebHookHandler extends TelegramWebhookBot {
     private static final Logger LOG = LoggerFactory.getLogger(OTelegramWebHookHandler.class);
     private final WebHookHandlerConfig botConfig;
-    private final LoadingCache<Integer, UserSession> sessions;
+    private final OTelegramBotHandler botHandler;
 
     public OTelegramWebHookHandler(WebHookHandlerConfig botConfig, LoadingCache<Integer, UserSession> sessions) {
         this.botConfig = botConfig;
-        this.sessions = sessions;
+        botHandler = new OTelegramBotHandler(sessions);
     }
 
     @Override
     public BotApiMethod onWebhookUpdateReceived(Update update) {
-        if (update.hasMessage()) {
+        if (update.hasCallbackQuery()) {
+            CallbackQuery callbackQuery = update.getCallbackQuery();
+            try {
+                BotApiMethod botApiMethod = handleRequest(botHandler.handleRequest(callbackQuery));
+                return botApiMethod;
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        } else if (update.hasMessage()) {
             Message message = update.getMessage();
             if (message.hasText()) {
                 try {
                     LOG.info("Get message from - " + message.getFrom().getFirstName() + " " + message.getFrom().getLastName());
-                    SendMessage result = handleIncomingMessage(message);
+                    BotApiMethod result = handleRequest(botHandler.handleRequest(message));
                     LOG.info("Send message to - " + message.getFrom().getFirstName() + " " + message.getFrom().getLastName());
                     return result;
                 } catch (TelegramApiException e) {
@@ -47,18 +58,14 @@ public class OTelegramWebHookHandler extends TelegramWebhookBot {
         return null;
     }
 
-
-    public SendMessage handleIncomingMessage(Message message) throws TelegramApiException {
-        try {
-            OTelegramBot.setCurrentSession(sessions.get(message.getFrom().getId()));
-        } catch (ExecutionException e) {
-            LOG.error("Cannot create user session");
-            if (LOG.isDebugEnabled()) e.printStackTrace();
-        }
-        OTelegramBot.setApplication();
-        SendMessage response = new Response(message).getResponse();
-        sessions.put(message.getFrom().getId(), OTelegramBot.getCurrentSession());
-        return response;
+    private BotApiMethod handleRequest(OTelegramBotResponse response) throws TelegramApiException {
+        SendMessage sendMessage = response.getSendMessage();
+        AnswerCallbackQuery answerCallbackQuery = response.getAnswerCallbackQuery();
+        EditMessageText editMessageText = response.getEditMessageText();
+        if (sendMessage == null) {
+            answerCallbackQuery(answerCallbackQuery);
+            return editMessageText;
+        } else return sendMessage;
     }
 
     @Override

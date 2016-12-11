@@ -21,16 +21,16 @@ public class ClassNameSearch extends Search {
     }
 
     @Override
-    public List<String> execute() {
+    public Result execute() {
         List<String> resultList = new ArrayList<>();
         String searchClass;
         for (OClass oClass : CLASS_CACHE.values()) {
             if (isWordInLine(searchWord, oClass.getName())) {
-                searchClass = String.format(MessageKey.HTML_STRONG_TEXT.toString(), "•  " + MessageKey.CLASS_NAME.getString(locale) + " ") + oClass.getName() + " "
+                searchClass = String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.CLASS_NAME.getString(locale) + " ") + oClass.getName() + " "
                         + BotState.GO_TO_CLASS.getCommand() + oClass.getName() + "\n";
                 resultList.add(searchClass);
             }
         }
-        return getResultListOfSearch(null, null, resultList);
+        return getResultOfSearch(null, null, resultList, null);
     }
 }

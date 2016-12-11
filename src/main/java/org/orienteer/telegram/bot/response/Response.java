@@ -4,6 +4,7 @@ import org.orienteer.telegram.bot.MessageKey;
 import org.orienteer.telegram.bot.OTelegramBot;
 import org.orienteer.telegram.bot.UserSession;
 import org.orienteer.telegram.bot.link.Link;
+import org.orienteer.telegram.bot.search.Result;
 import org.orienteer.telegram.bot.search.Search;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
@@ -11,6 +12,7 @@ import org.telegram.telegrambots.api.objects.Message;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * @author Vitaliy Gonchar
@@ -19,7 +21,7 @@ public class Response {
     private final Message message;
 
     private List<SendMessage> responses;
-    private UserSession userSession;
+    private final UserSession userSession;
 
     public Response(Message message) {
         this.message = message;
@@ -42,14 +44,6 @@ public class Response {
                 userSession.setBotState(BotState.SEARCH_IN_CLASS_GLOBAL);
                 userSession.setPreviousBotState(BotState.START);
                 result = ResponseMessage.getBackMenu(message, String.format(MessageKey.CLASS_SEARCH_MSG.getString(userSession.getLocale()), "/" + userSession.getTargetClass()));
-                break;
-            case NEXT_RESULT:
-                String next = userSession.getNextResult();
-                result = ResponseMessage.getNextPreviousMenu(message, next, userSession.hasNextResult(), userSession.hasPreviousResult());
-                break;
-            case PREVIOUS_RESULT:
-                String previous = userSession.getPreviousResult();
-                result = ResponseMessage.getNextPreviousMenu(message, previous, userSession.hasNextResult(), userSession.hasPreviousResult());
                 break;
             case GO_TO_DOCUMENT_SHORT_DESCRIPTION:
                 result = ResponseMessage.getTextMessage(message, Link.getLink(message.getText(), false).goTo());
@@ -80,7 +74,7 @@ public class Response {
     }
 
     private SendMessage handleSearchRequest(Message message) {
-        List<String> result = null;
+        Result result = null;
         Search search;
         SendMessage sendMessage;
         switch (userSession.getBotState()) {
@@ -94,11 +88,11 @@ public class Response {
                 break;
         }
         if (result != null) {
-            userSession.setResultOfSearch(result);
-            if (result.size() > 1) {
-                sendMessage = ResponseMessage.getNextPreviousMenu(message,  userSession.getNextResult(), userSession.hasNextResult(), userSession.hasPreviousResult());
+            userSession.setResultOfSearch(result.getResultOfSearch(), result.getDocLinks());
+            if (result.getResultOfSearch().size() > 1) {
+                sendMessage = ResponseMessage.getPagingMenu(message, userSession);
             } else {
-                sendMessage = ResponseMessage.getTextMessage(message, userSession.getNextResult());
+                sendMessage = ResponseMessage.getTextMessage(message, userSession.getResultInPage());
             }
         } else sendMessage = ResponseMessage.getTextMessage(message, MessageKey.SEARCH_RESULT_FAILED_MSG.getString(userSession.getLocale()));
 

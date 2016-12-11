@@ -19,18 +19,20 @@ public class ClassSearch extends Search {
 
     private final String searchWord;
     private final String className;
+    private final List<String> docLinks;
 
     public ClassSearch(String searchWord, String className, Locale locale) {
         super(locale);
         this.searchWord = searchWord;
         this.className = className;
+        docLinks = new ArrayList<>();
     }
 
     @Override
-    public List<String> execute() {
-        return new DBClosure<List<String>>() {
+    public Result execute() {
+        return new DBClosure<Result>() {
             @Override
-            protected List<String> execute(ODatabaseDocument db) {
+            protected Result execute(ODatabaseDocument db) {
                 List<String> fieldValuesList = new ArrayList<>();
                 List<String> docNamesList = new ArrayList<>();
                 OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(className));
@@ -42,7 +44,7 @@ public class ClassSearch extends Search {
                     String doc = searchDocument(oDocument);
                     if (doc != null) docNamesList.add(doc);
                 }
-                return getResultListOfSearch(fieldValuesList, docNamesList, null);
+                return getResultOfSearch(fieldValuesList, docNamesList, null, docLinks);
             }
         }.execute();
     }
@@ -58,14 +60,13 @@ public class ClassSearch extends Search {
         if (docName == null) return null;
         String documentLink = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
                 + "_" + oDocument.getIdentity().getClusterId()
-                + "_" + oDocument.getIdentity().getClusterPosition()
-                + " : " + docName;
+                + "_" + oDocument.getIdentity().getClusterPosition();
+
         if (isWordInLine(searchWord, docName)) {
-            builder.append("• ");
             builder.append(docName);
             builder.append(" ");
-            builder.append(documentLink);
             builder.append("\n");
+            docLinks.add(documentLink);
         }
         return builder.length() > 0 ? builder.toString() : null;
     }
@@ -82,10 +83,9 @@ public class ClassSearch extends Search {
         if (docName == null) docName = MessageKey.WITHOUT_NAME.getString(locale);
         String documentLink = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
                 + "_" + oDocument.getIdentity().getClusterId()
-                + "_" + oDocument.getIdentity().getClusterPosition()
-                + " : " + docName;
+                + "_" + oDocument.getIdentity().getClusterPosition();
         Iterator<Map.Entry<String, Object>> iterator = oDocument.iterator();
-        long embeddedId = 0;
+        int embeddedId = 0;
         while (iterator.hasNext()) {
             Map.Entry<String, Object> entry = iterator.next();
             String name = entry.getKey() != null ? entry.getKey() : MessageKey.WITHOUT_NAME.getString(locale);
@@ -97,13 +97,13 @@ public class ClassSearch extends Search {
                     String similarValue = getSimilarDocumentValues(eDoc);
                     if (similarValue == null) continue;
                     String valueName = OTelegramBot.getDocName(eDoc);
-                    String embeddedLink = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
+                    documentLink = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
                             + "_" + oDocument.getIdentity().getClusterId()
                             + "_" + oDocument.getIdentity().getClusterPosition()
                             + "_" + embeddedId++
                             + MessageKey.EMBEDDED.toString()
                             + " : " + valueName;
-                    searchValue = String.format(MessageKey.HTML_STRONG_TEXT.toString(), "• " + name + " : ") + similarValue + " " + embeddedLink + "\n";
+                    searchValue = similarValue + "\n";
                 } else if (type.isLink()) {
                     final ORecordId linkID = (ORecordId) value;
                     ODocument linkDocument = new DBClosure<ODocument>() {
@@ -112,19 +112,19 @@ public class ClassSearch extends Search {
                             return db.getRecord(linkID);
                         }
                     }.execute();
-                    String similarValue = getSimilarDocumentValues(linkDocument);
-                    if (similarValue == null) continue;
-
-                    String linkName = OTelegramBot.getDocName(linkDocument);
-                    String link = BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
+                    String linkName = getSimilarDocumentValues(linkDocument);
+                    documentLink = BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
                             + "_" + linkDocument.getIdentity().getClusterId()
                             + "_" + linkDocument.getIdentity().getClusterPosition()
                             + " : " + linkName;
-                    searchValue = String.format(MessageKey.HTML_STRONG_TEXT.toString(), "• " + name + " : ") + similarValue + " " + link + "\n";
+                    searchValue = String.format(MessageKey.HTML_STRONG_TEXT.toString(), name + " : ") + linkName + "\n";
                 } else if (isWordInLine(searchWord, value.toString())){
-                    searchValue = String.format(MessageKey.HTML_STRONG_TEXT.toString(), "• " + name + " : ") + value + " " + documentLink + "\n";
+                    searchValue = String.format(MessageKey.HTML_STRONG_TEXT.toString(), name + " : ") + value + "\n";
                 }
-                if (searchValue != null) resultList.add(searchValue);
+                if (searchValue != null) {
+                    resultList.add(searchValue);
+                    docLinks.add(documentLink);
+                }
                 searchValue = null;
             }
         }
