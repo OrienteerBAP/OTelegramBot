@@ -19,11 +19,10 @@ import java.util.*;
 /**
  * @author Vitaliy Gonchar
  */
-public class ClassLink extends Link {
+public class ClassLink {
     private final String className;
     private final Locale locale;
     private final String classLink;
-
     private static final Logger LOG = LoggerFactory.getLogger(ClassLink.class);
 
     public ClassLink(String classLink, Locale locale) {
@@ -34,26 +33,18 @@ public class ClassLink extends Link {
                 : classLink.substring(BotState.GO_TO_CLASS.getCommand().length());
     }
 
-    @Override
-    public boolean isWithoutDetails() {
-        return false;
-    }
-
-    @Override
-    public String getLinkInString() {
-        return classLink;
-    }
-
-    @Override
-    public String goTo() {
-        return new DBClosure<String>() {
+    public Map<Integer, String> getResult() {
+        return new DBClosure<Map<Integer, String>>() {
             @Override
-            protected String execute(ODatabaseDocument oDatabaseDocument) {
+            protected Map<Integer, String> execute(ODatabaseDocument oDatabaseDocument) {
+                Map<Integer, String> result = new HashMap<Integer, String>();
                 StringBuilder builder = new StringBuilder(
                         String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.CLASS_DESCRIPTION_MSG.getString(locale)) + "\n\n");
                 Map<String, OClass> classCache = Cache.getClassCache();
                 if (!classCache.containsKey(className)) {
-                    return MessageKey.SEARCH_FAILED_CLASS_BY_NAME.getString(locale);
+                    result = new HashMap<Integer, String>();
+                    result.put(0, MessageKey.SEARCH_FAILED_CLASS_BY_NAME.getString(locale));
+                    return result;
                 }
                 OClass oClass = classCache.get(className);
                 builder.append(String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.NAME.getString(locale) + " "));
@@ -97,13 +88,18 @@ public class ClassLink extends Link {
                         String docName = OTelegramBot.getDocName(oDocument);
                         resultList.add(docName + " " + docId);
                     }
+                    Collections.sort(resultList);
+                    String head = builder.toString();
+                    result.put(0, head + String.format(MessageKey.HTML_STRONG_TEXT.toString(), "1. ") + resultList.get(0) + "\n");
+                    for (int i = 1; i < resultList.size(); i++) {
+                        if (i % 10 == 0) {
+                            result.put(i, head + String.format(MessageKey.HTML_STRONG_TEXT.toString(), (i + 1) + ". ") + resultList.get(i) + "\n");
+                        } else {
+                            result.put(i, String.format(MessageKey.HTML_STRONG_TEXT.toString(), (i + 1) + ". ") + resultList.get(i) + "\n");
+                        }
+                    }
                 }
-                Collections.sort(resultList);
-                for (String string : resultList) {
-                    builder.append(string);
-                    builder.append("\n");
-                }
-                return builder.toString();
+                return result;
             }
         }.execute();
     }

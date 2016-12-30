@@ -3,13 +3,12 @@ package org.orienteer.telegram.bot.response;
 import org.orienteer.telegram.bot.MessageKey;
 import org.orienteer.telegram.bot.OTelegramBot;
 import org.orienteer.telegram.bot.UserSession;
-import org.orienteer.telegram.bot.link.Link;
+import org.orienteer.telegram.bot.link.DocumentLink;
 import org.telegram.telegrambots.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.CallbackQuery;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboardMarkup;
 
 /**
  * @author Vitaliy Gonchar
@@ -61,7 +60,7 @@ public class CallbackResponse {
         String text;
         InlineKeyboardMarkup markup;
         if (isDocumentDescription) {
-            Link link = Link.getLink(query.getData(), isAllDescription);
+            DocumentLink link = new DocumentLink(query.getData(), isAllDescription, userSession.getLocale());
             text = link.goTo();
             markup = ResponseMessage.getInlineDocumentMarkup(link.getLinkInString(), isAllDescription, userSession);
         } else {
@@ -78,7 +77,9 @@ public class CallbackResponse {
         editText.setChatId(query.getMessage().getChatId().toString());
         editText.enableHtml(true);
         editText.setText(text);
-        editText.setReplyMarkup(markup);
+        if (markup != null) {
+            editText.setReplyMarkup(markup);
+        }
         return editText;
     }
 

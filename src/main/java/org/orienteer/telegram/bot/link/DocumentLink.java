@@ -20,7 +20,7 @@ import java.util.*;
 /**
  * @author Vitaliy Gonchar
  */
-public class DocumentLink extends Link {
+public class DocumentLink {
     private final String documentLink;
     private final Locale locale;
     private final ORecordId oRecordId;
@@ -45,17 +45,16 @@ public class DocumentLink extends Link {
         embeddedID = isEmbeddedLink?Long.valueOf(split[3]):-1;
     }
 
-    @Override
     public String getLinkInString() {
         return documentLink;
     }
 
-    @Override
+
     public boolean isWithoutDetails() {
         return isWithoutDetails;
     }
 
-    @Override
+
     public String goTo() {
         return  new DBClosure<String>() {
             @Override

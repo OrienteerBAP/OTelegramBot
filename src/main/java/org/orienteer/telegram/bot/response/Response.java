@@ -3,7 +3,8 @@ package org.orienteer.telegram.bot.response;
 import org.orienteer.telegram.bot.MessageKey;
 import org.orienteer.telegram.bot.OTelegramBot;
 import org.orienteer.telegram.bot.UserSession;
-import org.orienteer.telegram.bot.link.Link;
+import org.orienteer.telegram.bot.link.ClassLink;
+import org.orienteer.telegram.bot.link.DocumentLink;
 import org.orienteer.telegram.bot.search.Result;
 import org.orienteer.telegram.bot.search.Search;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
@@ -46,13 +47,14 @@ public class Response {
                 result = ResponseMessage.getBackMenu(message, String.format(MessageKey.CLASS_SEARCH_MSG.getString(userSession.getLocale()), "/" + userSession.getTargetClass()));
                 break;
             case GO_TO_DOCUMENT_SHORT_DESCRIPTION:
-                result = ResponseMessage.getDocumentDescription(Link.getLink(message.getText(), false), message, userSession, false);
+                result = ResponseMessage.getDocumentDescription(new DocumentLink(message.getText(), false, userSession.getLocale()), message, userSession, false);
                 break;
 //            case GO_TO_DOCUMENT_ALL_DESCRIPTION:
 //                result = ResponseMessage.getTextMessage(message, Link.getLink(message.getText(), true).goTo());
 //                break;
             case GO_TO_CLASS:
-                result = ResponseMessage.getTextMessage(message, Link.getLink(message.getText()).goTo());
+//                result = ResponseMessage.getTextMessage(message, new ClassLink(message.getText(), userSession.getLocale()).getResult());
+                result = setResultOfSearch(new ClassLink(message.getText(), userSession.getLocale()).getResult());
                 break;
             case CHANGE_LANGUAGE:
                 userSession.setLocale(changeLanguage(message));
@@ -88,14 +90,20 @@ public class Response {
                 break;
         }
         if (result != null) {
-            userSession.setResultOfSearch(result.getResultOfSearch());
-            if (result.getResultOfSearch().size() > 1) {
-                sendMessage = ResponseMessage.getPagingMenu(message, userSession);
-            } else {
-                sendMessage = ResponseMessage.getTextMessage(message, userSession.getResultInPage());
-            }
+            sendMessage = setResultOfSearch(result.getResultOfSearch());
         } else sendMessage = ResponseMessage.getTextMessage(message, MessageKey.SEARCH_RESULT_FAILED_MSG.getString(userSession.getLocale()));
 
+        return sendMessage;
+    }
+
+    private SendMessage setResultOfSearch(Map<Integer, String> resultOfSearch) {
+        SendMessage sendMessage;
+        userSession.setResultOfSearch(resultOfSearch);
+        if (resultOfSearch.size() > 1) {
+            sendMessage = ResponseMessage.getPagingMenu(message, userSession);
+        } else {
+            sendMessage = ResponseMessage.getTextMessage(message, userSession.getResultInPage());
+        }
         return sendMessage;
     }
 

@@ -5,7 +5,7 @@ import org.orienteer.telegram.bot.Cache;
 import org.orienteer.telegram.bot.MessageKey;
 import org.orienteer.telegram.bot.OTelegramBot;
 import org.orienteer.telegram.bot.UserSession;
-import org.orienteer.telegram.bot.link.Link;
+import org.orienteer.telegram.bot.link.DocumentLink;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -92,11 +92,14 @@ public abstract class ResponseMessage {
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.enableHtml(true);
         sendMessage.setText(userSession.getResultInPage());
-        sendMessage.setReplyMarkup(getInlinePagingMarkup(userSession.getStart(), userSession.getEnd(), userSession.getPages()));
+        InlineKeyboardMarkup markup = getInlinePagingMarkup(userSession.getStart(), userSession.getEnd(), userSession.getPages());
+        if (markup != null) {
+            sendMessage.setReplyMarkup(markup);
+        }
         return sendMessage;
     }
 
-    public static SendMessage getDocumentDescription(Link link, Message message, UserSession userSession,
+    public static SendMessage getDocumentDescription(DocumentLink link, Message message, UserSession userSession,
                                                      boolean isAllDescription) {
         SendMessage sendMessage = new SendMessage();
         if (OTelegramBot.isGroupChat()) sendMessage.setReplyToMessageId(message.getMessageId());
@@ -133,6 +136,9 @@ public abstract class ResponseMessage {
         List<InlineKeyboardButton> pageButtons = new ArrayList<>();
         List<InlineKeyboardButton> nextPreviousBut = new ArrayList<>();
         InlineKeyboardButton button;
+        if (end - start == 1) {
+            return null;
+        }
         int i = start;
         while (i < end) {
             button = new InlineKeyboardButton();
