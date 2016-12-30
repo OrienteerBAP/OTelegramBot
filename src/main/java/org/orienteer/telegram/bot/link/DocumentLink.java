@@ -46,6 +46,16 @@ public class DocumentLink extends Link {
     }
 
     @Override
+    public String getLinkInString() {
+        return documentLink;
+    }
+
+    @Override
+    public boolean isWithoutDetails() {
+        return isWithoutDetails;
+    }
+
+    @Override
     public String goTo() {
         return  new DBClosure<String>() {
             @Override
@@ -73,7 +83,7 @@ public class DocumentLink extends Link {
                         resultBuilder = new StringBuilder(String.format(
                                 MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SHORT_DOCUMENT_DESCRIPTION_MSG.getString(locale)) + "\n\n"
                                 + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.CLASS.getString(locale) + " "));
-                        builder.append("\n" + MessageKey.DOCUMENT_DETAILS_MSG.getString(locale) + documentLink + MessageKey.DETAILS.toString());
+                       // builder.append("\n" + MessageKey.DOCUMENT_DETAILS_MSG.getString(locale) + documentLink + MessageKey.DETAILS.toString());
                     }
                     resultBuilder.append(builder.toString());
                 } catch (ORecordNotFoundException ex) {

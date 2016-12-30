@@ -22,14 +22,26 @@ import java.util.*;
 public class ClassLink extends Link {
     private final String className;
     private final Locale locale;
+    private final String classLink;
 
     private static final Logger LOG = LoggerFactory.getLogger(ClassLink.class);
 
     public ClassLink(String classLink, Locale locale) {
         this.locale = locale;
+        this.classLink = classLink;
         className = classLink.contains("@") ?
                 classLink.substring(0, classLink.indexOf("@")).substring(BotState.GO_TO_CLASS.getCommand().length())
                 : classLink.substring(BotState.GO_TO_CLASS.getCommand().length());
+    }
+
+    @Override
+    public boolean isWithoutDetails() {
+        return false;
+    }
+
+    @Override
+    public String getLinkInString() {
+        return classLink;
     }
 
     @Override

@@ -46,11 +46,11 @@ public class Response {
                 result = ResponseMessage.getBackMenu(message, String.format(MessageKey.CLASS_SEARCH_MSG.getString(userSession.getLocale()), "/" + userSession.getTargetClass()));
                 break;
             case GO_TO_DOCUMENT_SHORT_DESCRIPTION:
-                result = ResponseMessage.getTextMessage(message, Link.getLink(message.getText(), false).goTo());
+                result = ResponseMessage.getDocumentDescription(Link.getLink(message.getText(), false), message, userSession, false);
                 break;
-            case GO_TO_DOCUMENT_ALL_DESCRIPTION:
-                result = ResponseMessage.getTextMessage(message, Link.getLink(message.getText(), true).goTo());
-                break;
+//            case GO_TO_DOCUMENT_ALL_DESCRIPTION:
+//                result = ResponseMessage.getTextMessage(message, Link.getLink(message.getText(), true).goTo());
+//                break;
             case GO_TO_CLASS:
                 result = ResponseMessage.getTextMessage(message, Link.getLink(message.getText()).goTo());
                 break;

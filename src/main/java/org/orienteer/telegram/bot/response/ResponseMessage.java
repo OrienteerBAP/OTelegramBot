@@ -5,6 +5,7 @@ import org.orienteer.telegram.bot.Cache;
 import org.orienteer.telegram.bot.MessageKey;
 import org.orienteer.telegram.bot.OTelegramBot;
 import org.orienteer.telegram.bot.UserSession;
+import org.orienteer.telegram.bot.link.Link;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -91,11 +92,42 @@ public abstract class ResponseMessage {
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.enableHtml(true);
         sendMessage.setText(userSession.getResultInPage());
-        sendMessage.setReplyMarkup(getInlineMarkup(userSession.getStart(), userSession.getEnd(), userSession.getPages()));
+        sendMessage.setReplyMarkup(getInlinePagingMarkup(userSession.getStart(), userSession.getEnd(), userSession.getPages()));
         return sendMessage;
     }
 
-    public static InlineKeyboardMarkup getInlineMarkup(int start, int end, int size) {
+    public static SendMessage getDocumentDescription(Link link, Message message, UserSession userSession,
+                                                     boolean isAllDescription) {
+        SendMessage sendMessage = new SendMessage();
+        if (OTelegramBot.isGroupChat()) sendMessage.setReplyToMessageId(message.getMessageId());
+        sendMessage.setChatId(message.getChatId().toString());
+        sendMessage.enableHtml(true);
+        sendMessage.setText(link.goTo());
+        if (link.isWithoutDetails()) {
+            sendMessage.setReplyMarkup(getInlineDocumentMarkup(link.getLinkInString(), isAllDescription, userSession));
+        }
+        return sendMessage;
+    }
+
+    public static InlineKeyboardMarkup getInlineDocumentMarkup(String documentLink, boolean isAllDescription, UserSession userSession) {
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        List<InlineKeyboardButton> buttonList = new ArrayList<>();
+        InlineKeyboardButton button = new InlineKeyboardButton();
+        if (isAllDescription) {
+            button.setText(MessageKey.SHORT_DOCUMENT_DSCR_BUT.getString(userSession.getLocale()));
+            button.setCallbackData(documentLink.substring(0, documentLink.indexOf("_details")));
+        } else {
+            button.setText(MessageKey.ALL_DOCUMENT_DSCR_BUT.getString(userSession.getLocale()));
+            button.setCallbackData(documentLink + "_details");
+        }
+        buttonList.add(button);
+        keyboard.add(buttonList);
+        markup.setKeyboard(keyboard);
+        return markup;
+    }
+
+    public static InlineKeyboardMarkup getInlinePagingMarkup(int start, int end, int size) {
         InlineKeyboardMarkup inlineMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> buttons = new ArrayList<>();
         List<InlineKeyboardButton> pageButtons = new ArrayList<>();

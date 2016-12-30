@@ -13,6 +13,8 @@ public enum MessageKey {
     LANGUAGE_BUT("telegram.bot.button.language"),
     LANGUAGE_CHANGED("telegram.bot.message.languageChanged"),
     CLASS_BUT("telegram.bot.button.class"),
+    ALL_DOCUMENT_DSCR_BUT("telegram.bot.button.allDescription"),
+    SHORT_DOCUMENT_DSCR_BUT("telegram.bot.button.shortDescription"),
     NEXT_RESULT_BUT("telegram.bot.button.next"),
     PREVIOUS_RESULT_BUT("telegram.bot.button.previous"),
     START_SEARCH_MSG("telegram.bot.message.startSearch"),

@@ -7,7 +7,9 @@ import org.orienteer.telegram.bot.OTelegramBot;
  * @author Vitaliy Gonchar
  */
 public abstract class Link {
+    public abstract String getLinkInString();
     public abstract String goTo();
+    public abstract boolean isWithoutDetails();
 
     public static Link getLink(String classLink) {
         return new ClassLink(classLink, OTelegramBot.getCurrentLocale());
