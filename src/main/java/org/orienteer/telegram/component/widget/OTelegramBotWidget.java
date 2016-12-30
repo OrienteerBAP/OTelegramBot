@@ -51,6 +51,7 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 		Form<OClass> form = new TransactionlessForm<OClass>("form");
 		propertiesList.add(OTelegramModule.TELEGRAM_SEARCH.getName());
 		propertiesList.add(OTelegramModule.TELEGRAM_DOCUMENTS_LIST.getName());
+		propertiesList.add(OTelegramModule.TELEGRAM_CLASS_DESCRIPTION.getName());
 		propertiesList.add(OTelegramModule.TELEGRAM_SEARCH_QUERY.getName());
 		structureTable = new OrienteerStructureTable<OClass, String>("attributes", model, propertiesList) {
 
@@ -70,21 +71,15 @@ public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {
 							mode = DisplayMode.VIEW;
 						}
 						if (DisplayMode.VIEW.equals(mode)) {
-							if (critery.equals(OTelegramModule.TELEGRAM_SEARCH.getName())) {
-								return new BooleanViewPanel(id, Model.<Boolean>of(getModel()));
-							} else if (critery.equals(OTelegramModule.TELEGRAM_DOCUMENTS_LIST.getName())) {
-								return new BooleanViewPanel(id, Model.<Boolean>of(getModel()));
-							} else if (critery.equals(OTelegramModule.TELEGRAM_SEARCH_QUERY.getName())) {
+							if (critery.equals(OTelegramModule.TELEGRAM_SEARCH_QUERY.getName())) {
 								return new Label(id, getModel());
+							} else {
+								return new BooleanViewPanel(id, Model.<Boolean>of(getModel()));
 							}
 						} else if (DisplayMode.EDIT.equals(mode)){
-							if (critery.equals(OTelegramModule.TELEGRAM_SEARCH.getName())) {
-								return new BooleanEditPanel(id, Model.<Boolean>of(getModel()));
-							} else if (critery.equals(OTelegramModule.TELEGRAM_DOCUMENTS_LIST.getName())) {
-								return new BooleanEditPanel(id, Model.<Boolean>of(getModel()));
-							} else if (critery.equals(OTelegramModule.TELEGRAM_SEARCH_QUERY.getName())) {
+							if (critery.equals(OTelegramModule.TELEGRAM_SEARCH_QUERY.getName())) {
 								return new TextField(id, getModel());
-							}
+							} else return new BooleanEditPanel(id, Model.<Boolean>of(getModel()));
 						}
 						return null;
 					}

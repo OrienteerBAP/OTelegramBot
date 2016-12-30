@@ -63,18 +63,19 @@ public class ClassLink {
                     }
                 } else builder.append(MessageKey.WITHOUT_SUPER_CLASSES.getString(locale));
                 builder.append("\n");
-                Collection<OProperty> properties = oClass.properties();
                 List<String> resultList = new ArrayList<>();
-                for (OProperty property : properties) {
-                    resultList.add(String.format(MessageKey.HTML_STRONG_TEXT.toString(), property.getName())
-                            + ": " + property.getDefaultValue() + " ("+ MessageKey.DEFAULT_VALUE.getString(locale) + ")");
+                if (OTelegramModule.TELEGRAM_CLASS_DESCRIPTION.getValue(oClass)) {
+                    Collection<OProperty> properties = oClass.properties();
+                    for (OProperty property : properties) {
+                        resultList.add(String.format(MessageKey.HTML_STRONG_TEXT.toString(), property.getName())
+                                + ": " + property.getDefaultValue() + " (" + MessageKey.DEFAULT_VALUE.getString(locale) + ")");
+                    }
+                    Collections.sort(resultList);
+                    for (String string : resultList) {
+                        builder.append(string);
+                        builder.append("\n");
+                    }
                 }
-                Collections.sort(resultList);
-                for (String string : resultList) {
-                    builder.append(string);
-                    builder.append("\n");
-                }
-
                 ORecordIteratorClass<ODocument> oDocuments = oDatabaseDocument.browseClass(oClass.getName());
                 resultList = new ArrayList<>();
                 if (OTelegramModule.TELEGRAM_DOCUMENTS_LIST.getValue(oClass)) {
