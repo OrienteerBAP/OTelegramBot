@@ -88,7 +88,7 @@ public class Response {
                 break;
         }
         if (result != null) {
-            userSession.setResultOfSearch(result.getResultOfSearch(), result.getDocLinks());
+            userSession.setResultOfSearch(result.getResultOfSearch());
             if (result.getResultOfSearch().size() > 1) {
                 sendMessage = ResponseMessage.getPagingMenu(message, userSession);
             } else {

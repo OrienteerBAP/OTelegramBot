@@ -51,11 +51,7 @@ class OTelegramBotHandler {
         OTelegramBotResponse response;
         CallbackResponse callbackResponse = new CallbackResponse(callbackQuery);
         AnswerCallbackQuery callbackAnswer = callbackResponse.getCallbackAnswer();
-        if (callbackResponse.isDocument()) {
-            response = new OTelegramBotResponse(callbackResponse.getDataResponse());
-        } else {
-            response = new OTelegramBotResponse(callbackAnswer, callbackResponse.getEditMessage());
-        }
+        response = new OTelegramBotResponse(callbackAnswer, callbackResponse.getEditMessage());
         sessions.put(callbackQuery.getFrom().getId(), callbackResponse.getUserSession());
         return response;
     }

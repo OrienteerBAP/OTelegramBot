@@ -37,18 +37,20 @@ public abstract class Search {
         if (docs == null) docs = new ArrayList<>();
         if (classes == null) classes = new ArrayList<>();
 
+        String info = "\n" + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SEARCH_RESULT.getString(locale)) + "\n";
+
         if (values.size() > 0 || docs.size() > 0 || classes.size() > 0) {
 
             if (classes.size() > 0) {
-                String info = "\n" + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SEARCH_CLASS_NAMES_RESULT.getString(locale)) + "\n";
+//                String info = "\n" + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SE.getString(locale)) + "\n";
                 buildResult(classes, null, info);
             }
             if (docs.size() > 0) {
-                String info = "\n" + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SEARCH_DOCUMENT_NAMES_RESULT.getString(locale)) + "\n";
+//                String info = "\n" + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SEARCH_DOCUMENT_NAMES_RESULT.getString(locale)) + "\n";
                 buildResult(docs, links, info);
             }
             if (values.size() > 0) {
-                String info = "\n" + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SEARCH_FIELD_VALUES_RESULT.getString(locale)) + "\n";
+//                String info = "\n" + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SEARCH_FIELD_VALUES_RESULT.getString(locale)) + "\n";
                 buildResult(values, links, info);
             }
         } else resultOfSearch.put(1, String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SEARCH_RESULT_FAILED_MSG.getString(locale)));

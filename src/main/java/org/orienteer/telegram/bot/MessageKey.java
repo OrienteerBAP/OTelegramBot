@@ -25,6 +25,7 @@ public enum MessageKey {
     SHORT_DOCUMENT_DESCRIPTION_MSG("telegram.bot.message.shortDocumentDescription"),
     DOCUMENT_DETAILS_MSG("telegram.bot.message.detailDocumentDescription"),
     SEARCH_FIELD_VALUES_RESULT("telegram.bot.message.searchFieldValues"),
+    SEARCH_RESULT("telegram.bot.message.searchResult"),
     BACK("telegram.bot.button.back"),
     SEARCH_FAILED_CLASS_BY_NAME("telegram.bot.message.failedSearchClassByName"),
     FAILED_DOCUMENT_BY_RID("telegram.bot.message.failedSearchDocumentByRID"),

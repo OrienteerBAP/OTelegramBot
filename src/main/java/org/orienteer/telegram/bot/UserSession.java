@@ -2,10 +2,7 @@ package org.orienteer.telegram.bot;
 
 import org.orienteer.telegram.bot.response.BotState;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author  Vitaliy Gonchar
@@ -15,15 +12,11 @@ public class UserSession {
     private BotState previousBotState;
     private String targetClass;
     private Map<Integer, String> result;
-    private Map<Integer, String> docLinks;
     private Locale locale;
-    private int counter;
     private int start;
     private int end;
-    private int results;
     private List<Integer> resultInPages;
-    private final int resultsNumber = 8;
-    private int page;
+    private final int resultsNumber = 10;
 
 
     public UserSession() {
@@ -55,56 +48,52 @@ public class UserSession {
         this.targetClass = targetClass;
     }
 
-    public void setResultOfSearch(Map<Integer, String> result, Map<Integer, String> docLinks) {
-        this.docLinks = docLinks;
-        this.result = result;
-        results = result.size();
+    public void setResultOfSearch(Map<Integer, String> result) {
         resultInPages = new ArrayList<>();
-        counter = 0;
-        int N = results;
+        this.result = new HashMap<>();
+        int N = result.size();
+        int number = 0;
+        int counter = 0;
         while (N > 0) {
             int temp = N;
             N -= resultsNumber;
             if (N >= 0) {
+                temp = resultsNumber;
                 resultInPages.add(resultsNumber);
             } else resultInPages.add(temp);
+
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < temp; i++) {
+                builder.append(result.get(counter));
+                counter++;
+            }
+            this.result.put(number, builder.toString());
+            number++;
         }
-        page = 0;
+
+        start = 0;
+        end = start + 8 < resultInPages.size() ? 8: resultInPages.size();
     }
 
 
-    public int getNextPage() {
-        return page < resultInPages.size() ? ++page : page;
+    public int getNextPages() {
+        start = start + 8 < resultInPages.size() ? start + 8 : start;
+        end = end + 8 < resultInPages.size() ? end + 8: resultInPages.size();
+        return start;
     }
 
-    public int getPreviousPage() {
-        return page != 0 ? --page : page;
+    public int getPreviousPages() {
+        start = start - 8 >= 0 ? start - 8 : start;
+        end = start + 8 < resultInPages.size() ? start + 8: resultInPages.size();
+        return start;
+    }
+
+    public String getResultInPage(int page) {
+        return result.get(page);
     }
 
     public String getResultInPage() {
-        StringBuilder builder = new StringBuilder();
-        int max;
-        if (counter > getNumberOfResults(page)) {
-            max = getNumberOfResults(page);
-            counter = max - resultInPages.get(page);
-        } else max = counter + resultInPages.get(page);
-        start = counter;
-
-        while (counter < max) {
-            builder.append(result.get(counter));
-            counter++;
-        }
-        end = counter;
-        return builder.toString();
-    }
-
-    private int getNumberOfResults(int N) {
-        int resultsInPage = resultInPages.get(N);
-        return resultsInPage == resultsNumber ? resultsNumber * (N + 1) : (resultsNumber * N + resultsInPage);
-    }
-
-    public String getLink(int numberOfLink) {
-        return docLinks.get(numberOfLink);
+        return result.get(0);
     }
 
     public int getStart() {
@@ -115,8 +104,8 @@ public class UserSession {
         return end;
     }
 
-    public int getResultSize() {
-        return result.size();
+    public int getPages() {
+        return resultInPages.size();
     }
 
     public BotState getPreviousBotState() {

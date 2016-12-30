@@ -41,19 +41,19 @@ public class ClassSearch extends Search {
                 for (ODocument oDocument : oDocuments) {
                     List<String> result = searchInFieldValues(oDocument);
                     if (result != null) fieldValuesList.addAll(result);
-                    String doc = searchDocument(oDocument);
-                    if (doc != null) docNamesList.add(doc);
+                    //String doc = searchDocument(oDocument);
+                  //  if (doc != null) docNamesList.add(doc);
                 }
-                return getResultOfSearch(fieldValuesList, docNamesList, null, docLinks);
+                return getResultOfSearch(fieldValuesList, null, null, docLinks);
             }
         }.execute();
     }
 
-    /**
+  /*  /**
      * Build string with result of searchAll
      * @param oDocument getResultOfSearch document
      * @return string with result of searchAll
-     */
+
     private String searchDocument(ODocument oDocument) {
         StringBuilder builder = new StringBuilder();
         String docName = OTelegramBot.getDocName(oDocument);
@@ -70,7 +70,7 @@ public class ClassSearch extends Search {
         }
         return builder.length() > 0 ? builder.toString() : null;
     }
-
+*/
     /**
      * getResultOfSearch similar words in field values
      * @param oDocument document where is getResultOfSearch
@@ -103,7 +103,7 @@ public class ClassSearch extends Search {
                             + "_" + embeddedId++
                             + MessageKey.EMBEDDED.toString()
                             + " : " + valueName;
-                    searchValue = similarValue + "\n";
+                    searchValue = similarValue;
                 } else if (type.isLink()) {
                     final ORecordId linkID = (ORecordId) value;
                     ODocument linkDocument = new DBClosure<ODocument>() {
@@ -117,13 +117,14 @@ public class ClassSearch extends Search {
                             + "_" + linkDocument.getIdentity().getClusterId()
                             + "_" + linkDocument.getIdentity().getClusterPosition()
                             + " : " + linkName;
-                    searchValue = String.format(MessageKey.HTML_STRONG_TEXT.toString(), name + " : ") + linkName + "\n";
+                    searchValue = name  + linkName;
                 } else if (isWordInLine(searchWord, value.toString())){
-                    searchValue = String.format(MessageKey.HTML_STRONG_TEXT.toString(), name + " : ") + value + "\n";
+                    searchValue = name + " : " + value;
                 }
                 if (searchValue != null) {
-                    resultList.add(searchValue);
+                    resultList.add(String.format(MessageKey.HTML_STRONG_TEXT.toString(), docName) + "  (" + searchValue + ")  " + documentLink + "\n");
                     docLinks.add(documentLink);
+                    break;
                 }
                 searchValue = null;
             }

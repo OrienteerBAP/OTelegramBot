@@ -6,7 +6,6 @@ import org.orienteer.telegram.bot.MessageKey;
 import org.orienteer.telegram.bot.OTelegramBot;
 import org.orienteer.telegram.bot.UserSession;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
-import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboardMarkup;
@@ -92,7 +91,7 @@ public abstract class ResponseMessage {
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.enableHtml(true);
         sendMessage.setText(userSession.getResultInPage());
-        sendMessage.setReplyMarkup(getInlineMarkup(userSession.getStart(), userSession.getEnd(), userSession.getResultSize()));
+        sendMessage.setReplyMarkup(getInlineMarkup(userSession.getStart(), userSession.getEnd(), userSession.getPages()));
         return sendMessage;
     }
 
