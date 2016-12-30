@@ -1,10 +1,12 @@
 package org.orienteer.telegram.bot.search;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
+import com.orientechnologies.orient.core.db.record.OTrackedList;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import org.orienteer.core.util.CommonUtils;
 import org.orienteer.telegram.bot.MessageKey;
 import org.orienteer.telegram.bot.OTelegramBot;
 import org.orienteer.telegram.bot.response.BotState;
@@ -20,6 +22,7 @@ public class ClassSearch extends Search {
     private final String searchWord;
     private final String className;
     private final List<String> docLinks;
+    private int embeddedId = 0;
 
     public ClassSearch(String searchWord, String className, Locale locale) {
         super(locale);
@@ -85,51 +88,81 @@ public class ClassSearch extends Search {
                 + "_" + oDocument.getIdentity().getClusterId()
                 + "_" + oDocument.getIdentity().getClusterPosition();
         Iterator<Map.Entry<String, Object>> iterator = oDocument.iterator();
-        int embeddedId = 0;
+
         while (iterator.hasNext()) {
             Map.Entry<String, Object> entry = iterator.next();
             String name = entry.getKey() != null ? entry.getKey() : MessageKey.WITHOUT_NAME.getString(locale);
             Object value = entry.getValue();
             OType type = OType.getTypeByValue(value);
             if (type != null) {
-                if (type.isEmbedded()) {
-                    ODocument eDoc = (ODocument) value;
-                    String similarValue = getSimilarDocumentValues(eDoc);
-                    if (similarValue == null) continue;
-                    String valueName = OTelegramBot.getDocName(eDoc);
-                    documentLink = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
-                            + "_" + oDocument.getIdentity().getClusterId()
-                            + "_" + oDocument.getIdentity().getClusterPosition()
-                            + "_" + embeddedId++
-                            + MessageKey.EMBEDDED.toString()
-                            + " : " + valueName;
-                    searchValue = similarValue;
-                } else if (type.isLink()) {
-                    final ORecordId linkID = (ORecordId) value;
-                    ODocument linkDocument = new DBClosure<ODocument>() {
+                searchValue = getFieldValueInString(type, value, oDocument);
+                if (isWordInLine(searchWord, searchValue)) {
+                    searchValue = name + " : " + searchValue;
+                    resultList.add(String.format(MessageKey.HTML_STRONG_TEXT.toString(), docName) + "  (" + searchValue + ")  " + documentLink + "\n");
+                    docLinks.add(documentLink);
+                    break;
+                }
+            }
+        }
+        return resultList.size() > 0 ? resultList : null;
+    }
+
+    private String getFieldValueInString(OType type, Object fieldValue, ODocument doc) {
+        String fieldValueStr = " ";
+        switch (type) {
+            case LINKSET:
+            case LINKMAP:
+            case LINKLIST:
+                OTrackedList list = (OTrackedList) fieldValue;
+                Iterator iterator = list.iterator();
+                fieldValueStr = "\n";
+                while (iterator.hasNext()) {
+                    Object value = iterator.next();
+                    OType oType = OType.getTypeByValue(value);
+                    String result = getFieldValueInString(oType, value, doc);
+                    fieldValueStr += "  " + result + "\n";
+                }
+                break;
+            case LINK:
+                ODocument linkDocument = null;
+                if (fieldValue instanceof ORecordId) {
+                    final ORecordId linkID = (ORecordId) fieldValue;
+                    linkDocument = new DBClosure<ODocument>() {
                         @Override
                         protected ODocument execute(ODatabaseDocument db) {
                             return db.getRecord(linkID);
                         }
                     }.execute();
-                    String linkName = getSimilarDocumentValues(linkDocument);
-                    documentLink = BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
-                            + "_" + linkDocument.getIdentity().getClusterId()
-                            + "_" + linkDocument.getIdentity().getClusterPosition()
-                            + " : " + linkName;
-                    searchValue = name  + linkName;
-                } else if (isWordInLine(searchWord, value.toString())){
-                    searchValue = name + " : " + value;
+                } else if (fieldValue instanceof ODocument) {
+                    linkDocument = (ODocument) fieldValue;
                 }
-                if (searchValue != null) {
-                    resultList.add(String.format(MessageKey.HTML_STRONG_TEXT.toString(), docName) + "  (" + searchValue + ")  " + documentLink + "\n");
-                    docLinks.add(documentLink);
-                    break;
-                }
-                searchValue = null;
-            }
+
+                String linkName = OTelegramBot.getDocName(linkDocument);
+                fieldValueStr = linkName + " " + BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
+                        + "_" + linkDocument.getIdentity().getClusterId()
+                        + "_" + linkDocument.getIdentity().getClusterPosition();
+                break;
+            case EMBEDDEDSET:
+            case EMBEDDEDLIST:
+            case EMBEDDEDMAP:
+                Map<String, Object> localizations = (Map<String, Object>) fieldValue;
+                Object localized = CommonUtils.localizeByMap(localizations, true, locale.getLanguage(), Locale.getDefault().getLanguage());
+                if (localized != null) fieldValueStr = localized.toString();
+                break;
+            case EMBEDDED:
+                ODocument value = (ODocument) fieldValue;
+                String valueName = OTelegramBot.getDocName(value);
+                fieldValueStr = valueName + " " + BotState.GO_TO_CLASS.getCommand() + doc.getClassName()
+                        + "_" + doc.getIdentity().getClusterId()
+                        + "_" + doc.getIdentity().getClusterPosition()
+                        + "_" + embeddedId++
+                        + MessageKey.EMBEDDED.toString();
+                break;
+            default:
+                fieldValueStr = fieldValue.toString();
+                break;
         }
-        return resultList.size() > 0 ? resultList : null;
+        return fieldValueStr.equals(" ") ? null : fieldValueStr;
     }
 
     private String getSimilarDocumentValues(ODocument doc) {

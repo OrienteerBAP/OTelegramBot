@@ -1,12 +1,17 @@
 package org.orienteer.telegram.bot.link;
 
+import com.orientechnologies.common.collection.OLazyIterator;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
+import com.orientechnologies.orient.core.db.record.OIdentifiable;
+import com.orientechnologies.orient.core.db.record.ORecordLazyList;
+import com.orientechnologies.orient.core.db.record.OTrackedList;
 import com.orientechnologies.orient.core.exception.ORecordNotFoundException;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.orienteer.core.CustomAttribute;
+import org.orienteer.core.util.CommonUtils;
 import org.orienteer.telegram.bot.Cache;
 import org.orienteer.telegram.bot.MessageKey;
 import org.orienteer.telegram.bot.OTelegramBot;
@@ -122,32 +127,61 @@ public class DocumentLink {
     }
 
     private String buildValueString(OType type, Object fieldValue, ODocument doc) {
-        String fieldValueStr;
-        if (type.isLink()) {
-            final ORecordId linkID = (ORecordId) fieldValue;
-            ODocument linkDocument = new DBClosure<ODocument>() {
-                @Override
-                protected ODocument execute(ODatabaseDocument db) {
-                    return db.getRecord(linkID);
+        String fieldValueStr = " ";
+        switch (type) {
+            case LINKSET:
+            case LINKMAP:
+            case LINKLIST:
+                OTrackedList list = (OTrackedList) fieldValue;
+                Iterator iterator = list.iterator();
+                fieldValueStr = "\n";
+                while (iterator.hasNext()) {
+                    Object value = iterator.next();
+                    OType oType = OType.getTypeByValue(value);
+                    String result = buildValueString(oType, value, doc);
+                    fieldValueStr += "  " + result + "\n";
                 }
-            }.execute();
-            String linkName = OTelegramBot.getDocName(linkDocument);
-            fieldValueStr = linkName + " " + BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
-                    + "_" + linkDocument.getIdentity().getClusterId()
-                    + "_" + linkDocument.getIdentity().getClusterPosition();
-        } else if (type.isEmbedded()) {
-            ODocument value = (ODocument) fieldValue;
-            String valueName = OTelegramBot.getDocName(value);
-            fieldValueStr = valueName + " " + BotState.GO_TO_CLASS.getCommand() + doc.getClassName()
-                    + "_" + doc.getIdentity().getClusterId()
-                    + "_" + doc.getIdentity().getClusterPosition()
-                    + "_" + embeddedIdCounter++
-                    + MessageKey.EMBEDDED.toString();
-        } else if (type.isMultiValue()) {
-            fieldValueStr = fieldValue.getClass().toString();
-        } else fieldValueStr = fieldValue.toString();
+                break;
+            case LINK:
+                ODocument linkDocument = null;
+                if (fieldValue instanceof ORecordId) {
+                    final ORecordId linkID = (ORecordId) fieldValue;
+                    linkDocument = new DBClosure<ODocument>() {
+                        @Override
+                        protected ODocument execute(ODatabaseDocument db) {
+                            return db.getRecord(linkID);
+                        }
+                    }.execute();
+                } else if (fieldValue instanceof ODocument) {
+                    linkDocument = (ODocument) fieldValue;
+                }
 
-        return fieldValueStr;
+                String linkName = OTelegramBot.getDocName(linkDocument);
+                fieldValueStr = linkName + " " + BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
+                        + "_" + linkDocument.getIdentity().getClusterId()
+                        + "_" + linkDocument.getIdentity().getClusterPosition();
+                break;
+            case EMBEDDEDSET:
+            case EMBEDDEDLIST:
+            case EMBEDDEDMAP:
+                Map<String, Object> localizations = (Map<String, Object>) fieldValue;
+                Object localized = CommonUtils.localizeByMap(localizations, true, locale.getLanguage(), Locale.getDefault().getLanguage());
+                if (localized != null) fieldValueStr = localized.toString();
+                break;
+            case EMBEDDED:
+                ODocument value = (ODocument) fieldValue;
+                String valueName = OTelegramBot.getDocName(value);
+                fieldValueStr = valueName + " " + BotState.GO_TO_CLASS.getCommand() + doc.getClassName()
+                        + "_" + doc.getIdentity().getClusterId()
+                        + "_" + doc.getIdentity().getClusterPosition()
+                        + "_" + embeddedIdCounter++
+                        + MessageKey.EMBEDDED.toString();
+                break;
+            default:
+                fieldValueStr = fieldValue.toString();
+                break;
+        }
+        return fieldValueStr.equals(" ") ? null : fieldValueStr;
     }
 
     private List<String> buildEmbeddedResultList(ODocument doc) {
