@@ -99,6 +99,8 @@ public class ClassLink {
                             result.put(i, String.format(MessageKey.HTML_STRONG_TEXT.toString(), (i + 1) + ". ") + resultList.get(i) + "\n");
                         }
                     }
+                } else {
+                    result.put(0, builder.toString());
                 }
                 return result;
             }
