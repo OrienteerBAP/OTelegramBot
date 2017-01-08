@@ -34,6 +34,12 @@ public class Response {
         BotState state = getBotState(message.getText());
         SendMessage result;
         state = state == BotState.BACK ? userSession.getPreviousBotState() : state;
+        if (state == null) {
+            userSession.setBotState(BotState.NEW_CLASS_SEARCH);
+            userSession.setPreviousBotState(BotState.START);
+            result = ResponseMessage.getStartMenu(message);
+            return result;
+        }
         switch (state) {
             case START:
                 userSession.setBotState(BotState.NEW_CLASS_SEARCH);

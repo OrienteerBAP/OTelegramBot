@@ -53,7 +53,7 @@ public abstract class Search {
 //                String info = "\n" + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SEARCH_FIELD_VALUES_RESULT.getString(locale)) + "\n";
                 buildResult(values, links, info);
             }
-        } else resultOfSearch.put(1, String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SEARCH_RESULT_FAILED_MSG.getString(locale)));
+        } else resultOfSearch.put(0, String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SEARCH_RESULT_FAILED_MSG.getString(locale)));
         return new Result(resultOfSearch, docLinks);
     }
 
