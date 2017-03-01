@@ -38,7 +38,7 @@ public class ClassSearch extends Search {
             protected Result execute(ODatabaseDocument db) {
                 List<String> fieldValuesList = new ArrayList<>();
                 List<String> docNamesList = new ArrayList<>();
-                OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(QUERY_CACHE.get(className));
+                OSQLSynchQuery<ODocument> query = new OSQLSynchQuery<ODocument>(queryCache.get(className));
                 Iterable<ODocument> oDocuments = (Iterable<ODocument>) (query.getText().contains("?") ? db.query(query, searchWord): db.query(query));
 
                 for (ODocument oDocument : oDocuments) {

@@ -12,8 +12,8 @@ import java.util.*;
  */
 public abstract class Search {
 
-    protected final Map<String, OClass> CLASS_CACHE = Cache.getClassCache();
-    protected final Map<String, String> QUERY_CACHE = Cache.getQueryCache();
+    protected final Map<String, OClass> classCache = Cache.getClassCache();
+    protected final Map<String, String> queryCache = Cache.getQueryCache();
     protected final Locale locale;
     private Map<Integer, String> resultOfSearch;
     private Map<Integer, String> docLinks;

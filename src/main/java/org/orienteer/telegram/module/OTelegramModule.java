@@ -67,8 +67,7 @@ public class OTelegramModule extends AbstractOrienteerModule {
 
 	@Override
 	public void onInitialize(OrienteerWebApplication app, ODatabaseDocument db, ODocument moduleDoc) {
-
-
+		app.registerWidgets("org.orienteer.telegram.component.widget");
 		LOG.debug("moduleDoc: " + moduleDoc.toString());
 
 		TelegramBotsApi telegramBotsApi;
