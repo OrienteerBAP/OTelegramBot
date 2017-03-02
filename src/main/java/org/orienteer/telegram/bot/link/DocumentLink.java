@@ -76,7 +76,7 @@ public class DocumentLink {
                     builder.append(oDocument.getClassName());
                     builder.append("\n\n");
                     List<String> result = isEmbeddedLink ? buildEmbeddedResultList(oDocument) : buildResultList(oDocument);
-                    if (result == null) throw new ORecordNotFoundException("Not found");
+                    if (result == null) throw new ORecordNotFoundException(oRecordId, "Not found");
                     for (String str : result) {
                         builder.append(str);
                     }

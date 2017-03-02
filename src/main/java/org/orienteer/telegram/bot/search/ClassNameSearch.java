@@ -24,7 +24,7 @@ public class ClassNameSearch extends Search {
     public Result execute() {
         List<String> resultList = new ArrayList<>();
         String searchClass;
-        for (OClass oClass : CLASS_CACHE.values()) {
+        for (OClass oClass : classCache.values()) {
             if (isWordInLine(searchWord, oClass.getName())) {
                 searchClass = String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.CLASS_NAME.getString(locale) + " ") + oClass.getName() + " "
                         + BotState.GO_TO_CLASS.getCommand() + oClass.getName() + "\n";

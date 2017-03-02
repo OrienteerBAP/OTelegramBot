@@ -51,13 +51,13 @@ public class UserSession {
     public void setResultOfSearch(Map<Integer, String> result) {
         resultInPages = new ArrayList<>();
         this.result = new HashMap<>();
-        int N = result.size();
+        int size = result.size();
         int number = 0;
         int counter = 0;
-        while (N > 0) {
-            int temp = N;
-            N -= resultsNumber;
-            if (N >= 0) {
+        while (size > 0) {
+            int temp = size;
+            size -= resultsNumber;
+            if (size >= 0) {
                 temp = resultsNumber;
                 resultInPages.add(resultsNumber);
             } else resultInPages.add(temp);
