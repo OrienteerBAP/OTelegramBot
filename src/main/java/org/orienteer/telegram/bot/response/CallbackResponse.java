@@ -1,9 +1,10 @@
 package org.orienteer.telegram.bot.response;
 
-import org.orienteer.telegram.bot.MessageKey;
-import org.orienteer.telegram.bot.OTelegramBot;
+import org.orienteer.telegram.bot.AbstractOTelegramBot;
 import org.orienteer.telegram.bot.UserSession;
-import org.orienteer.telegram.bot.link.DocumentLink;
+import org.orienteer.telegram.bot.util.BotState;
+import org.orienteer.telegram.bot.util.MessageKey;
+import org.orienteer.telegram.bot.util.ODocumentTelegramDescription;
 import org.telegram.telegrambots.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
@@ -11,7 +12,7 @@ import org.telegram.telegrambots.api.objects.CallbackQuery;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 /**
- * @author Vitaliy Gonchar
+ * Class which contains callback response
  */
 public class CallbackResponse {
 
@@ -23,7 +24,7 @@ public class CallbackResponse {
 
     public CallbackResponse(CallbackQuery callbackQuery) {
         query = callbackQuery;
-        userSession = OTelegramBot.getCurrentSession();
+        userSession = AbstractOTelegramBot.getCurrentSession();
     }
 
     public AnswerCallbackQuery getCallbackAnswer() {
@@ -40,11 +41,11 @@ public class CallbackResponse {
         } else if (data.startsWith(BotState.GO_TO_CLASS.getCommand()) && data.contains("_details")) {
             isDocumentDescription = true;
             isAllDescription = true;
-            answer.setText(MessageKey.DOCUMENT_DETAILS_MSG.getString(userSession.getLocale()));
+            answer.setText(MessageKey.DOCUMENT_DETAILS_MSG.getString());
         } else if (data.startsWith(BotState.GO_TO_CLASS.getCommand()) && data.contains("_")) {
             isDocumentDescription = true;
             isAllDescription = false;
-            answer.setText(MessageKey.SHORT_DOCUMENT_DESCRIPTION_MSG.getString(userSession.getLocale()));
+            answer.setText(MessageKey.SHORT_DOCUMENT_DESCRIPTION_MSG.getString());
         } else {
             page = Integer.valueOf(query.getData()) - 1;
             answer.setText(query.getData());
@@ -53,19 +54,19 @@ public class CallbackResponse {
     }
 
     public SendMessage getResponse() {
-        return ResponseMessage.getPagingMenu(query.getMessage(), userSession);
+        return AbstractResponseMessageFactory.createPagingMenu(query.getMessage(), userSession);
     }
 
     public EditMessageText getEditMessage() {
         String text;
         InlineKeyboardMarkup markup;
         if (isDocumentDescription) {
-            DocumentLink link = new DocumentLink(query.getData(), isAllDescription, userSession.getLocale());
-            text = link.goTo();
-            markup = ResponseMessage.getInlineDocumentMarkup(link.getLinkInString(), isAllDescription, userSession);
+            ODocumentTelegramDescription link = new ODocumentTelegramDescription(query.getData(), isAllDescription);
+            text = link.getDescription();
+            markup = AbstractResponseMessageFactory.createInlineDocumentMarkup(link.getLinkInString(), isAllDescription, userSession);
         } else {
             text = userSession.getResultInPage(page);
-            markup = ResponseMessage.getInlinePagingMarkup(userSession.getStart(), userSession.getEnd(), userSession.getPages());
+            markup = AbstractResponseMessageFactory.createInlinePagingMarkup(userSession.getStart(), userSession.getEnd(), userSession.getPages());
         }
 
         return getEditMessage(text, markup);
@@ -75,7 +76,7 @@ public class CallbackResponse {
         EditMessageText editText = new EditMessageText();
         editText.setMessageId(query.getMessage().getMessageId());
         editText.setChatId(query.getMessage().getChatId().toString());
-        editText.enableHtml(true);
+        editText.enableMarkdown(true);
         editText.setText(text);
         if (markup != null) {
             editText.setReplyMarkup(markup);

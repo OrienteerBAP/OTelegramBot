@@ -1,29 +1,25 @@
 package org.orienteer.telegram.bot.handler;
 
 import com.google.common.cache.LoadingCache;
-import org.orienteer.telegram.bot.OTelegramBot;
+import org.orienteer.core.OrienteerWebApplication;
+import org.orienteer.telegram.bot.AbstractOTelegramBot;
 import org.orienteer.telegram.bot.UserSession;
+import org.orienteer.telegram.bot.response.AbstractBotResponseFactory;
 import org.orienteer.telegram.bot.response.CallbackResponse;
-import org.orienteer.telegram.bot.response.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.orienteer.telegram.bot.response.OTelegramBotResponse;
 import org.telegram.telegrambots.api.methods.AnswerCallbackQuery;
-import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.CallbackQuery;
 import org.telegram.telegrambots.api.objects.Message;
-import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import java.util.concurrent.ExecutionException;
 
 /**
- * @author Vitaliy Gonchar
+ * Class which handles user requests
  */
-class OTelegramBotHandler {
+public class OTelegramBotHandler {
     private final LoadingCache<Integer, UserSession> sessions;
 
-    private static final Logger LOG = LoggerFactory.getLogger(OTelegramBotHandler.class);
-
-    OTelegramBotHandler(LoadingCache<Integer, UserSession> sessions) {
+    public OTelegramBotHandler(LoadingCache<Integer, UserSession> sessions) {
         this.sessions = sessions;
     }
 
@@ -37,12 +33,10 @@ class OTelegramBotHandler {
 
     private OTelegramBotResponse handleMessage(Message message) {
         setCurrentSession(message.getFrom().getId());
-        Response response1 = new Response(message);
-        SendMessage response2 = response1.getResponse();
-        OTelegramBotResponse response = new OTelegramBotResponse(response2);
-        OTelegramBot.setGroupChat(!message.getChat().isUserChat());
-        LOG.debug("Is user chat : " + message.getChat().isUserChat());
-        sessions.put(message.getFrom().getId(), OTelegramBot.getCurrentSession());
+        OTelegramBotResponse response = AbstractBotResponseFactory.createResponse(message);
+        AbstractOTelegramBot.setGroupChat(!message.getChat().isUserChat());
+        sessions.put(message.getFrom().getId(), AbstractOTelegramBot.getCurrentSession());
+        AbstractOTelegramBot.setCurrentSession(AbstractOTelegramBot.getCurrentSession());
         return response;
     }
 
@@ -58,11 +52,10 @@ class OTelegramBotHandler {
 
     private void setCurrentSession(int id) {
         try {
-            OTelegramBot.setCurrentSession(sessions.get(id));
-            OTelegramBot.setApplication();
+            AbstractOTelegramBot.setCurrentSession(sessions.get(id));
+            AbstractOTelegramBot.setApplication(OrienteerWebApplication.lookupApplication());
         } catch (ExecutionException e) {
-            LOG.error("Cannot create user session");
-            if (LOG.isDebugEnabled()) e.printStackTrace();
+            e.printStackTrace();
         }
     }
 }

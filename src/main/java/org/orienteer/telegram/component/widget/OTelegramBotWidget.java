@@ -32,10 +32,8 @@ import ru.ydn.wicket.wicketorientdb.security.OrientPermission;
 import java.util.ArrayList;
 import java.util.List;
 
-
-
 /**
- * @author Vitaliy Gonchar
+ * Orienteer widget for manage {@link OTelegramModule}
  */
 @Widget(domain="class", tab="telegram", id="telegram-list", autoEnable=true)
 public class OTelegramBotWidget extends AbstractModeAwareWidget<OClass> {

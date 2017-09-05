@@ -6,7 +6,7 @@ import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.telegram.module.OTelegramModule;
 
 /**
- * @author Vitaliy Gonchar
+ * Implementation of {@link IInitializer} for 'AbstractOTelegramBot' Orienteer module
  */
 public class Initializer implements IInitializer {
     @Override

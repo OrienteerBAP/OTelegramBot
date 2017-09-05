@@ -1,5 +1,5 @@
 /**
  * @author Vitaliy Gonchar
- * Main package of OTelegramBot module.
+ * Main package of AbstractOTelegramBot module.
  */
 package org.orienteer.telegram.bot;

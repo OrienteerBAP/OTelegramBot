@@ -3,12 +3,13 @@ package org.orienteer.telegram.bot.search;
 import com.google.common.base.Strings;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import org.orienteer.telegram.bot.Cache;
-import org.orienteer.telegram.bot.MessageKey;
+import org.orienteer.telegram.bot.util.MessageKey;
+import org.orienteer.telegram.bot.util.Markdown;
 
 import java.util.*;
 
 /**
- * @author Vitaliy Gonchar
+ * Abstract class for search document in class
  */
 public abstract class Search {
 
@@ -37,23 +38,20 @@ public abstract class Search {
         if (docs == null) docs = new ArrayList<>();
         if (classes == null) classes = new ArrayList<>();
 
-        String info = "\n" + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SEARCH_RESULT.getString(locale)) + "\n";
+        String info = "\n" + Markdown.BOLD.toString(MessageKey.SEARCH_RESULT.getString()) + "\n";
 
         if (values.size() > 0 || docs.size() > 0 || classes.size() > 0) {
 
             if (classes.size() > 0) {
-//                String info = "\n" + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SE.getString(locale)) + "\n";
                 buildResult(classes, null, info);
             }
             if (docs.size() > 0) {
-//                String info = "\n" + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SEARCH_DOCUMENT_NAMES_RESULT.getString(locale)) + "\n";
                 buildResult(docs, links, info);
             }
             if (values.size() > 0) {
-//                String info = "\n" + String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SEARCH_FIELD_VALUES_RESULT.getString(locale)) + "\n";
                 buildResult(values, links, info);
             }
-        } else resultOfSearch.put(0, String.format(MessageKey.HTML_STRONG_TEXT.toString(), MessageKey.SEARCH_RESULT_FAILED_MSG.getString(locale)));
+        } else resultOfSearch.put(0, Markdown.BOLD.toString(MessageKey.SEARCH_RESULT_FAILED_MSG.getString()));
         return new Result(resultOfSearch, docLinks);
     }
 
@@ -63,10 +61,10 @@ public abstract class Search {
             if (!Strings.isNullOrEmpty(string)) {
                 if (links != null) docLinks.put(counter, links.get(counter));
                 if (isStart) {
-                    string = info + String.format(MessageKey.HTML_STRONG_TEXT.toString(), (counter + 1) + ".  ") + string;
+                    string = info + Markdown.BOLD.toString((counter + 1) + ".  ") + string;
                     isStart = false;
                     resultOfSearch.put(counter, string);
-                } else resultOfSearch.put(counter, String.format(MessageKey.HTML_STRONG_TEXT.toString(), (counter + 1) + ".  ") + string);
+                } else resultOfSearch.put(counter, Markdown.BOLD.toString((counter + 1) + ".  ") + string);
                 counter++;
             }
         }

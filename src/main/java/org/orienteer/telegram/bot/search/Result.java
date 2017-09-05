@@ -3,7 +3,7 @@ package org.orienteer.telegram.bot.search;
 import java.util.Map;
 
 /**
- * @author Vitaliy Gonchar
+ * Class which contains result of search
  */
 public class Result {
     private final Map<Integer, String> resultOfSearch;

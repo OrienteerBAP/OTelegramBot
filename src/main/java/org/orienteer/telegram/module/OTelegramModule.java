@@ -8,23 +8,24 @@ import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.module.AbstractOrienteerModule;
 import org.orienteer.core.module.IOrienteerModule;
 import org.orienteer.core.util.OSchemaHelper;
-import org.orienteer.telegram.bot.OTelegramBot;
-import org.orienteer.telegram.bot.handler.LongPolligHandlerConfig;
+import org.orienteer.telegram.bot.AbstractOTelegramBot;
+import org.orienteer.telegram.bot.handler.LongPollingHandlerConfig;
 import org.orienteer.telegram.bot.handler.WebHookHandlerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.exceptions.TelegramApiRequestException;
-import org.telegram.telegrambots.updatesreceivers.BotSession;
+import org.telegram.telegrambots.generics.BotSession;
 
 /**
- * @author Vitaliy Gonchar
+ * Orienteer module for access Orienteer data from Telegram
  */
 public class OTelegramModule extends AbstractOrienteerModule {
 
 	private static final Logger LOG = LoggerFactory.getLogger(OTelegramModule.class);
 	public static final String NAME = "telegram";
-	public static final String OCLASS_NAME = "OTelegramBotTest";
+	public static final String OCLASS_NAME = "OTelegramBot";
 	public static final String OPROPERTY_USERNAME = "username";
 	public static final String OPROPERTY_TOKEN = "token";
 	public static final String OPROPERTY_USER_SESSION = "user_session";
@@ -68,8 +69,7 @@ public class OTelegramModule extends AbstractOrienteerModule {
 	@Override
 	public void onInitialize(OrienteerWebApplication app, ODatabaseDocument db, ODocument moduleDoc) {
 		app.registerWidgets("org.orienteer.telegram.component.widget");
-		LOG.debug("moduleDoc: " + moduleDoc.toString());
-
+		ApiContextInitializer.init();
 		TelegramBotsApi telegramBotsApi;
 		try {
 			if (moduleDoc.field(IOrienteerModule.OMODULE_ACTIVATE)) {
@@ -81,21 +81,21 @@ public class OTelegramModule extends AbstractOrienteerModule {
 							config.externalWebHookUrl,
 							config.internalWebHookUrl,
 							config.pathToCertificatePublicKey);
-					telegramBotsApi.registerBot(OTelegramBot.getWebHookBot(config));
+					telegramBotsApi.registerBot(AbstractOTelegramBot.getWebHookBot(config));
 				} else {
 					telegramBotsApi = new TelegramBotsApi();
-					LongPolligHandlerConfig longPolligHandlerConfig = readLongPollingBotConfig(moduleDoc);
-					botSession = telegramBotsApi.registerBot(OTelegramBot.getLongPollingBot(longPolligHandlerConfig));
+					LongPollingHandlerConfig longPollingHandlerConfig = readLongPollingBotConfig(moduleDoc);
+					botSession = telegramBotsApi.registerBot(AbstractOTelegramBot.getLongPollingBot(longPollingHandlerConfig));
 				}
 			}
-
+			LOG.info("Start Orienteer Telegram bot");
 		} catch (TelegramApiRequestException e) {
-			LOG.error("Cannot register bot");
+			LOG.error("Can't start Orienteer Telegram bot");
 			if (LOG.isDebugEnabled()) e.printStackTrace();
 		}
 	}
 
-	private LongPolligHandlerConfig readLongPollingBotConfig(ODocument doc) {
+	private LongPollingHandlerConfig readLongPollingBotConfig(ODocument doc) {
 		String username;
 		String token;
 		long userSession;
@@ -103,7 +103,7 @@ public class OTelegramModule extends AbstractOrienteerModule {
 		token = doc.field(OPROPERTY_TOKEN, OType.STRING);
 		userSession = doc.field(OPROPERTY_USER_SESSION, OType.LONG);
 
-		return new LongPolligHandlerConfig(username, token, userSession);
+		return new LongPollingHandlerConfig(username, token, userSession);
 	}
 
 	private WebHookHandlerConfig readWebHookBotConfig(ODocument doc) {
@@ -130,7 +130,7 @@ public class OTelegramModule extends AbstractOrienteerModule {
 
 	@Override
 	public void onDestroy(OrienteerWebApplication app, ODatabaseDocument db, ODocument moduleDoc) {
-		if (botSession != null) botSession.close();
+		if (botSession != null) botSession.stop();
 	}
 
 }

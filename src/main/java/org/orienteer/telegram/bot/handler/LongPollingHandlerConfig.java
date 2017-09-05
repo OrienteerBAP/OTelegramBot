@@ -1,15 +1,15 @@
 package org.orienteer.telegram.bot.handler;
 
 /**
- * @author Vitaliy Gonchar
+ * Contains config for {@link OTelegramLongPollingHandler}
  */
-public class LongPolligHandlerConfig {
+public class LongPollingHandlerConfig {
     public final String username;
     public final String token;
 
     public final long userSession;
 
-    public LongPolligHandlerConfig(String username, String token, long userSession) {
+    public LongPollingHandlerConfig(String username, String token, long userSession) {
         this.username = username;
         this.token = token;
         this.userSession = userSession;
@@ -17,7 +17,7 @@ public class LongPolligHandlerConfig {
 
     @Override
     public String toString() {
-        return "LongPolligHandlerConfig:"
+        return "LongPollingHandlerConfig:"
                 + "\nUsername: " + username
                 + "\nBot token: " + token
                 + "\nUser session: " + userSession;

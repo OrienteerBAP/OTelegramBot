@@ -1,14 +1,14 @@
-package org.orienteer.telegram.bot;
+package org.orienteer.telegram.bot.util;
 
 import org.apache.wicket.Localizer;
-
-import java.util.Locale;
+import org.orienteer.telegram.bot.AbstractOTelegramBot;
 
 /**
- * @author Vitaliy Gonchar
+ * Contains keys for creating localized messages
  */
 public enum MessageKey {
     CLASS_MENU_MSG("telegram.bot.menu.classesMenu"),
+    CLASS_MENU_EMPTY_MSG("telegram.bot.menu.classesMenu.empty"),
     LANGUAGE_MENU_MSG("telegram.bot.menu.language"),
     LANGUAGE_BUT("telegram.bot.button.language"),
     LANGUAGE_CHANGED("telegram.bot.message.languageChanged"),
@@ -36,14 +36,13 @@ public enum MessageKey {
     NAME("telegram.bot.message.name"),
     SUPER_CLASSES("telegram.bot.message.superClasses"),
     WITHOUT_SUPER_CLASSES("telegram.bot.message.withoutSuperClasses"),
+    WITHOUT_PROPERTIES("telegram.bot.message.withoutProperties"),
+    WITHOUT_DOCUMENTS("telegram.bot.message.withoutDocuments"),
     DEFAULT_VALUE("telegram.bot.message.defaultValue"),
     CLASS("telegram.bot.message.class"),
     WITHOUT_NAME("telegram.bot.message.withoutName"),
     CLASS_NAME("telegram.bot.message.className"),
     ABOUT_MSG("telegram.bot.message.about"),
-    EMBEDDED("_embedded"),
-    DETAILS("_details"),
-    HTML_STRONG_TEXT("<strong>%s</strong>"),
     ENGLISH("English"),
     RUSSIAN("Русский"),
     UKRAINIAN("Українська");
@@ -55,9 +54,9 @@ public enum MessageKey {
         this.key = key;
     }
 
-    public String getString(Locale locale) {
-        Localizer localizer = OTelegramBot.getLocalizer();
-        return localizer.getString(key, null, null, locale, null, "");
+    public String getString() {
+        Localizer localizer = AbstractOTelegramBot.getLocalizer();
+        return localizer.getString(key, null, null, AbstractOTelegramBot.getCurrentLocale(), null, "");
     }
 
 

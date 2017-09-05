@@ -2,8 +2,7 @@ package org.orienteer.telegram.bot.handler;
 
 import com.google.common.cache.LoadingCache;
 import org.orienteer.telegram.bot.UserSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.orienteer.telegram.bot.response.OTelegramBotResponse;
 import org.telegram.telegrambots.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
@@ -14,16 +13,15 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 /**
- * @author Vitaliy Gonchar
+ * Telegram bot handler which use <a href="https://core.telegram.org/bots/api#getupdates">long-polling</a> method for connections with users
  */
 public class OTelegramLongPollingHandler extends TelegramLongPollingBot {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OTelegramLongPollingHandler.class);
-    private final LongPolligHandlerConfig longPolligHandlerConfig;
+    private final LongPollingHandlerConfig longPollingHandlerConfig;
     private final OTelegramBotHandler botHandler;
 
-    public OTelegramLongPollingHandler(LongPolligHandlerConfig longPolligHandlerConfig, LoadingCache<Integer, UserSession> sessions) {
-        this.longPolligHandlerConfig = longPolligHandlerConfig;
+    public OTelegramLongPollingHandler(LongPollingHandlerConfig longPollingHandlerConfig, LoadingCache<Integer, UserSession> sessions) {
+        this.longPollingHandlerConfig = longPollingHandlerConfig;
         botHandler = new OTelegramBotHandler(sessions);
     }
 
@@ -40,12 +38,9 @@ public class OTelegramLongPollingHandler extends TelegramLongPollingBot {
             Message message = update.getMessage();
             if (message.hasText()) {
                 try {
-                    LOG.info("Get message from - " + message.getFrom().getFirstName() + " " + message.getFrom().getLastName());
                     handleRequest(botHandler.handleRequest(message));
-                    LOG.info("Send message to - " + message.getFrom().getFirstName() + " " + message.getFrom().getLastName());
                 } catch (TelegramApiException e) {
-                    LOG.error("Cannot send message");
-                    if (LOG.isDebugEnabled()) e.printStackTrace();
+                    e.printStackTrace();
                 }
             }
         }
@@ -56,19 +51,19 @@ public class OTelegramLongPollingHandler extends TelegramLongPollingBot {
         AnswerCallbackQuery answerCallbackQuery = response.getAnswerCallbackQuery();
         EditMessageText editMessageText = response.getEditMessageText();
         if (sendMessage == null) {
-            answerCallbackQuery(answerCallbackQuery);
-            editMessageText(editMessageText);
-        } else sendMessage(sendMessage);
+            sendApiMethod(answerCallbackQuery);
+            sendApiMethod(editMessageText);
+        } else sendApiMethod(sendMessage);
     }
 
     @Override
     public String getBotToken() {
-        return longPolligHandlerConfig.token;
+        return longPollingHandlerConfig.token;
     }
 
     @Override
     public String getBotUsername() {
-        return longPolligHandlerConfig.username;
+        return longPollingHandlerConfig.username;
     }
 
 }

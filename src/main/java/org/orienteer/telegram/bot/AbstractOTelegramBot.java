@@ -6,32 +6,38 @@ import com.google.common.cache.LoadingCache;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import org.apache.wicket.Application;
 import org.apache.wicket.Localizer;
 import org.apache.wicket.ThreadContext;
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.util.CommonUtils;
-import org.orienteer.telegram.bot.handler.LongPolligHandlerConfig;
+import org.orienteer.telegram.bot.handler.LongPollingHandlerConfig;
 import org.orienteer.telegram.bot.handler.OTelegramLongPollingHandler;
 import org.orienteer.telegram.bot.handler.OTelegramWebHookHandler;
 import org.orienteer.telegram.bot.handler.WebHookHandlerConfig;
-import org.orienteer.telegram.bot.response.BotState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.orienteer.telegram.bot.util.BotState;
+import org.orienteer.telegram.bot.util.MessageKey;
 
-import java.util.*;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author Vitaliy Gonchar
+ * Abstract class for manage telegram bot
  */
-public abstract class OTelegramBot {
+public abstract class AbstractOTelegramBot {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OTelegramBot.class);
-    private static OrienteerWebApplication application;
+    private static Application application;
     private static UserSession currentSession;
     private static boolean groupChat;
 
-    public static synchronized OTelegramLongPollingHandler getLongPollingBot(LongPolligHandlerConfig botConfig) {
+    /**
+     * Create new {@link OTelegramLongPollingHandler}
+     * @param botConfig {@link LongPollingHandlerConfig} - bot config
+     * @return {@link OTelegramLongPollingHandler}
+     */
+    public static synchronized OTelegramLongPollingHandler getLongPollingBot(LongPollingHandlerConfig botConfig) {
         LoadingCache<Integer, UserSession> sessions = setUpDefaultConfig(botConfig.userSession);
         return new OTelegramLongPollingHandler(botConfig, sessions);
     }
@@ -54,33 +60,35 @@ public abstract class OTelegramBot {
         return sessions;
     }
 
+    @SuppressWarnings("unchecked")
     public static String getDocName(ODocument doc) {
-        Locale locale = OTelegramBot.getCurrentLocale();
+        Locale locale = AbstractOTelegramBot.getCurrentLocale();
         OProperty nameProp = OrienteerWebApplication.lookupApplication().getOClassIntrospector().getNameProperty(doc.getSchemaClass());
-        if (nameProp == null) return MessageKey.WITHOUT_NAME.getString(locale);
+        if (nameProp == null) return MessageKey.WITHOUT_NAME.getString();
 
         OType type = nameProp.getType();
         Object value = doc.field(nameProp.getName());
-
-        switch (type) {
-            case DATE:
-                return OrienteerWebApplication.DATE_CONVERTER.convertToString((Date) value, locale);
-            case DATETIME:
-                return OrienteerWebApplication.DATE_TIME_CONVERTER.convertToString((Date) value, locale);
-            case LINK:
-                return getDocName((ODocument) value);
-            case EMBEDDEDMAP:
-                Map<String, Object> localizations = (Map<String, Object>) value;
-                Object localized = CommonUtils.localizeByMap(localizations, true, locale.getLanguage(), Locale.getDefault().getLanguage());
-                if (localized != null) return localized.toString();
-            default:
-                return value.toString();
-        }
+        if (value != null) {
+            switch (type) {
+                case DATE:
+                    return OrienteerWebApplication.DATE_CONVERTER.convertToString((Date) value, locale);
+                case DATETIME:
+                    return OrienteerWebApplication.DATE_TIME_CONVERTER.convertToString((Date) value, locale);
+                case LINK:
+                    return getDocName((ODocument) value);
+                case EMBEDDEDMAP:
+                    Map<String, Object> localizations = (Map<String, Object>) value;
+                    Object localized = CommonUtils.localizeByMap(localizations, true, locale.getLanguage(), Locale.getDefault().getLanguage());
+                    if (localized != null) return localized.toString();
+                default:
+                    return value.toString();
+            }
+        } else return "";
     }
 
 
-    public static synchronized void setApplication() {
-        application = OrienteerWebApplication.lookupApplication();
+    public static synchronized void setApplication(Application app) {
+        application = app;
         ThreadContext.setApplication(application);
     }
 

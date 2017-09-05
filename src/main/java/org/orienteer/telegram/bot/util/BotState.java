@@ -1,7 +1,7 @@
-package org.orienteer.telegram.bot.response;
+package org.orienteer.telegram.bot.util;
 
 /**
- * @author Vitaliy Gonchar
+ * Enum which contains current bot state
  */
 public enum BotState {
     NEW_SEARCH(""),
@@ -10,14 +10,17 @@ public enum BotState {
     NEW_CLASS_SEARCH("/newClassSearch"),
     CLASS_SEARCH("/classMenuOptions"),
     BACK("/back"),
-    GO_TO_DOCUMENT_SHORT_DESCRIPTION("/_"),
-    GO_TO_DOCUMENT_ALL_DESCRIPTION("/__details"),
+    GO_TO_DOCUMENT_SHORT_DESCRIPTION("_"),
+    GO_TO_DOCUMENT_ALL_DESCRIPTION(""),
     GO_TO_CLASS("/"),
     NEXT_RESULT("/next"),
     PREVIOUS_RESULT("/previous"),
     SEARCH_GLOBAL("/globalSearch"),
     SEARCH_IN_CLASS_GLOBAL("/searchInClassAll"),
     ERROR("/error"),
+
+    EMBEDDED("_embedded"),
+    DETAILS("_details"),
 
     START("/start"),
     LANGUAGE("/language"),

@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author Vitaliy Gonchar
+ * Abstract class which contains oClass and query cache
  */
 public abstract class Cache {
     private static Map<String, OClass> classCache;

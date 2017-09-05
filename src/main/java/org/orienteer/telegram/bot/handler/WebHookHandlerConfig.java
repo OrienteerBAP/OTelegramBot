@@ -1,7 +1,7 @@
 package org.orienteer.telegram.bot.handler;
 
 /**
- * @author Vitaliy Gonchar
+ * Contains config for {@link OTelegramWebHookHandler}
  */
 public class WebHookHandlerConfig {
     public final String username;

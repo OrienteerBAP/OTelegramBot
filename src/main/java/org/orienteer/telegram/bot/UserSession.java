@@ -1,11 +1,11 @@
 package org.orienteer.telegram.bot;
 
-import org.orienteer.telegram.bot.response.BotState;
+import org.orienteer.telegram.bot.util.BotState;
 
 import java.util.*;
 
 /**
- * @author  Vitaliy Gonchar
+ * Class which contains information about user session
  */
 public class UserSession {
     private BotState botState;
