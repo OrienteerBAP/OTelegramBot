@@ -27,7 +27,8 @@ public enum MessageKey {
     SHORT_DOCUMENT_DESCRIPTION_MSG("telegram.bot.message.shortDocumentDescription"),
     DOCUMENT_DETAILS_MSG("telegram.bot.message.detailDocumentDescription"),
     SEARCH_FIELD_VALUES_RESULT("telegram.bot.message.searchFieldValues"),
-    SEARCH_RESULT("telegram.bot.message.searchResult"),
+    SEARCH_RESULT("telegram.bot.message.search.result"),
+    SEARCH_CLASS_RESULT("telegram.bot.message.search.class.result"),
     BACK("telegram.bot.button.back"),
     SEARCH_FAILED_CLASS_BY_NAME("telegram.bot.message.failedSearchClassByName"),
     FAILED_DOCUMENT_BY_RID("telegram.bot.message.failedSearchDocumentByRID"),
@@ -54,7 +55,7 @@ public enum MessageKey {
         this.key = key;
     }
 
-    public String getString() {
+    public String toLocaleString() {
         Localizer localizer = AbstractOTelegramBot.getLocalizer();
         return localizer.getString(key, null, null, AbstractOTelegramBot.getCurrentLocale(), null, "");
     }

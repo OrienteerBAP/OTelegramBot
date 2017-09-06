@@ -3,8 +3,6 @@ package org.orienteer.telegram.bot.response;
 import org.orienteer.telegram.bot.AbstractOTelegramBot;
 import org.orienteer.telegram.bot.UserSession;
 import org.orienteer.telegram.bot.util.*;
-import org.orienteer.telegram.bot.search.Result;
-import org.orienteer.telegram.bot.search.Search;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 
@@ -38,10 +36,10 @@ public abstract class AbstractBotResponseFactory {
                 sendMessage = AbstractResponseMessageFactory.createStartMenu(message);
                 break;
             case CLASS_SEARCH:
-                userSession.setTargetClass(message.getText().substring(MessageKey.CLASS_BUT.getString().length()));
+                userSession.setTargetClass(message.getText().substring(MessageKey.CLASS_BUT.toLocaleString().length()));
                 userSession.setBotState(BotState.SEARCH_IN_CLASS_GLOBAL);
                 userSession.setPreviousBotState(BotState.START);
-                sendMessage = AbstractResponseMessageFactory.createBackMenu(message, String.format(MessageKey.CLASS_SEARCH_MSG.getString(), "/" + userSession.getTargetClass()));
+                sendMessage = AbstractResponseMessageFactory.createBackMenu(message, String.format(MessageKey.CLASS_SEARCH_MSG.toLocaleString(), "/" + userSession.getTargetClass()));
                 break;
             case GO_TO_DOCUMENT_SHORT_DESCRIPTION:
                 sendMessage = AbstractResponseMessageFactory.createDocumentDescription(new ODocumentTelegramDescription(message.getText(), false), message, userSession, false);
@@ -59,7 +57,7 @@ public abstract class AbstractBotResponseFactory {
                 sendMessage = AbstractResponseMessageFactory.createLanguageMenu(message);
                 break;
             case ABOUT:
-                sendMessage = AbstractResponseMessageFactory.createTextMessage(message, MessageKey.ABOUT_MSG.getString());
+                sendMessage = AbstractResponseMessageFactory.createTextMessage(message, MessageKey.ABOUT_MSG.toLocaleString());
                 break;
             default:
                 sendMessage = handleSearchRequest(message, userSession);
@@ -68,23 +66,23 @@ public abstract class AbstractBotResponseFactory {
     }
 
     private static SendMessage handleSearchRequest(Message message, UserSession userSession) {
-        Result result = null;
-        Search search;
+        Map<Integer, String> result = null;
+        AbstractSearch search;
         SendMessage sendMessage;
         switch (userSession.getBotState()) {
             case SEARCH_IN_CLASS_GLOBAL:
-                search = Search.getSearch(message.getText(), userSession.getTargetClass(), userSession.getLocale());
-                result = search.execute();
+                search = AbstractSearch.newSearch(message.getText(), userSession.getTargetClass());
+                result = search.search();
                 break;
             case NEW_CLASS_SEARCH:
-                search = Search.getSearch(message.getText(), null, userSession.getLocale());
-                result = search.execute();
+                search = AbstractSearch.newSearch(message.getText(), null);
+                result = search.search();
                 break;
         }
         if (result != null) {
-            sendMessage = setResultOfSearch(result.getResultOfSearch(), message, userSession);
+            sendMessage = setResultOfSearch(result, message, userSession);
         } else sendMessage = AbstractResponseMessageFactory.createTextMessage(message,
-                Markdown.BOLD.toString(MessageKey.SEARCH_RESULT_FAILED_MSG.getString()));
+                Markdown.BOLD.toString(MessageKey.SEARCH_RESULT_FAILED_MSG.toLocaleString()));
 
         return sendMessage;
     }
@@ -101,7 +99,7 @@ public abstract class AbstractBotResponseFactory {
     }
 
     private static Locale changeLanguage(Message message) {
-        String lang = message.getText().substring(MessageKey.LANGUAGE_BUT.getString().length());
+        String lang = message.getText().substring(MessageKey.LANGUAGE_BUT.toLocaleString().length());
         if (lang.equals(MessageKey.ENGLISH.toString())) {
             return new Locale("en");
         } else if (lang.equals(MessageKey.RUSSIAN.toString())) {
@@ -116,20 +114,20 @@ public abstract class AbstractBotResponseFactory {
         if (state == BotState.ERROR) {
             if (command.startsWith(BotState.GO_TO_CLASS.getCommand()) && command.endsWith(BotState.DETAILS.getCommand())) {
                 state = BotState.GO_TO_DOCUMENT_ALL_DESCRIPTION;
-            } else if (command.startsWith(MessageKey.LANGUAGE_BUT.getString())) {
+            } else if (command.startsWith(MessageKey.LANGUAGE_BUT.toLocaleString())) {
                 state = BotState.CHANGE_LANGUAGE;
             } else if (command.startsWith(BotState.GO_TO_CLASS.getCommand()) &&
                     command.contains(BotState.GO_TO_DOCUMENT_SHORT_DESCRIPTION.getCommand())) {
                 state = BotState.GO_TO_DOCUMENT_SHORT_DESCRIPTION;
             } else if (command.startsWith(BotState.GO_TO_CLASS.getCommand())) {
                 state = BotState.GO_TO_CLASS;
-            } else if (command.startsWith(MessageKey.CLASS_BUT.getString())) {
+            } else if (command.startsWith(MessageKey.CLASS_BUT.toLocaleString())) {
                 state = BotState.CLASS_SEARCH;
-            } else if (command.equals(MessageKey.NEXT_RESULT_BUT.getString())) {
+            } else if (command.equals(MessageKey.NEXT_RESULT_BUT.toLocaleString())) {
                 state = BotState.NEXT_RESULT;
-            } else if (command.endsWith(MessageKey.PREVIOUS_RESULT_BUT.getString())) {
+            } else if (command.endsWith(MessageKey.PREVIOUS_RESULT_BUT.toLocaleString())) {
                 state = BotState.PREVIOUS_RESULT;
-            } else if (command.equals(MessageKey.BACK.getString())) {
+            } else if (command.equals(MessageKey.BACK.toLocaleString())) {
                 state = BotState.BACK;
             }
         }

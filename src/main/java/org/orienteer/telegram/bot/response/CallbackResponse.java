@@ -41,11 +41,11 @@ public class CallbackResponse {
         } else if (data.startsWith(BotState.GO_TO_CLASS.getCommand()) && data.contains("_details")) {
             isDocumentDescription = true;
             isAllDescription = true;
-            answer.setText(MessageKey.DOCUMENT_DETAILS_MSG.getString());
+            answer.setText(MessageKey.DOCUMENT_DETAILS_MSG.toLocaleString());
         } else if (data.startsWith(BotState.GO_TO_CLASS.getCommand()) && data.contains("_")) {
             isDocumentDescription = true;
             isAllDescription = false;
-            answer.setText(MessageKey.SHORT_DOCUMENT_DESCRIPTION_MSG.getString());
+            answer.setText(MessageKey.SHORT_DOCUMENT_DESCRIPTION_MSG.toLocaleString());
         } else {
             page = Integer.valueOf(query.getData()) - 1;
             answer.setText(query.getData());

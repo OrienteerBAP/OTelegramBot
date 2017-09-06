@@ -1,19 +1,22 @@
 package org.orienteer.telegram.bot.util;
 
+import com.google.common.collect.Lists;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
-import com.orientechnologies.orient.core.db.record.OTrackedList;
 import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
+import org.apache.http.util.Args;
 import org.orienteer.core.CustomAttribute;
-import org.orienteer.core.util.CommonUtils;
-import org.orienteer.telegram.bot.AbstractOTelegramBot;
 import org.orienteer.telegram.bot.Cache;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import static org.orienteer.telegram.bot.util.OTelegramUtil.*;
 
 /**
  * Represents {@link ODocument} description in Telegram
@@ -23,177 +26,202 @@ public class ODocumentTelegramDescription {
     private final ODocument document;
     private Boolean showAllFields;
     private boolean noDisplayableFields;
-    private final long embeddedID;
-    private long embeddedIdCounter = 0;
+    private int embeddedIdCounter = 0;
 
+    /**
+     * Constructor
+     * @param documentLink {@link String} string which contains Telegram link to {@link ODocument}
+     * @param showAllFields if true all fields of document includes to description
+     */
     public ODocumentTelegramDescription(String documentLink, final boolean showAllFields) {
-        this.documentLink = documentLink.contains("@") ? documentLink.substring(0, documentLink.indexOf("@")) : documentLink;
-        String [] split = this.documentLink.substring(BotState.GO_TO_CLASS.getCommand().length()).split("_");
-        final int clusterID = Integer.valueOf(split[1]);
-        final long recordID = Long.valueOf(split[2]);
-        this.document = new DBClosure<ODocument>() {
+        Args.notEmpty(documentLink, "documentLink");
+        this.documentLink = documentLink;
+        String linkBody = this.documentLink.substring(this.documentLink.indexOf(BotState.GO_TO_CLASS.getCommand()));
+        String [] split = linkBody.split("_");
+        if (this.documentLink.endsWith("_" + BotState.EMBEDDED.getCommand())) {
+            int clusterID = Integer.valueOf(split[1]);
+            int recordID = Integer.valueOf(split[2]);
+            ODocument owner = OTelegramUtil.getDocumentByRecord(new ORecordId(clusterID, recordID));
+            this.document = owner != null ?
+                    getEmbeddedDocument(owner, Integer.valueOf(split[3]), BotState.of(split[4]), showAllFields) : null;
+        } else {
+            int clusterID = Integer.valueOf(split[1]);
+            int recordID = Integer.valueOf(split[2]);
+            this.document = getDocument(new ORecordId(clusterID, recordID), showAllFields);
+        }
+    }
+
+    private ODocument getDocument(final ORecordId recordId, final boolean showAllFields) {
+        return new DBClosure<ODocument>() {
             @Override
             protected ODocument execute(ODatabaseDocument db) {
-                ODocument document = db.getRecord(new ORecordId(clusterID, recordID));
-                OClass oClass = document.getSchemaClass();
-                for (String name : document.fieldNames()) {
-                    OProperty property = oClass.getProperty(name);
-                    boolean displayable = CustomAttribute.DISPLAYABLE.getValue(property);
-                    if (!displayable) {
-                        ODocumentTelegramDescription.this.showAllFields = showAllFields;
-                        ODocumentTelegramDescription.this.noDisplayableFields = true;
-                    }
-                }
-                if (ODocumentTelegramDescription.this.showAllFields == null) {
-                    ODocumentTelegramDescription.this.showAllFields = true;
-                }
+                ODocument document = db.getRecord(recordId);
+                setShowAllFields(document, showAllFields);
                 return document;
             }
         }.execute();
-        embeddedID = isDocumentEmbedded()?Long.valueOf(split[3]):-1;
     }
 
+    private ODocument getEmbeddedDocument(final ODocument owner, final int id, final BotState state, final boolean showAllFields) {
+        return new DBClosure<ODocument>() {
+            @Override
+            @SuppressWarnings("unchecked")
+            protected ODocument execute(ODatabaseDocument db) {
+                ODocument result = null;
+                int counter = 0;
+                for (String name : owner.fieldNames()) {
+                    Object obj = owner.field(name);
+                    OType type = OType.getTypeByValue(obj);
+                    if (type != null && type.isEmbedded()) {
+                        if (state == BotState.EMBEDDED && type == OType.EMBEDDED
+                                || state == BotState.EMBEDDED_LIST && type == OType.EMBEDDEDLIST
+                                || state == BotState.EMBEDDED_SET && type == OType.EMBEDDEDSET
+                                || state == BotState.EMBEDDED_MAP && type == OType.EMBEDDEDMAP) {
+                            if (counter == id) {
+                                result = (ODocument) obj;
+                                break;
+                            }
+                            counter++;
+                        }
+                    }
+                }
+                if (result != null) setShowAllFields(result, showAllFields);
+                return result;
+            }
+        }.execute();
+    }
+
+    private void setShowAllFields(ODocument document, boolean showAllFields) {
+        OClass oClass = document.getSchemaClass();
+        for (String name : document.fieldNames()) {
+            OProperty property = oClass.getProperty(name);
+            boolean displayable = CustomAttribute.DISPLAYABLE.getValue(property);
+            if (!displayable) {
+                this.showAllFields = showAllFields;
+                noDisplayableFields = true;
+            }
+        }
+        if (this.showAllFields == null) {
+            this.showAllFields = true;
+        }
+    }
+
+    /**
+     * @return {@link String} which contains description of document
+     */
     public String getDescription() {
         return new DBClosure<String>() {
             @Override
             protected String execute(ODatabaseDocument db) {
-                StringBuilder builder = new StringBuilder();
-
+                StringBuilder sb = new StringBuilder();
                 if (!isShowAllFields()) {
-                    builder.append(Markdown.BOLD.toString(MessageKey.SHORT_DOCUMENT_DESCRIPTION_MSG.getString()));
-                } else builder.append(Markdown.BOLD.toString(MessageKey.DOCUMENT_DETAILS_MSG.getString()));
-                builder.append("\n\n")
-                        .append(Markdown.BOLD.toString(MessageKey.CLASS.getString()))
-                        .append(" ");
+                    sb.append(Markdown.BOLD.toString(MessageKey.SHORT_DOCUMENT_DESCRIPTION_MSG.toLocaleString()));
+                } else sb.append(Markdown.BOLD.toString(MessageKey.DOCUMENT_DETAILS_MSG.toLocaleString()));
+                sb.append("\n\n").append(Markdown.BOLD.toString(MessageKey.CLASS.toLocaleString())).append(" ");
                 if (Cache.getClassCache().containsKey(document.getClassName())) {
-                    builder.append(document.getClassName())
-                            .append(" ")
-                            .append(BotState.GO_TO_CLASS.getCommand());
+                    sb.append(document.getClassName()).append(" ").append(BotState.GO_TO_CLASS.getCommand());
                 }
-                builder.append(document.getClassName()).append("\n\n");
-                List<String> result = isDocumentEmbedded() ? buildEmbeddedResultList(document) : buildResultList(document);
-                if (result != null && !result.isEmpty()) {
-                    for (String str : result) {
-                        builder.append(str);
-                    }
-                }
-                return builder.toString();
+                sb.append(document.getClassName()).append("\n\n");
+                appendDocumentDescription(sb, document);
+                return sb.toString();
             }
         }.execute();
     }
 
-    private List<String> buildResultList(ODocument doc) {
-        List<String> result = new ArrayList<>();
-        CustomAttribute displayable = CustomAttribute.DISPLAYABLE;
-        Iterator<Map.Entry<String, Object>> iterator = doc.iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, Object> field = iterator.next();
-            String fieldName = field.getKey();
-            Object fieldValue = field.getValue();
-            OType type = OType.getTypeByValue(fieldValue);
-            if (type != null) {
-                String fieldValueStr;
-                if (!showAllFields) {
-                    fieldValueStr = buildValueString(type, fieldValue, doc);
-                    if (fieldValueStr != null) {
-                        OProperty property = doc.getSchemaClass().getProperty(fieldName);
-                        if (displayable.getValue(property)) {
-                            result.add(Markdown.BOLD.toString(fieldName) + ": "
-                                    + fieldValueStr + "\n");
-                        }
-                    }
+    private void appendDocumentDescription(StringBuilder sb, ODocument document) {
+        OClass documentClass = document.getSchemaClass();
+        List<String> names = Lists.newArrayList(document.fieldNames());
+        for (String fieldName : names) {
+            Object value = document.field(fieldName);
+            OType type = OType.getTypeByValue(value);
+            if (type != null && isPropertyDisplayable(documentClass.getProperty(fieldName))) {
+                sb.append(Markdown.BOLD.toString(fieldName)).append(": ");
+                if (type.isLink()) {
+                    appendLinkValue(sb, type, document, value);
+                } else if (type.isEmbedded()) {
+                    appendEmbeddedValue(sb, type, document, value);
                 } else {
-                    fieldValueStr = buildValueString(type, fieldValue, doc);
-                    if (fieldValueStr != null) result.add(Markdown.BOLD.toString(fieldName) + ": "
-                            + fieldValueStr + "\n");
+                    sb.append(value.toString());
                 }
+                sb.append("\n");
             }
         }
-        Collections.sort(result);
-        return result;
     }
 
-    private String buildValueString(OType type, Object fieldValue, ODocument doc) {
-        String fieldValueStr = null;
+    @SuppressWarnings("unchecked")
+    private void appendLinkValue(StringBuilder sb, OType type, ODocument owner, Object value) {
         switch (type) {
-            case LINKSET:
-            case LINKMAP:
-            case LINKLIST:
-                OTrackedList list = (OTrackedList) fieldValue;
-                Iterator iterator = list.iterator();
-                StringBuilder sb = new StringBuilder("\n");
-                while (iterator.hasNext()) {
-                    Object value = iterator.next();
-                    OType oType = OType.getTypeByValue(value);
-                    String result = buildValueString(oType, value, doc);
-                    sb.append("  ").append(result).append("\n");
-                }
-                fieldValueStr = sb.toString();
-                break;
             case LINK:
-                ODocument linkDocument = null;
-                if (fieldValue instanceof ORecordId) {
-                    final ORecordId linkID = (ORecordId) fieldValue;
-                    linkDocument = new DBClosure<ODocument>() {
-                        @Override
-                        protected ODocument execute(ODatabaseDocument db) {
-                            return db.getRecord(linkID);
-                        }
-                    }.execute();
-                } else if (fieldValue instanceof ODocument) {
-                    linkDocument = (ODocument) fieldValue;
-                }
+                appendDocumentLink(sb, (ODocument) value);
+                break;
+            case LINKLIST:
+                appendCollection(sb, owner, (Collection<Object>) value, true);
+                break;
+            case LINKSET:
+                appendCollection(sb, owner, (Collection<Object>) value, false);
+                break;
+            case LINKMAP:
+                appendMap(sb, owner, (Map<String, Object>) value);
+                break;
+        }
+    }
 
-                String linkName = AbstractOTelegramBot.getDocName(linkDocument);
-                fieldValueStr = linkName + " " + BotState.GO_TO_CLASS.getCommand() + linkDocument.getClassName()
-                        + "\\_" + linkDocument.getIdentity().getClusterId()
-                        + "\\_" + linkDocument.getIdentity().getClusterPosition();
+    @SuppressWarnings("unchecked")
+    private void appendEmbeddedValue(StringBuilder sb, OType type, ODocument owner, Object value) {
+        switch (type) {
+            case EMBEDDED:
+                appendEmbeddedLink(sb, embeddedIdCounter++, owner, (ODocument) value);
+                break;
+            case EMBEDDEDLIST:
+                appendCollection(sb, owner, (Collection<Object>) value, true);
                 break;
             case EMBEDDEDSET:
-            case EMBEDDEDLIST:
+                appendCollection(sb, owner, (Collection<Object>) value, false);
+                break;
             case EMBEDDEDMAP:
-                if (fieldValue instanceof Map) {
-                    Map<String, Object> localizations = (Map<String, Object>) fieldValue;
-                    Object localized = CommonUtils.localizeByMap(localizations, true,
-                            AbstractOTelegramBot.getCurrentLocale().getLanguage(), Locale.getDefault().getLanguage());
-                    if (localized != null) fieldValueStr = localized.toString();
-                }
-                break;
-            case EMBEDDED:
-                ODocument value = (ODocument) fieldValue;
-                String valueName = AbstractOTelegramBot.getDocName(value);
-                fieldValueStr = valueName + " " + BotState.GO_TO_CLASS.getCommand() + doc.getClassName()
-                        + "\\_" + doc.getIdentity().getClusterId()
-                        + "\\_" + doc.getIdentity().getClusterPosition()
-                        + "\\_" + embeddedIdCounter++
-                        + BotState.EMBEDDED.getCommand();
-                break;
-            default:
-                fieldValueStr = fieldValue.toString();
+                appendMap(sb, owner, (Map<String, Object>) value);
                 break;
         }
-        return fieldValueStr;
     }
 
-    private List<String> buildEmbeddedResultList(ODocument doc) {
-        Iterator<Map.Entry<String, Object>> iterator = doc.iterator();
-        ODocument document = null;
-        while (iterator.hasNext()) {
-            Map.Entry<String, Object> entry = iterator.next();
-            Object value = entry.getValue();
-            OType type = OType.getTypeByValue(value);
-            if (type != null && type.isEmbedded()) {
-                if (embeddedID == embeddedIdCounter) {
-                    document = (ODocument) value;
-                    break;
-                } else embeddedIdCounter++;
+    @SuppressWarnings("unchecked")
+    private void appendCollection(StringBuilder sb, ODocument owner, Collection<Object> collection, boolean list) {
+        int counter = 0;
+        for (Object obj : collection) {
+            OType type = OType.getTypeByValue(obj);
+            if (type != null && (type.isLink() || type.isEmbedded())) {
+                sb.append("\n").append(counter + 1).append(") ");
+                if (type.isLink()) {
+                    appendDocumentLink(sb, (ODocument) obj);
+                } else {
+                    if (list) {
+                        appendEmbeddedListLink(sb, embeddedIdCounter++, owner, (ODocument) obj);
+                    } else appendEmbeddedSetLink(sb, embeddedIdCounter++, owner, (ODocument) obj);
+                }
+                counter++;
+            } else if (obj != null) {
+                sb.append("\n").append(counter + 1).append(") ").append(obj.toString());
+                counter++;
             }
         }
-        return document != null ? buildResultList(document) : null;
     }
 
-    private boolean isDocumentEmbedded() {
-        return document.isEmbedded();
+    @SuppressWarnings("unchecked")
+    private void appendMap(StringBuilder sb, ODocument owner, Map<String, Object> map) {
+        for (String key : map.keySet()) {
+            Object value = map.get(key);
+            OType type = OType.getTypeByValue(value);
+            if (type != null && (type.isLink() || type.isEmbedded())) {
+                sb.append(key).append(":\n");
+                if (type.isLink()) {
+                    appendDocumentLink(sb, (ODocument) value);
+                } else {
+                    appendEmbeddedMapLink(sb, embeddedIdCounter++, owner, (ODocument) value);
+                }
+            } else if (value != null) {
+                sb.append(key).append(": ").append(value);
+            }
+        }
     }
 
     public String getLinkInString() {
@@ -206,5 +234,10 @@ public class ODocumentTelegramDescription {
 
     public boolean hasNonDisplayableFields() {
         return noDisplayableFields;
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean isPropertyDisplayable(OProperty property) {
+        return property != null && ((Boolean) CustomAttribute.DISPLAYABLE.getValue(property) || isShowAllFields());
     }
 }

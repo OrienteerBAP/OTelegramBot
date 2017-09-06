@@ -46,13 +46,13 @@ public abstract class AbstractResponseMessageFactory {
 
         List<String> buttonNames = Lists.newArrayList();
         for (OClass oClass: Cache.getClassCache().values()) {
-            buttonNames.add(MessageKey.CLASS_BUT.getString()+ oClass.getName());
+            buttonNames.add(MessageKey.CLASS_BUT.toLocaleString()+ oClass.getName());
         }
         if (!buttonNames.isEmpty()) {
             Collections.sort(buttonNames);
-            sendMessage.setText(MessageKey.CLASS_MENU_MSG.getString());
+            sendMessage.setText(MessageKey.CLASS_MENU_MSG.toLocaleString());
             sendMessage.setReplyMarkup(createMenuMarkup(buttonNames));
-        } else sendMessage.setText(MessageKey.CLASS_MENU_EMPTY_MSG.getString());
+        } else sendMessage.setText(MessageKey.CLASS_MENU_EMPTY_MSG.toLocaleString());
         return sendMessage;
     }
 
@@ -60,20 +60,20 @@ public abstract class AbstractResponseMessageFactory {
         SendMessage sendMessage = newSendMessage();
         sendMessage.setChatId(message.getChatId().toString());
         if (AbstractOTelegramBot.isGroupChat()) sendMessage.setReplyToMessageId(message.getMessageId());
-        sendMessage.setText(MessageKey.LANGUAGE_MENU_MSG.getString());
+        sendMessage.setText(MessageKey.LANGUAGE_MENU_MSG.toLocaleString());
 
         List<String> buttonNames = new ArrayList<>();
-        buttonNames.add(MessageKey.LANGUAGE_BUT.getString() + MessageKey.ENGLISH.toString());
-        buttonNames.add(MessageKey.LANGUAGE_BUT.getString() + MessageKey.RUSSIAN.toString());
-        buttonNames.add(MessageKey.LANGUAGE_BUT.getString() + MessageKey.UKRAINIAN.toString());
-        buttonNames.add(MessageKey.BACK.getString());
+        buttonNames.add(MessageKey.LANGUAGE_BUT.toLocaleString() + MessageKey.ENGLISH.toString());
+        buttonNames.add(MessageKey.LANGUAGE_BUT.toLocaleString() + MessageKey.RUSSIAN.toString());
+        buttonNames.add(MessageKey.LANGUAGE_BUT.toLocaleString() + MessageKey.UKRAINIAN.toString());
+        buttonNames.add(MessageKey.BACK.toLocaleString());
         sendMessage.setReplyMarkup(createMenuMarkup(buttonNames));
         return sendMessage;
     }
 
     public static SendMessage createBackMenu(Message message, String text) {
         List<String> keyboard = new ArrayList<>(1);
-        keyboard.add(MessageKey.BACK.getString());
+        keyboard.add(MessageKey.BACK.toLocaleString());
         SendMessage sendMessage = newSendMessage();
         if (AbstractOTelegramBot.isGroupChat()) sendMessage.setReplyToMessageId(message.getMessageId());
         sendMessage.setChatId(message.getChatId().toString());
@@ -88,9 +88,9 @@ public abstract class AbstractResponseMessageFactory {
         sendMessage.setChatId(message.getChatId().toString());
         sendMessage.setText(text);
         List<String> buttons = new ArrayList<>();
-        if (hasNext) buttons.add(MessageKey.NEXT_RESULT_BUT.getString());
-        if (hasPrevious) buttons.add(MessageKey.PREVIOUS_RESULT_BUT.getString());
-        buttons.add(MessageKey.BACK.getString());
+        if (hasNext) buttons.add(MessageKey.NEXT_RESULT_BUT.toLocaleString());
+        if (hasPrevious) buttons.add(MessageKey.PREVIOUS_RESULT_BUT.toLocaleString());
+        buttons.add(MessageKey.BACK.toLocaleString());
         sendMessage.setReplyMarkup(createMenuMarkup(buttons));
         return sendMessage;
     }
@@ -125,10 +125,10 @@ public abstract class AbstractResponseMessageFactory {
         List<InlineKeyboardButton> buttonList = new ArrayList<>();
         InlineKeyboardButton button = new InlineKeyboardButton();
         if (isAllDescription) {
-            button.setText(MessageKey.SHORT_DOCUMENT_DSCR_BUT.getString());
+            button.setText(MessageKey.SHORT_DOCUMENT_DSCR_BUT.toLocaleString());
             button.setCallbackData(documentLink.substring(0, documentLink.indexOf("_details")));
         } else {
-            button.setText(MessageKey.ALL_DOCUMENT_DSCR_BUT.getString());
+            button.setText(MessageKey.ALL_DOCUMENT_DSCR_BUT.toLocaleString());
             button.setCallbackData(documentLink + "_details");
         }
         buttonList.add(button);

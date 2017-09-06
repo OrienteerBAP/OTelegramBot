@@ -19,7 +19,15 @@ public enum BotState {
     SEARCH_IN_CLASS_GLOBAL("/searchInClassAll"),
     ERROR("/error"),
 
-    EMBEDDED("_embedded"),
+    LINK_LIST("l"),
+    LINK_SET("s"),
+    LINK_MAP("m"),
+
+    EMBEDDED("e"),
+    EMBEDDED_LIST("el"),
+    EMBEDDED_SET("es"),
+    EMBEDDED_MAP("em"),
+
     DETAILS("_details"),
 
     START("/start"),
@@ -34,5 +42,18 @@ public enum BotState {
 
     public String getCommand() {
         return command;
+    }
+
+    public static BotState of(String modifier) {
+        for (BotState value : values()) {
+            if (value.getCommand().equals(modifier))
+                return value;
+        }
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        return getCommand();
     }
 }

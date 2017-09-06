@@ -7,7 +7,6 @@ import com.orientechnologies.orient.core.iterator.ORecordIteratorClass;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
 import com.orientechnologies.orient.core.record.impl.ODocument;
-import org.orienteer.telegram.bot.AbstractOTelegramBot;
 import org.orienteer.telegram.bot.Cache;
 import org.orienteer.telegram.module.OTelegramModule;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
@@ -20,10 +19,18 @@ import java.util.*;
 public class OClassTelegramDescription {
     private final String className;
 
+    /**
+     * Constructor
+     * @param classLink {@link String} which contains Telegram link to {@link OClass}
+     */
     public OClassTelegramDescription(String classLink) {
         className = classLink.substring(BotState.GO_TO_CLASS.getCommand().length());
     }
 
+    /**
+     * Get description of class as map
+     * @return {@link Map<Integer, String>} which contains description
+     */
     public Map<Integer, String> getDescription() {
         return new DBClosure<Map<Integer, String>>() {
             @Override
@@ -31,7 +38,7 @@ public class OClassTelegramDescription {
                 Map<Integer, String> result = Maps.newHashMap();
                 if (!Cache.getClassCache().containsKey(className)) {
                     result = new HashMap<>();
-                    result.put(0, MessageKey.SEARCH_FAILED_CLASS_BY_NAME.getString());
+                    result.put(0, MessageKey.SEARCH_FAILED_CLASS_BY_NAME.toLocaleString());
                     return result;
                 }
                 OClass oClass = Cache.getClassCache().get(className);
@@ -54,18 +61,14 @@ public class OClassTelegramDescription {
 
     private String createOClassHeadDescription(OClass oClass, boolean docsPresent) {
         StringBuilder sb = new StringBuilder();
-        sb.append(Markdown.BOLD.toString(MessageKey.CLASS_DESCRIPTION_MSG.getString()))
-                .append("\n\n")
-                .append(Markdown.BOLD.toString(MessageKey.NAME.getString()))
-                .append(" ")
-                .append(oClass.getName())
-                .append("\n")
-                .append(Markdown.BOLD.toString(MessageKey.SUPER_CLASSES.getString()))
-                .append(" ");
+        sb.append(Markdown.BOLD.toString(MessageKey.CLASS_DESCRIPTION_MSG.toLocaleString())).append("\n\n")
+                .append(Markdown.BOLD.toString(MessageKey.NAME.toLocaleString())).append(" ")
+                .append(oClass.getName()).append("\n")
+                .append(Markdown.BOLD.toString(MessageKey.SUPER_CLASSES.toLocaleString())).append(" ");
         appendSuperClasses(sb, oClass, Cache.getClassCache());
         appendProperties(sb, oClass);
-        if (docsPresent) sb.append(Markdown.BOLD.toString(MessageKey.CLASS_DOCUMENTS.getString())).append("\n");
-        else sb.append(Markdown.BOLD.toString(MessageKey.WITHOUT_DOCUMENTS.getString()));
+        if (docsPresent) sb.append(Markdown.BOLD.toString(MessageKey.CLASS_DOCUMENTS.toLocaleString())).append("\n");
+        else sb.append(Markdown.BOLD.toString(MessageKey.WITHOUT_DOCUMENTS.toLocaleString()));
         return sb.toString();
     }
 
@@ -76,7 +79,7 @@ public class OClassTelegramDescription {
                     sb.append("/").append(superClass.getName()).append(" ");
                 }
             }
-        } else sb.append(MessageKey.WITHOUT_SUPER_CLASSES.getString());
+        } else sb.append(MessageKey.WITHOUT_SUPER_CLASSES.toLocaleString());
         sb.append("\n");
     }
 
@@ -87,7 +90,7 @@ public class OClassTelegramDescription {
                 sb.append(property)
                         .append("\n");
             }
-        } else sb.append(MessageKey.WITHOUT_PROPERTIES.getString());
+        } else sb.append(MessageKey.WITHOUT_PROPERTIES.toLocaleString());
         sb.append("\n");
     }
 
@@ -96,7 +99,7 @@ public class OClassTelegramDescription {
         if (OTelegramModule.TELEGRAM_CLASS_DESCRIPTION.getValue(oClass)) {
             Collection<OProperty> properties = oClass.properties();
             for (OProperty property : properties) {
-                result.add(Markdown.BOLD.toString(property.getName() + ":") + " " + property.getDefaultValue() + " (" + MessageKey.DEFAULT_VALUE.getString() + ")");
+                result.add(Markdown.BOLD.toString(property.getName() + ":") + " " + property.getDefaultValue() + " (" + MessageKey.DEFAULT_VALUE.toLocaleString() + ")");
             }
             Collections.sort(result);
         }
@@ -111,7 +114,7 @@ public class OClassTelegramDescription {
                 String docId = BotState.GO_TO_CLASS.getCommand() + oDocument.getClassName()
                         + "\\_" + oDocument.getIdentity().getClusterId()
                         + "\\_" + oDocument.getIdentity().getClusterPosition();
-                String docName = AbstractOTelegramBot.getDocName(oDocument);
+                String docName = OTelegramUtil.getDocumentName(oDocument);
                 result.add(docName + " " + docId);
             }
             Collections.sort(result);
