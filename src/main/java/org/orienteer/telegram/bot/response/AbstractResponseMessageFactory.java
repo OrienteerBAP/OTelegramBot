@@ -82,19 +82,6 @@ public abstract class AbstractResponseMessageFactory {
         return sendMessage;
     }
 
-    public static SendMessage createNextPreviousMenu(Message message, String text, boolean hasNext, boolean hasPrevious) {
-        SendMessage sendMessage = newSendMessage();
-        if (AbstractOTelegramBot.isGroupChat()) sendMessage.setReplyToMessageId(message.getMessageId());
-        sendMessage.setChatId(message.getChatId().toString());
-        sendMessage.setText(text);
-        List<String> buttons = new ArrayList<>();
-        if (hasNext) buttons.add(MessageKey.NEXT_RESULT_BUT.toLocaleString());
-        if (hasPrevious) buttons.add(MessageKey.PREVIOUS_RESULT_BUT.toLocaleString());
-        buttons.add(MessageKey.BACK.toLocaleString());
-        sendMessage.setReplyMarkup(createMenuMarkup(buttons));
-        return sendMessage;
-    }
-
     public static SendMessage createPagingMenu(Message message, UserSession userSession) {
         SendMessage sendMessage = newSendMessage();
         if (AbstractOTelegramBot.isGroupChat()) sendMessage.setReplyToMessageId(message.getMessageId());

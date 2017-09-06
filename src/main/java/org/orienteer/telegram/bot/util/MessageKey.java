@@ -15,8 +15,6 @@ public enum MessageKey {
     CLASS_BUT("telegram.bot.button.class"),
     ALL_DOCUMENT_DSCR_BUT("telegram.bot.button.allDescription"),
     SHORT_DOCUMENT_DSCR_BUT("telegram.bot.button.shortDescription"),
-    NEXT_RESULT_BUT("telegram.bot.button.next"),
-    PREVIOUS_RESULT_BUT("telegram.bot.button.previous"),
     START_SEARCH_MSG("telegram.bot.message.startSearch"),
     SEARCH_RESULT_SUCCESS_MSG("telegram.bot.message.searchSuccess"),
     SEARCH_RESULT_FAILED_MSG("telegram.bot.message.searchFailed"),
@@ -24,8 +22,6 @@ public enum MessageKey {
     CLASS_SEARCH_MSG("telegram.bot.message.classSearch"),
     CLASS_DESCRIPTION_MSG("telegram.bot.message.classDescription"),
     CLASS_DOCUMENTS("telegram.bot.message.classDocuments"),
-    SHORT_DOCUMENT_DESCRIPTION_MSG("telegram.bot.message.shortDocumentDescription"),
-    DOCUMENT_DETAILS_MSG("telegram.bot.message.detailDocumentDescription"),
     SEARCH_FIELD_VALUES_RESULT("telegram.bot.message.searchFieldValues"),
     SEARCH_RESULT("telegram.bot.message.search.result"),
     SEARCH_CLASS_RESULT("telegram.bot.message.search.class.result"),
@@ -44,6 +40,7 @@ public enum MessageKey {
     WITHOUT_NAME("telegram.bot.message.withoutName"),
     CLASS_NAME("telegram.bot.message.className"),
     ABOUT_MSG("telegram.bot.message.about"),
+
     ENGLISH("English"),
     RUSSIAN("Русский"),
     UKRAINIAN("Українська");

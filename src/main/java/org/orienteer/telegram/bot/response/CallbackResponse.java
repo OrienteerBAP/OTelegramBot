@@ -6,7 +6,6 @@ import org.orienteer.telegram.bot.util.BotState;
 import org.orienteer.telegram.bot.util.MessageKey;
 import org.orienteer.telegram.bot.util.ODocumentTelegramDescription;
 import org.telegram.telegrambots.api.methods.AnswerCallbackQuery;
-import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.CallbackQuery;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -41,20 +40,16 @@ public class CallbackResponse {
         } else if (data.startsWith(BotState.GO_TO_CLASS.getCommand()) && data.contains("_details")) {
             isDocumentDescription = true;
             isAllDescription = true;
-            answer.setText(MessageKey.DOCUMENT_DETAILS_MSG.toLocaleString());
+            answer.setText(MessageKey.ALL_DOCUMENT_DSCR_BUT.toLocaleString());
         } else if (data.startsWith(BotState.GO_TO_CLASS.getCommand()) && data.contains("_")) {
             isDocumentDescription = true;
             isAllDescription = false;
-            answer.setText(MessageKey.SHORT_DOCUMENT_DESCRIPTION_MSG.toLocaleString());
+            answer.setText(MessageKey.SHORT_DOCUMENT_DSCR_BUT.toLocaleString());
         } else {
             page = Integer.valueOf(query.getData()) - 1;
             answer.setText(query.getData());
         }
         return answer;
-    }
-
-    public SendMessage getResponse() {
-        return AbstractResponseMessageFactory.createPagingMenu(query.getMessage(), userSession);
     }
 
     public EditMessageText getEditMessage() {

@@ -19,9 +19,9 @@ import java.util.Map;
 import static org.orienteer.telegram.bot.util.OTelegramUtil.*;
 
 /**
- * Represents {@link ODocument} description in Telegram
+ * Implements {@link IOTelegramDescription} for represents {@link ODocument} description in Telegram
  */
-public class ODocumentTelegramDescription {
+public class ODocumentTelegramDescription implements IOTelegramDescription<String> {
     private final String documentLink;
     private final ODocument document;
     private Boolean showAllFields;
@@ -51,6 +51,12 @@ public class ODocumentTelegramDescription {
         }
     }
 
+    /**
+     * Get {@link ODocument} by {@link ORecordId} and set if need to display all document fields
+     * @param recordId {@link ORecordId}
+     * @param showAllFields true if need to display all document fields
+     * @return {@link ODocument}
+     */
     private ODocument getDocument(final ORecordId recordId, final boolean showAllFields) {
         return new DBClosure<ODocument>() {
             @Override
@@ -62,6 +68,14 @@ public class ODocumentTelegramDescription {
         }.execute();
     }
 
+    /**
+     * Get embedded {@link ODocument} by id and {@link BotState}
+     * @param owner {@link ODocument} owner document
+     * @param id id of embedded document
+     * @param state {@link BotState}
+     * @param showAllFields true if need to show all fields of document
+     * @return {@link ODocument}
+     */
     private ODocument getEmbeddedDocument(final ODocument owner, final int id, final BotState state, final boolean showAllFields) {
         return new DBClosure<ODocument>() {
             @Override
@@ -109,14 +123,15 @@ public class ODocumentTelegramDescription {
     /**
      * @return {@link String} which contains description of document
      */
+    @Override
     public String getDescription() {
         return new DBClosure<String>() {
             @Override
             protected String execute(ODatabaseDocument db) {
                 StringBuilder sb = new StringBuilder();
                 if (!isShowAllFields()) {
-                    sb.append(Markdown.BOLD.toString(MessageKey.SHORT_DOCUMENT_DESCRIPTION_MSG.toLocaleString()));
-                } else sb.append(Markdown.BOLD.toString(MessageKey.DOCUMENT_DETAILS_MSG.toLocaleString()));
+                    sb.append(Markdown.BOLD.toString(MessageKey.SHORT_DOCUMENT_DSCR_BUT.toLocaleString()));
+                } else sb.append(Markdown.BOLD.toString(MessageKey.ALL_DOCUMENT_DSCR_BUT.toLocaleString()));
                 sb.append("\n\n").append(Markdown.BOLD.toString(MessageKey.CLASS.toLocaleString())).append(" ");
                 if (Cache.getClassCache().containsKey(document.getClassName())) {
                     sb.append(document.getClassName()).append(" ").append(BotState.GO_TO_CLASS.getCommand());

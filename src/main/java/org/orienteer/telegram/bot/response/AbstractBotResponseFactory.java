@@ -123,10 +123,6 @@ public abstract class AbstractBotResponseFactory {
                 state = BotState.GO_TO_CLASS;
             } else if (command.startsWith(MessageKey.CLASS_BUT.toLocaleString())) {
                 state = BotState.CLASS_SEARCH;
-            } else if (command.equals(MessageKey.NEXT_RESULT_BUT.toLocaleString())) {
-                state = BotState.NEXT_RESULT;
-            } else if (command.endsWith(MessageKey.PREVIOUS_RESULT_BUT.toLocaleString())) {
-                state = BotState.PREVIOUS_RESULT;
             } else if (command.equals(MessageKey.BACK.toLocaleString())) {
                 state = BotState.BACK;
             }

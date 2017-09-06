@@ -14,9 +14,9 @@ import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 import java.util.*;
 
 /**
- * Represents {@link OClass} description in Telegram
+ * Implements {@link IOTelegramDescription} for represents {@link OClass} description in Telegram
  */
-public class OClassTelegramDescription {
+public class OClassTelegramDescription implements IOTelegramDescription<Map<Integer, String>> {
     private final String className;
 
     /**
@@ -31,29 +31,30 @@ public class OClassTelegramDescription {
      * Get description of class as map
      * @return {@link Map<Integer, String>} which contains description
      */
+    @Override
     public Map<Integer, String> getDescription() {
         return new DBClosure<Map<Integer, String>>() {
             @Override
             protected Map<Integer, String> execute(ODatabaseDocument db) {
                 Map<Integer, String> result = Maps.newHashMap();
-                if (!Cache.getClassCache().containsKey(className)) {
+                if (Cache.getClassCache().containsKey(className)) {
+                    OClass oClass = Cache.getClassCache().get(className);
+                    List<String> telegramDocs = getTelegramDocuments(oClass, db);
+                    String head = createOClassHeadDescription(oClass, !telegramDocs.isEmpty());
+                    if (!telegramDocs.isEmpty()) {
+                        result.put(0, head + Markdown.BOLD.toString("1. ") + telegramDocs.get(0) + "\n");
+                        for (int i = 1; i < telegramDocs.size(); i++) {
+                            if (i % 10 == 0) {
+                                result.put(i, head + Markdown.BOLD.toString((i + 1) + ". ") + telegramDocs.get(i) + "\n");
+                            } else {
+                                result.put(i, Markdown.BOLD.toString((i + 1) + ". ") + telegramDocs.get(i) + "\n");
+                            }
+                        }
+                    } else result.put(0, head);
+                } else {
                     result = new HashMap<>();
                     result.put(0, MessageKey.SEARCH_FAILED_CLASS_BY_NAME.toLocaleString());
-                    return result;
                 }
-                OClass oClass = Cache.getClassCache().get(className);
-                List<String> telegramDocs = getTelegramDocuments(oClass, db);
-                String head = createOClassHeadDescription(oClass, !telegramDocs.isEmpty());
-                if (!telegramDocs.isEmpty()) {
-                    result.put(0, head + Markdown.BOLD.toString("1. ") + telegramDocs.get(0) + "\n");
-                    for (int i = 1; i < telegramDocs.size(); i++) {
-                        if (i % 10 == 0) {
-                            result.put(i, head + Markdown.BOLD.toString((i + 1) + ". ") + telegramDocs.get(i) + "\n");
-                        } else {
-                            result.put(i, Markdown.BOLD.toString((i + 1) + ". ") + telegramDocs.get(i) + "\n");
-                        }
-                    }
-                } else result.put(0, head);
                 return result;
             }
         }.execute();
