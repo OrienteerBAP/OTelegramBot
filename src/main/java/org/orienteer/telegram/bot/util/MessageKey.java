@@ -1,7 +1,7 @@
 package org.orienteer.telegram.bot.util;
 
 import org.apache.wicket.Localizer;
-import org.orienteer.telegram.bot.AbstractOTelegramBot;
+import org.orienteer.telegram.bot.OTelegramBot;
 
 /**
  * Contains keys for creating localized messages
@@ -52,9 +52,13 @@ public enum MessageKey {
         this.key = key;
     }
 
-    public String toLocaleString() {
-        Localizer localizer = AbstractOTelegramBot.getLocalizer();
-        return localizer.getString(key, null, null, AbstractOTelegramBot.getCurrentLocale(), null, "");
+    /**
+     * @param bot {@link OTelegramBot} which need localized message
+     * @return localized message
+     */
+    public String toLocaleString(OTelegramBot bot) {
+        Localizer localizer = bot.getLocalizer();
+        return localizer.getString(key, null, null, bot.getCurrentLocale(), null, "");
     }
 
 

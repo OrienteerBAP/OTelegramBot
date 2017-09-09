@@ -4,7 +4,9 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
-import org.orienteer.telegram.bot.Cache;
+import org.apache.http.util.Args;
+import org.orienteer.telegram.bot.OTelegramBot;
+import org.orienteer.telegram.bot.OTelegramCache;
 
 import java.util.List;
 import java.util.Map;
@@ -16,17 +18,26 @@ import java.util.Stack;
 public abstract class AbstractSearch {
     protected final Map<String, OClass> classCache;
     protected final Map<String, String> queryCache;
+    protected final OTelegramBot bot;
     private int counter = 0;
 
-    public AbstractSearch() {
-        classCache = Cache.getClassCache();
-        queryCache = Cache.getQueryCache();
+    public AbstractSearch(OTelegramBot bot) {
+        this.bot = Args.notNull(bot, "bot");
+        classCache = OTelegramCache.getClassCache();
+        queryCache = OTelegramCache.getQueryCache();
     }
 
     public abstract Map<Integer, String> search();
 
-    public static AbstractSearch newSearch(String searchWord, String className) {
-        return className == null ? new OClassNameSearch(searchWord) : new OClassDocumentSearch(searchWord, className);
+    /**
+     * Create new {@link AbstractSearch} instance for search something in database
+     * @param bot {@link OTelegramBot} which need search something
+     * @param searchWord {@link String} word for search
+     * @param className {@link String} name of class where will be search
+     * @return {@link AbstractSearch}
+     */
+    public static AbstractSearch newSearch(OTelegramBot bot, String searchWord, String className) {
+        return className == null ? new OClassNameSearch(bot, searchWord) : new OClassDocumentSearch(bot, searchWord, className);
     }
 
     protected Map<Integer, String> newSearchResult(List<String> values, String headInfo) {
@@ -43,7 +54,7 @@ public abstract class AbstractSearch {
                     counter++;
                 }
             }
-        } else result.put(0, Markdown.BOLD.toString(MessageKey.SEARCH_RESULT_FAILED_MSG.toLocaleString()));
+        } else result.put(0, Markdown.BOLD.toString(MessageKey.SEARCH_RESULT_FAILED_MSG.toLocaleString(bot)));
         return result;
     }
 

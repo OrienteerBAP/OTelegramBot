@@ -6,9 +6,10 @@ import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.telegram.module.OTelegramModule;
 
 /**
- * Implementation of {@link IInitializer} for 'AbstractOTelegramBot' Orienteer module
+ * Implementation of {@link IInitializer} for 'OTelegramBot' Orienteer module
  */
 public class Initializer implements IInitializer {
+
     @Override
     public void init(Application application) {
         OrienteerWebApplication app = (OrienteerWebApplication) application;

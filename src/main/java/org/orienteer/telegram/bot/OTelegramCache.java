@@ -3,8 +3,6 @@ package org.orienteer.telegram.bot;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import org.orienteer.telegram.module.OTelegramModule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
 import java.util.HashMap;
@@ -13,13 +11,11 @@ import java.util.Map;
 /**
  * Abstract class which contains oClass and query cache
  */
-public abstract class Cache {
+public abstract class OTelegramCache {
     private static Map<String, OClass> classCache;
     private static Map<String, String> queryCache;
 
     private static int schemaVersion;
-
-    private static final Logger LOG = LoggerFactory.getLogger(Cache.class);
 
     public static synchronized void initCache() {
         new DBClosure() {
@@ -39,20 +35,19 @@ public abstract class Cache {
     private static void createClassCache(ODatabaseDocument db) {
         classCache = new HashMap<>();
         for (OClass oClass : db.getMetadata().getSchema().getClasses()) {
-            if (OTelegramModule.TELEGRAM_SEARCH.getValue(oClass)) {
+            if (OTelegramModule.TELEGRAM_BOT_SEARCH.getValue(oClass)) {
                 classCache.put(oClass.getName(), oClass);
             }
         }
-        LOG.debug("Class cache size: " + classCache.size());
     }
 
     private static void createQueryCache() {
         queryCache = new HashMap<>();
         for (OClass oClass : classCache.values()) {
-            String query = OTelegramModule.TELEGRAM_SEARCH_QUERY.getValue(oClass);
+            String query = OTelegramModule.TELEGRAM_BOT_SEARCH_QUERY.getValue(oClass);
             if (query == null){
                 query = "SELECT FROM " + oClass.getName();
-                OTelegramModule.TELEGRAM_SEARCH_QUERY.setValue(oClass, query);
+                OTelegramModule.TELEGRAM_BOT_SEARCH_QUERY.setValue(oClass, query);
             }
             queryCache.put(oClass.getName(), query);
         }

@@ -1,4 +1,4 @@
 /**
- * Contains AbstractOTelegramBot widget for configure search OClass documents in OTelegraamBot
+ * Contains widget for configure search classes and documents in 'orienteer-telegram'
  */
 package org.orienteer.telegram.component.widget;

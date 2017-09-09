@@ -9,7 +9,8 @@ import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.apache.http.util.Args;
 import org.orienteer.core.CustomAttribute;
-import org.orienteer.telegram.bot.Cache;
+import org.orienteer.telegram.bot.OTelegramBot;
+import org.orienteer.telegram.bot.OTelegramCache;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
 import java.util.Collection;
@@ -22,6 +23,7 @@ import static org.orienteer.telegram.bot.util.OTelegramUtil.*;
  * Implements {@link IOTelegramDescription} for represents {@link ODocument} description in Telegram
  */
 public class ODocumentTelegramDescription implements IOTelegramDescription<String> {
+    private final OTelegramBot bot;
     private final String documentLink;
     private final ODocument document;
     private Boolean showAllFields;
@@ -32,9 +34,11 @@ public class ODocumentTelegramDescription implements IOTelegramDescription<Strin
      * Constructor
      * @param documentLink {@link String} string which contains Telegram link to {@link ODocument}
      * @param showAllFields if true all fields of document includes to description
+     * @param bot {@link OTelegramBot} bot which need description
      */
-    public ODocumentTelegramDescription(String documentLink, final boolean showAllFields) {
+    public ODocumentTelegramDescription(String documentLink, final boolean showAllFields, OTelegramBot bot) {
         Args.notEmpty(documentLink, "documentLink");
+        this.bot = Args.notNull(bot, "bot");
         this.documentLink = documentLink;
         String linkBody = this.documentLink.substring(this.documentLink.indexOf(BotState.GO_TO_CLASS.getCommand()));
         String [] split = linkBody.split("_");
@@ -130,10 +134,10 @@ public class ODocumentTelegramDescription implements IOTelegramDescription<Strin
             protected String execute(ODatabaseDocument db) {
                 StringBuilder sb = new StringBuilder();
                 if (!isShowAllFields()) {
-                    sb.append(Markdown.BOLD.toString(MessageKey.SHORT_DOCUMENT_DSCR_BUT.toLocaleString()));
-                } else sb.append(Markdown.BOLD.toString(MessageKey.ALL_DOCUMENT_DSCR_BUT.toLocaleString()));
-                sb.append("\n\n").append(Markdown.BOLD.toString(MessageKey.CLASS.toLocaleString())).append(" ");
-                if (Cache.getClassCache().containsKey(document.getClassName())) {
+                    sb.append(Markdown.BOLD.toString(MessageKey.SHORT_DOCUMENT_DSCR_BUT.toLocaleString(bot)));
+                } else sb.append(Markdown.BOLD.toString(MessageKey.ALL_DOCUMENT_DSCR_BUT.toLocaleString(bot)));
+                sb.append("\n\n").append(Markdown.BOLD.toString(MessageKey.CLASS.toLocaleString(bot))).append(" ");
+                if (OTelegramCache.getClassCache().containsKey(document.getClassName())) {
                     sb.append(document.getClassName()).append(" ").append(BotState.GO_TO_CLASS.getCommand());
                 }
                 sb.append(document.getClassName()).append("\n\n");
@@ -167,7 +171,7 @@ public class ODocumentTelegramDescription implements IOTelegramDescription<Strin
     private void appendLinkValue(StringBuilder sb, OType type, ODocument owner, Object value) {
         switch (type) {
             case LINK:
-                appendDocumentLink(sb, (ODocument) value);
+                appendDocumentLink(sb, (ODocument) value, bot);
                 break;
             case LINKLIST:
                 appendCollection(sb, owner, (Collection<Object>) value, true);
@@ -185,7 +189,7 @@ public class ODocumentTelegramDescription implements IOTelegramDescription<Strin
     private void appendEmbeddedValue(StringBuilder sb, OType type, ODocument owner, Object value) {
         switch (type) {
             case EMBEDDED:
-                appendEmbeddedLink(sb, embeddedIdCounter++, owner, (ODocument) value);
+                appendEmbeddedLink(sb, embeddedIdCounter++, owner, (ODocument) value, bot);
                 break;
             case EMBEDDEDLIST:
                 appendCollection(sb, owner, (Collection<Object>) value, true);
@@ -207,11 +211,11 @@ public class ODocumentTelegramDescription implements IOTelegramDescription<Strin
             if (type != null && (type.isLink() || type.isEmbedded())) {
                 sb.append("\n").append(counter + 1).append(") ");
                 if (type.isLink()) {
-                    appendDocumentLink(sb, (ODocument) obj);
+                    appendDocumentLink(sb, (ODocument) obj, bot);
                 } else {
                     if (list) {
-                        appendEmbeddedListLink(sb, embeddedIdCounter++, owner, (ODocument) obj);
-                    } else appendEmbeddedSetLink(sb, embeddedIdCounter++, owner, (ODocument) obj);
+                        appendEmbeddedListLink(sb, embeddedIdCounter++, owner, (ODocument) obj, bot);
+                    } else appendEmbeddedSetLink(sb, embeddedIdCounter++, owner, (ODocument) obj, bot);
                 }
                 counter++;
             } else if (obj != null) {
@@ -229,9 +233,9 @@ public class ODocumentTelegramDescription implements IOTelegramDescription<Strin
             if (type != null && (type.isLink() || type.isEmbedded())) {
                 sb.append(key).append(":\n");
                 if (type.isLink()) {
-                    appendDocumentLink(sb, (ODocument) value);
+                    appendDocumentLink(sb, (ODocument) value, bot);
                 } else {
-                    appendEmbeddedMapLink(sb, embeddedIdCounter++, owner, (ODocument) value);
+                    appendEmbeddedMapLink(sb, embeddedIdCounter++, owner, (ODocument) value, bot);
                 }
             } else if (value != null) {
                 sb.append(key).append(": ").append(value);

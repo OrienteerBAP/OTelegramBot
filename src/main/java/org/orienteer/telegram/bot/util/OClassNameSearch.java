@@ -2,6 +2,7 @@ package org.orienteer.telegram.bot.util;
 
 import com.google.common.collect.Lists;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
+import org.orienteer.telegram.bot.OTelegramBot;
 
 import java.util.List;
 import java.util.Map;
@@ -14,9 +15,12 @@ public class OClassNameSearch extends AbstractSearch {
     private final String searchWord;
 
     /**
+     * Constructor
+     * @param bot {@link OTelegramBot} bot which need search
      * @param searchWord {@link String} which will search
      */
-    public OClassNameSearch(String searchWord) {
+    public OClassNameSearch(OTelegramBot bot, String searchWord) {
+        super(bot);
         this.searchWord = searchWord;
     }
 
@@ -32,7 +36,7 @@ public class OClassNameSearch extends AbstractSearch {
             }
         }
         if (!result.isEmpty()) {
-            headInfo =  "\n" + Markdown.BOLD.toString(MessageKey.SEARCH_CLASS_RESULT.toLocaleString()) + "\n"
+            headInfo =  "\n" + Markdown.BOLD.toString(MessageKey.SEARCH_CLASS_RESULT.toLocaleString(bot)) + "\n"
                     + Markdown.BOLD.toString(1 + ".  ");
         }
         return newSearchResult(result, headInfo);

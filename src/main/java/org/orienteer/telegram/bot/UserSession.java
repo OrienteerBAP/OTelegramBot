@@ -1,5 +1,6 @@
 package org.orienteer.telegram.bot;
 
+import org.apache.wicket.util.io.IClusterable;
 import org.orienteer.telegram.bot.util.BotState;
 
 import java.util.*;
@@ -7,7 +8,7 @@ import java.util.*;
 /**
  * Class which contains information about user session
  */
-public class UserSession {
+public class UserSession implements IClusterable {
     private BotState botState;
     private BotState previousBotState;
     private String targetClass;

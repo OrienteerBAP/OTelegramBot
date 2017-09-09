@@ -7,6 +7,7 @@ import com.orientechnologies.orient.core.id.ORecordId;
 import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+import org.orienteer.telegram.bot.OTelegramBot;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
 import java.util.Collection;
@@ -22,7 +23,14 @@ public class OClassDocumentSearch extends AbstractSearch {
     private final String className;
     private int embeddedId = 0;
 
-    public OClassDocumentSearch(String searchWord, String className) {
+    /**
+     * Constructor
+     * @param bot {@link OTelegramBot} bot which need search
+     * @param searchWord {@link String} word which will be search
+     * @param className {@link String} class name where will be search
+     */
+    public OClassDocumentSearch(OTelegramBot bot, String searchWord, String className) {
+        super(bot);
         this.searchWord = searchWord;
         this.className = className;
     }
@@ -43,8 +51,8 @@ public class OClassDocumentSearch extends AbstractSearch {
                     }
                 }
 
-                if (!result.isEmpty()) head = "\n" + Markdown.BOLD.toString(MessageKey.SEARCH_RESULT.toLocaleString()) + "\n"
-                        + Markdown.BOLD.toString(1 + ".  ");
+                if (!result.isEmpty()) head = "\n" + Markdown.BOLD.toString(MessageKey.SEARCH_RESULT.toLocaleString(bot))
+                        + "\n" + Markdown.BOLD.toString(1 + ".  ");
 
                 return newSearchResult(result, head);
             }
@@ -66,7 +74,7 @@ public class OClassDocumentSearch extends AbstractSearch {
         String documentLink = BotState.GO_TO_CLASS.getCommand() + document.getClassName()
                 + "\\_" + document.getIdentity().getClusterId()
                 + "\\_" + document.getIdentity().getClusterPosition();
-        String documentName = OTelegramUtil.getDocumentName(document);
+        String documentName = OTelegramUtil.getDocumentName(document, bot);
 
         for (String fieldName : document.fieldNames()) {
             String fieldValueAsString = searchInField(fieldName, document, false);
@@ -105,7 +113,7 @@ public class OClassDocumentSearch extends AbstractSearch {
                 ODocument link = value instanceof ORecordId ?
                         OTelegramUtil.getDocumentByRecord((ORecordId) value) : (ODocument) value;
                 if (link != null) {
-                    String linkName = OTelegramUtil.getDocumentName(link);
+                    String linkName = OTelegramUtil.getDocumentName(link, bot);
                     if (!Strings.isNullOrEmpty(linkName) && (isWordInLine(searchWord, linkName) || withoutSearch)) {
                         OTelegramUtil.appendDocumentLink(sb, createSearchResultString(searchWord, linkName), link);
                     }
@@ -134,7 +142,7 @@ public class OClassDocumentSearch extends AbstractSearch {
         switch (type) {
             case EMBEDDED:
                 ODocument doc = (ODocument) value;
-                String valueName = OTelegramUtil.getDocumentName(doc);
+                String valueName = OTelegramUtil.getDocumentName(doc, bot);
                 if (!Strings.isNullOrEmpty(valueName) && (isWordInLine(searchWord, valueName) || withoutSearch)) {
                     OTelegramUtil.appendEmbeddedLink(sb, createSearchResultString(searchWord, valueName), embeddedId++, owner, doc);
                 }
@@ -163,7 +171,7 @@ public class OClassDocumentSearch extends AbstractSearch {
             OType type = OType.getTypeByValue(obj);
             if (type != null && (type.isLink() || type.isEmbedded())) {
                 ODocument document = (ODocument) obj;
-                String name = OTelegramUtil.getDocumentName(document);
+                String name = OTelegramUtil.getDocumentName(document, bot);
                 if (!Strings.isNullOrEmpty(name) && (isWordInLine(searchWord, name) || withoutSearch)) {
                     sb.append("\n").append(counter + 1).append(") ");
                     if (type.isEmbedded()) {
@@ -188,7 +196,7 @@ public class OClassDocumentSearch extends AbstractSearch {
             OType type = OType.getTypeByValue(obj);
             if (type != null && (type.isEmbedded() || type.isLink())) {
                 ODocument doc = (ODocument) obj;
-                String name = OTelegramUtil.getDocumentName(doc);
+                String name = OTelegramUtil.getDocumentName(doc, bot);
                 if (!Strings.isNullOrEmpty(name) && (isWordInLine(searchWord, name) || isWordInLine(searchWord, key) || withoutSearch)) {
                     sb.append("\n").append(counter + 1).append(") ")
                             .append(createSearchResultString(searchWord, key)).append(": ");
