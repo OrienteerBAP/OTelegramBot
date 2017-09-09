@@ -1,6 +1,5 @@
 package org.orienteer.telegram.bot;
 
-import com.google.common.base.Strings;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -13,16 +12,11 @@ import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.telegram.bot.handler.IOTelegramBotUpdateHandler;
 import org.orienteer.telegram.bot.handler.OTelegramLongPollingHandler;
 import org.orienteer.telegram.bot.handler.OTelegramWebHookHandler;
-import org.orienteer.telegram.bot.util.BotState;
 import org.orienteer.telegram.bot.util.OTelegramUpdateHandlerConfig;
 import org.orienteer.telegram.bot.util.OTelegramUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.telegram.telegrambots.TelegramBotsApi;
-import org.telegram.telegrambots.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.generics.BotSession;
-import org.telegram.telegrambots.generics.LongPollingBot;
-import org.telegram.telegrambots.generics.WebhookBot;
 
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -64,53 +58,12 @@ public class OTelegramBot implements IClusterable {
                         });
     }
 
-    public synchronized boolean start() {
-        boolean started = false;
-        try {
-            TelegramBotsApi api;
-            if (webHook) {
-                api = newWebHookBotApi(updateHandler.getConfig());
-                api.registerBot((WebhookBot) updateHandler.getTelegramHandler());
-            } else {
-                api = new TelegramBotsApi();
-                botSession = api.registerBot((LongPollingBot) updateHandler.getTelegramHandler());
-            }
-            LOG.info("Start Orienteer Telegram bot with username: {}", updateHandler.getBotUsername());
-            started = true;
-        } catch (TelegramApiRequestException e) {
-            stop();
-            LOG.error("Can't start Orienteer Telegram bot with username: {}", updateHandler.getBotUsername());
-            if (LOG.isDebugEnabled()) e.printStackTrace();
-        }
-        return started;
+    public void setBotSession(BotSession session) {
+        this.botSession = session;
     }
 
-    public synchronized void stop() {
-        if (webHook) {
-            LOG.info("Stop WebHook Orienteer Telegram bot with username: {}", updateHandler.getBotUsername());
-        } else {
-            botSession.stop();
-            LOG.info("Stop LongPolling Orienteer Telegram bot with username: {}", updateHandler.getBotUsername());
-        }
-    }
-
-
-    private TelegramBotsApi newWebHookBotApi(OTelegramUpdateHandlerConfig config) throws TelegramApiRequestException {
-        TelegramBotsApi result;
-        if (Strings.isNullOrEmpty(config.getCertificateStorePassword()) ||
-                Strings.isNullOrEmpty(config.getPathToCertificateStore()) ||
-                Strings.isNullOrEmpty(config.getPathToPublicKey())) {
-            result = new TelegramBotsApi(config.getExternalUrl(), config.getInternalUrl());
-        } else {
-            result = new TelegramBotsApi(
-                    config.getPathToCertificateStore(),
-                    config.getCertificateStorePassword(),
-                    config.getExternalUrl(),
-                    config.getInternalUrl(),
-                    config.getPathToPublicKey());
-        }
-
-        return result;
+    public BotSession getBotSession() {
+        return botSession;
     }
 
     public boolean isGroupChat() {
@@ -129,18 +82,6 @@ public class OTelegramBot implements IClusterable {
         return currentSession.getLocale();
     }
 
-    public synchronized void setCurrentLocale(Locale locale) {
-        currentSession.setLocale(locale);
-    }
-
-    public BotState getCurrentBotState() {
-        return currentSession.getBotState();
-    }
-
-    public synchronized void setCurrentBotState(BotState botState) {
-        currentSession.setBotState(botState);
-    }
-
     public UserSession getCurrentSession() {
         return currentSession;
     }
@@ -151,5 +92,13 @@ public class OTelegramBot implements IClusterable {
 
     public LoadingCache<Integer, UserSession> getUserSessions() {
         return sessions;
+    }
+
+    public boolean useWebHook() {
+        return webHook;
+    }
+
+    public IOTelegramBotUpdateHandler getUpdateHandler() {
+        return updateHandler;
     }
 }

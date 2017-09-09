@@ -9,8 +9,8 @@ import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.module.AbstractOrienteerModule;
 import org.orienteer.core.util.OSchemaHelper;
-import org.orienteer.telegram.bot.util.IOTelegramBotRegistry;
 import org.orienteer.telegram.bot.util.OTelegramUtil;
+import org.orienteer.telegram.bot.util.telegram.IOTelegramBotManager;
 import org.telegram.telegrambots.ApiContextInitializer;
 import ru.ydn.wicket.wicketorientdb.model.ODocumentModel;
 
@@ -21,7 +21,7 @@ import java.util.List;
  */
 public class OTelegramModule extends AbstractOrienteerModule {
 
-	public static final String OTELEGRAM_OCLASS      = "OTelegramBot";
+	public static final String OTELEGRAM_OCLASS     = "OTelegramBot";
 	public static final String NAME                 = "telegram";
 	public static final String USERNAME             = "username";
 	public static final String TOKEN                = "token";
@@ -40,9 +40,8 @@ public class OTelegramModule extends AbstractOrienteerModule {
 	public static final CustomAttribute TELEGRAM_BOT_SEARCH_QUERY      = CustomAttribute.create("orienteer.telegram.bot.search.query", OType.STRING, null, true, false);
 	public static final CustomAttribute TELEGRAM_BOT_CLASS_DESCRIPTION = CustomAttribute.create("orienteer.telegram.bot.class.description", OType.BOOLEAN, false, false, false);
 
-
 	@Inject
-	private IOTelegramBotRegistry botRegistry;
+	private IOTelegramBotManager manager;
 
 	protected OTelegramModule() {
 		super(NAME, 1);
@@ -98,7 +97,7 @@ public class OTelegramModule extends AbstractOrienteerModule {
 		app.registerWidgets("org.orienteer.telegram.component.widget");
 		ApiContextInitializer.init();
 		for (ODocument botDoc :  getActiveBotDocuments(db)) {
-			OTelegramUtil.switchBotStateByDocument(new ODocumentModel(botDoc), botRegistry);
+			OTelegramUtil.switchBotStateByDocument(new ODocumentModel(botDoc), manager);
 		}
 	}
 
@@ -106,7 +105,7 @@ public class OTelegramModule extends AbstractOrienteerModule {
 	public void onDestroy(OrienteerWebApplication app, ODatabaseDocument db) {
 		app.unregisterWidgets("org.orienteer.telegram.component.widget");
 		for (ODocument botDoc :  getActiveBotDocuments(db)) {
-			OTelegramUtil.stopBotByDocument(new ODocumentModel(botDoc), botRegistry);
+			OTelegramUtil.stopBotByDocument(new ODocumentModel(botDoc), manager);
 		}
 	}
 

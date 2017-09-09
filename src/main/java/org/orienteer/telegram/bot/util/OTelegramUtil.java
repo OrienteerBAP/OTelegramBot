@@ -10,6 +10,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.util.io.IClusterable;
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.telegram.bot.OTelegramBot;
+import org.orienteer.telegram.bot.util.telegram.IOTelegramBotManager;
 import org.orienteer.telegram.module.OTelegramModule;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
@@ -29,20 +30,18 @@ public abstract class OTelegramUtil implements IClusterable {
     /**
      * Switch bot state by document. Start or stop Telegram bot which contains in document.
      * @param model {@link IModel<ODocument>} contains document with information about bot
-     * @param registry {@link IOTelegramBotRegistry} Telegram bots registry
+     * @param manager {@link IOTelegramBotManager} Telegram bots manager
      */
-    public static void switchBotStateByDocument(IModel<ODocument> model, IOTelegramBotRegistry registry) {
+    public static void switchBotStateByDocument(IModel<ODocument> model, IOTelegramBotManager manager) {
         synchronized (BOT_LOCKER) {
             ODocument document = model.getObject();
-            String name = document.field(OTelegramModule.NAME, OType.STRING);
+            String token = document.field(OTelegramModule.TOKEN, OType.STRING);
             boolean active = document.field(OTelegramModule.ACTIVE, OType.BOOLEAN);
-            if (active && registry.getBot(name) == null) {
+            if (active && !manager.isBotAlreadyRegistered(token)) {
                 OTelegramBot bot = new OTelegramBot(model, (Boolean) document.field(OTelegramModule.WEB_HOOK_ENABLE, OType.BOOLEAN));
-                boolean started = bot.start();
-                if (started)
-                    registry.registerBot(name, bot);
-            } else if (!active && registry.getBot(name) != null) {
-                registry.unregisterBot(name).stop();
+                manager.registerAndStartBot(bot);
+            } else if (!active && manager.isBotAlreadyRegistered(token)) {
+                manager.unregisterAndStopBot(token);
             }
         }
     }
@@ -50,14 +49,14 @@ public abstract class OTelegramUtil implements IClusterable {
     /**
      * Stop bot by document
      * @param model {@link IModel<ODocument>} contains document with information about bot
-     * @param registry {@link IOTelegramBotRegistry} Telegram bots registry
+     * @param manager {@link IOTelegramBotManager} Telegram bots manager
      */
-    public static void stopBotByDocument(IModel<ODocument> model, IOTelegramBotRegistry registry) {
+    public static void stopBotByDocument(IModel<ODocument> model, IOTelegramBotManager manager) {
         synchronized (BOT_LOCKER) {
             ODocument document = model.getObject();
-            String name = document.field(NAME, OType.STRING);
-            if (registry.getBot(name) != null) {
-                registry.getBot(name).stop();
+            String token = document.field(TOKEN, OType.STRING);
+            if (manager.isBotAlreadyRegistered(token)) {
+                manager.unregisterAndStopBot(token);
             }
         }
     }
