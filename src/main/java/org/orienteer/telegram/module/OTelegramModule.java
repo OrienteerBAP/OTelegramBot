@@ -7,10 +7,12 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
 import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.OrienteerWebApplication;
+import org.orienteer.core.component.visualizer.UIVisualizersRegistry;
 import org.orienteer.core.module.AbstractOrienteerModule;
 import org.orienteer.core.util.OSchemaHelper;
 import org.orienteer.telegram.bot.util.OTelegramUtil;
 import org.orienteer.telegram.bot.util.telegram.IOTelegramBotManager;
+import org.orienteer.telegram.component.visualizer.OTelegramVisualizer;
 import org.telegram.telegrambots.ApiContextInitializer;
 import ru.ydn.wicket.wicketorientdb.model.ODocumentModel;
 
@@ -27,8 +29,8 @@ public class OTelegramModule extends AbstractOrienteerModule {
 	public static final String TOKEN                = "token";
 	public static final String USER_SESSION         = "user_session";
 	public static final String EXTERNAL_URL         = "external_url";
-	public static final String INTERNAL_URL         = "internal_url";
-	public static final String PORT                 = "web_hook_port";
+	public static final String INTERNAL_PATH        = "internal_path";
+	public static final String INTERNAL_PORT        = "internal_port";
 	public static final String PUBLIC_KEY           = "public_key";
 	public static final String CERTIFICATE_STORE    = "certificate_store";
 	public static final String CERTIFICATE_PASSWORD = "certificate_password";
@@ -42,6 +44,9 @@ public class OTelegramModule extends AbstractOrienteerModule {
 
 	@Inject
 	private IOTelegramBotManager manager;
+
+	@Inject
+	private UIVisualizersRegistry registry;
 
 	protected OTelegramModule() {
 		super(NAME, 1);
@@ -61,33 +66,38 @@ public class OTelegramModule extends AbstractOrienteerModule {
 				.oProperty(ACTIVE, OType.BOOLEAN)
 					.defaultValue("false")
 					.updateCustomAttribute(CustomAttribute.HIDDEN, true)
-					.switchDisplayable(false)
+					.assignVisualization("telegram")
+					.markDisplayable()
 				.oProperty(WEB_HOOK_ENABLE, OType.BOOLEAN)
 					.defaultValue("false")
 					.updateCustomAttribute(CustomAttribute.HIDDEN, true)
-					.switchDisplayable(false)
+					.assignVisualization("telegram")
+					.markDisplayable()
 				.oProperty(EXTERNAL_URL, OType.STRING)
-					.markDisplayable()
 					.defaultValue("/")
 					.notNull()
-				.oProperty(INTERNAL_URL, OType.STRING)
-					.markDisplayable()
+					.switchDisplayable(false)
+				.oProperty(INTERNAL_PATH, OType.STRING)
 					.defaultValue("/")
 					.notNull()
-				.oProperty(PORT, OType.INTEGER)
-					.markDisplayable()
-					.defaultValue("8443")
+					.switchDisplayable(false)
+				.oProperty(INTERNAL_PORT, OType.INTEGER)
+					.defaultValue("9000")
 					.notNull()
+					.switchDisplayable(false)
 				.oProperty(PUBLIC_KEY, OType.STRING)
+					.assignVisualization("telegram")
 					.switchDisplayable(false)
 				.oProperty(CERTIFICATE_STORE, OType.STRING)
+					.assignVisualization("telegram")
 					.switchDisplayable(false)
 				.oProperty(CERTIFICATE_PASSWORD, OType.STRING)
+					.assignVisualization("telegram")
 					.switchDisplayable(false)
 				.oProperty(USER_SESSION, OType.LONG)
-					.markDisplayable()
 					.defaultValue("30")
-					.notNull();
+					.notNull()
+					.switchDisplayable(false);
 
 		return null;
 	}
@@ -96,16 +106,27 @@ public class OTelegramModule extends AbstractOrienteerModule {
 	public void onInitialize(OrienteerWebApplication app, ODatabaseDocument db) {
 		app.registerWidgets("org.orienteer.telegram.component.widget");
 		ApiContextInitializer.init();
-		for (ODocument botDoc :  getActiveBotDocuments(db)) {
-			OTelegramUtil.switchBotStateByDocument(new ODocumentModel(botDoc), manager);
+		registry.registerUIComponentFactory(new OTelegramVisualizer());
+		for (ODocument botDoc : getActiveBotDocuments(db)) {
+			ODocumentModel model = new ODocumentModel(botDoc);
+			try {
+				OTelegramUtil.switchBotStateByDocument(model, manager);
+			} catch (Exception ex) {
+				botDoc.field(ACTIVE, false);
+				botDoc.save();
+				OTelegramUtil.stopBotByDocument(model, manager);
+				ex.printStackTrace();
+			}
 		}
 	}
 
 	@Override
 	public void onDestroy(OrienteerWebApplication app, ODatabaseDocument db) {
 		app.unregisterWidgets("org.orienteer.telegram.component.widget");
-		for (ODocument botDoc :  getActiveBotDocuments(db)) {
+		for (ODocument botDoc : getActiveBotDocuments(db)) {
 			OTelegramUtil.stopBotByDocument(new ODocumentModel(botDoc), manager);
+			botDoc.field(ACTIVE, false);
+			botDoc.save();
 		}
 	}
 
@@ -114,4 +135,5 @@ public class OTelegramModule extends AbstractOrienteerModule {
 				new OSQLSynchQuery<>(String.format("select from %s where %s = true", OTELEGRAM_OCLASS, ACTIVE));
 		return db.query(sql);
 	}
+
 }

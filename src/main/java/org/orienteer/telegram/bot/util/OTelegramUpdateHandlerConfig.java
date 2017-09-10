@@ -14,6 +14,7 @@ public class OTelegramUpdateHandlerConfig implements IClusterable{
     private final String pathToCertificateStore;
     private final String certificateStorePassword;
     private final long userSession;
+    private final int port;
 
     public OTelegramUpdateHandlerConfig(String username, String token, long userSession) {
         this(username, token, null, null, -1, userSession, null, null, null);
@@ -33,6 +34,7 @@ public class OTelegramUpdateHandlerConfig implements IClusterable{
         this.pathToCertificateStore = pathToCertificateStore;
         this.certificateStorePassword = password;
         this.userSession = userSession;
+        this.port = port;
     }
 
     public String getUsername() {
@@ -67,6 +69,10 @@ public class OTelegramUpdateHandlerConfig implements IClusterable{
         return userSession;
     }
 
+    public int getPort() {
+        return port;
+    }
+
     @Override
     public String toString() {
         return "OTelegramUpdateHandlerConfig{" +
@@ -78,6 +84,7 @@ public class OTelegramUpdateHandlerConfig implements IClusterable{
                 ", pathToCertificateStore='" + pathToCertificateStore + '\'' +
                 ", certificateStorePassword='" + certificateStorePassword + '\'' +
                 ", userSession=" + userSession +
+                ", port=" + port +
                 '}';
     }
 }

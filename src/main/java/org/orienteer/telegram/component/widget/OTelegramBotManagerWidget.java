@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
+import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 import org.apache.wicket.Component;
 import org.apache.wicket.markup.html.form.Form;
@@ -15,6 +16,8 @@ import org.orienteer.core.component.FAIconType;
 import org.orienteer.core.component.command.EditODocumentCommand;
 import org.orienteer.core.component.command.SaveODocumentCommand;
 import org.orienteer.core.component.meta.ODocumentMetaPanel;
+import org.orienteer.core.component.property.BooleanEditPanel;
+import org.orienteer.core.component.property.BooleanViewPanel;
 import org.orienteer.core.component.property.DisplayMode;
 import org.orienteer.core.component.structuretable.OrienteerStructureTable;
 import org.orienteer.core.widget.AbstractWidget;
@@ -39,7 +42,15 @@ public class OTelegramBotManagerWidget extends AbstractWidget<ODocument> {
         Form form = new Form("form") {
             @Override
             protected void onSubmit() {
-                OTelegramUtil.switchBotStateByDocument(model, manager);
+                try {
+                    OTelegramUtil.switchBotStateByDocument(model, manager);
+                } catch (Exception ex) {
+                    error(new ResourceModel("telegram.bot.start.error").getObject());
+                    ODocument document = model.getObject();
+                    document.field(OTelegramModule.ACTIVE, false);
+                    OTelegramUtil.stopBotByDocument(model, manager);
+                    ex.printStackTrace();
+                }
             }
         };
         final IModel<DisplayMode> mode = DisplayMode.VIEW.asModel();
@@ -57,7 +68,27 @@ public class OTelegramBotManagerWidget extends AbstractWidget<ODocument> {
                 new OrienteerStructureTable<ODocument, OProperty>("state", model, list) {
             @Override
             protected Component getValueComponent(String id, IModel<OProperty> rowModel) {
-                return new ODocumentMetaPanel<Boolean>(id, mode, model, rowModel);
+                return new ODocumentMetaPanel<Boolean>(id, mode, model, rowModel) {
+                    @Override
+                    protected Component resolveComponent(String id, DisplayMode mode, OProperty property) {
+                        Component component = null;
+                        OType type = property.getType();
+                        if (mode == DisplayMode.EDIT) {
+                            switch (type) {
+                                case BOOLEAN:
+                                    component = new BooleanEditPanel(id, getModel());
+                                    break;
+                            }
+                        } else {
+                            switch (type) {
+                                case BOOLEAN:
+                                    component = new BooleanViewPanel(id, getModel());
+                                    break;
+                            }
+                        }
+                        return component;
+                    }
+                };
             }
         };
 

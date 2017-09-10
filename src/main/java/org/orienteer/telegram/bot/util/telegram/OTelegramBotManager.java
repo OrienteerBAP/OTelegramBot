@@ -29,20 +29,16 @@ public class OTelegramBotManager implements IOTelegramBotManager {
     private IOWebHook webHook;
 
     @Override
-    public void registerAndStartBot(OTelegramBot bot) {
+    public void registerAndStartBot(OTelegramBot bot) throws TelegramApiRequestException {
         synchronized (LOCK) {
-            try {
-                if (bot.useWebHook()) {
-                    startWebHookBot(bot);
-                } else {
-                    startLongPollingBot(bot);
-                }
-                telegramBots.put(bot.getUpdateHandler().getBotToken(), bot);
-                LOG.info("Start Telegram bot with name: {}", bot.getUpdateHandler().getBotUsername());
-            } catch (TelegramApiRequestException e) {
-                LOG.warn("Can't start Telegram bot with name: {}", bot.getUpdateHandler().getBotUsername());
-                e.printStackTrace();
+            if (bot.useWebHook()) {
+                startWebHookBot(bot);
+                LOG.info("Start Web Hook Telegram bot with name: {}", bot.getUpdateHandler().getBotUsername());
+            } else {
+                startLongPollingBot(bot);
+                LOG.info("Start Long Polling Telegram bot with name: {}", bot.getUpdateHandler().getBotUsername());
             }
+            telegramBots.put(bot.getUpdateHandler().getBotToken(), bot);
         }
     }
 
@@ -54,24 +50,31 @@ public class OTelegramBotManager implements IOTelegramBotManager {
                 if (bot.useWebHook()) {
                     WebhookBot webhookBot = (WebhookBot) bot.getUpdateHandler().getTelegramHandler();
                     webHook.unregisterWebHook(webhookBot);
+                    LOG.info("Stop Web Hook Telegram bot with name: {}", bot.getUpdateHandler().getBotUsername());
                 } else {
-                    bot.getBotSession().stop();
+                    BotSession session = bot.getBotSession();
+                    session.stop();
+                    LOG.info("Stop Long Polling Telegram bot with name: {}", bot.getUpdateHandler().getBotUsername());
                 }
-                LOG.info("Stop Telegram bot with token: {}", bot.getUpdateHandler().getBotUsername());
             } else LOG.info("Telegram bot with token {} don't registered!", token);
         }
     }
 
     @Override
     public boolean isBotAlreadyRegistered(String token) {
-        return telegramBots.get(token) != null;
+        return getBotByToken(token) != null;
+    }
+
+    @Override
+    public OTelegramBot getBotByToken(String token) {
+        return telegramBots.get(token);
     }
 
     private void startWebHookBot(OTelegramBot bot) throws TelegramApiRequestException {
         OTelegramUpdateHandlerConfig config = bot.getUpdateHandler().getConfig();
         WebhookBot webhookBot = (WebhookBot) bot.getUpdateHandler().getTelegramHandler();
         if (!webHook.isServerStarted()) {
-            webHook.setInternalUrl(config.getInternalUrl());
+            webHook.setInternalUrl(getInternalUrl(config.getInternalUrl(), config.getPort()));
             if (!Strings.isNullOrEmpty(config.getPathToCertificateStore()) &&
                     !Strings.isNullOrEmpty(config.getCertificateStorePassword())) {
                 webHook.setKeyStore(config.getPathToCertificateStore(), config.getCertificateStorePassword());
@@ -91,10 +94,18 @@ public class OTelegramBotManager implements IOTelegramBotManager {
         session.setOptions(bot.getOptions());
         session.setCallback(bot);
         session.start();
+        telegramBot.setBotSession(session);
+    }
+
+    private String getInternalUrl(String path, int port) {
+        if (path != null && !path.startsWith("/")) {
+            path = "/" + path;
+        }
+        return "https://localhost:" + port + path;
     }
 
     private String getExternalWebHookUrl(String externalUrl, String name) {
-        if (externalUrl != null && !externalUrl.endsWith("/")) {
+        if (!externalUrl.endsWith("/")) {
             externalUrl += "/";
         }
         return externalUrl + webHook.REST_URL + name;

@@ -2,24 +2,31 @@ package org.orienteer.telegram.bot.util.telegram;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.grizzly.http.server.NetworkListener;
 import org.glassfish.grizzly.ssl.SSLContextConfigurator;
 import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.generics.WebhookBot;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.logging.Level;
 
 /**
  * Implementation of {@link IOWebHook}
  */
 @Singleton
 public class OWebHook implements IOWebHook {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OWebHook.class);
 
     private String keystoreServerFile;
     private String keystoreServerPwd;
@@ -36,6 +43,10 @@ public class OWebHook implements IOWebHook {
             rc.register(restApi);
             rc.register(JacksonFeature.class);
 
+            Grizzly.logger(HttpServer.class).setLevel(Level.SEVERE);
+            Grizzly.logger(NetworkListener.class).setLevel(Level.SEVERE);
+            URI uri = getBaseURI();
+
             if (keystoreServerFile != null && keystoreServerPwd != null) {
                 SSLContextConfigurator sslContext = new SSLContextConfigurator();
 
@@ -43,14 +54,15 @@ public class OWebHook implements IOWebHook {
                 sslContext.setKeyStoreFile(keystoreServerFile); // contains server keypair
                 sslContext.setKeyStorePass(keystoreServerPwd);
 
-                server = GrizzlyHttpServerFactory.createHttpServer(getBaseURI(), rc, true,
+                server = GrizzlyHttpServerFactory.createHttpServer(uri, rc, true,
                         new SSLEngineConfigurator(sslContext).setClientMode(false).setNeedClientAuth(false));
             } else {
-                server = GrizzlyHttpServerFactory.createHttpServer(getBaseURI(), rc);
+                server = GrizzlyHttpServerFactory.createHttpServer(uri, rc);
             }
 
             try {
                 server.start();
+                LOG.info("Start Web Hook server at: {}:{}", uri.getHost(), uri.getPort());
             } catch (IOException e) {
                 server = null;
                 throw new TelegramApiRequestException("Error starting webhook server", e);
@@ -63,6 +75,8 @@ public class OWebHook implements IOWebHook {
         if (isServerStarted()) {
             server.shutdown();
             server = null;
+            URI uri = getBaseURI();
+            LOG.info("Stop Web Hook server at {}:{}", uri.getHost(), uri.getPort());
         }
     }
 

@@ -12,6 +12,7 @@ import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.telegram.bot.OTelegramBot;
 import org.orienteer.telegram.bot.util.telegram.IOTelegramBotManager;
 import org.orienteer.telegram.module.OTelegramModule;
+import org.telegram.telegrambots.exceptions.TelegramApiRequestException;
 import ru.ydn.wicket.wicketorientdb.utils.DBClosure;
 
 import java.util.Date;
@@ -32,15 +33,20 @@ public abstract class OTelegramUtil implements IClusterable {
      * @param model {@link IModel<ODocument>} contains document with information about bot
      * @param manager {@link IOTelegramBotManager} Telegram bots manager
      */
-    public static void switchBotStateByDocument(IModel<ODocument> model, IOTelegramBotManager manager) {
+    public static void switchBotStateByDocument(IModel<ODocument> model, IOTelegramBotManager manager) throws TelegramApiRequestException {
         synchronized (BOT_LOCKER) {
             ODocument document = model.getObject();
             String token = document.field(OTelegramModule.TOKEN, OType.STRING);
             boolean active = document.field(OTelegramModule.ACTIVE, OType.BOOLEAN);
-            if (active && !manager.isBotAlreadyRegistered(token)) {
-                OTelegramBot bot = new OTelegramBot(model, (Boolean) document.field(OTelegramModule.WEB_HOOK_ENABLE, OType.BOOLEAN));
-                manager.registerAndStartBot(bot);
-            } else if (!active && manager.isBotAlreadyRegistered(token)) {
+            if (active) {
+                OTelegramBot bot = manager.getBotByToken(token);
+                boolean useWebHook = document.field(OTelegramModule.WEB_HOOK_ENABLE, OType.BOOLEAN);
+                if (bot == null || bot.useWebHook() != useWebHook) {
+                    if (bot != null) manager.unregisterAndStopBot(token);
+                    bot = new OTelegramBot(model, useWebHook);
+                    manager.registerAndStartBot(bot);
+                }
+            } else if (manager.isBotAlreadyRegistered(token)) {
                 manager.unregisterAndStopBot(token);
             }
         }
@@ -71,12 +77,12 @@ public abstract class OTelegramUtil implements IClusterable {
         String username               = doc.field(USERNAME, OType.STRING);
         String token                  = doc.field(TOKEN, OType.STRING);
         String externalUrl            = doc.field(EXTERNAL_URL, OType.STRING);
-        String internalUrl            = doc.field(INTERNAL_URL, OType.STRING);
+        String internalUrl            = doc.field(INTERNAL_PATH, OType.STRING);
         String pathToPublicKey        = doc.field(PUBLIC_KEY, OType.STRING);
         String pathToCertificateStore = doc.field(CERTIFICATE_STORE, OType.STRING);
         String certificatePassword    = doc.field(CERTIFICATE_PASSWORD, OType.STRING);
         long userSession              = doc.field(USER_SESSION, OType.LONG);
-        int port                      = doc.field(PORT, OType.INTEGER);
+        int port                      = doc.field(INTERNAL_PORT, OType.INTEGER);
         return new OTelegramUpdateHandlerConfig(username, token, externalUrl, internalUrl, port, userSession, pathToPublicKey, pathToCertificateStore, certificatePassword);
     }
 
